@@ -189,10 +189,10 @@ public:
         const QString key=family+"|"+QString::number(height)+"|"+color.name()+"|"+QString::number(option.rect.width());
         auto found=cache_.constFind(key);
         if(found==cache_.cend()){
-            // 预览 = 字体名 + 中文样字(永东:覆盖基本笔画,直观展示该字体的中文渲染与回退效果)
+            // 预览 = 字体名 + 中文样字(永东)。不设 families 回退链:QFontMetrics 会按
+            // 回退链里行高最大的字体计算,把行撑高;绘制时 Qt 自动按字形回退即可。
             static const QString sample=QString::fromUtf8("  永东");
             QFont font(family);font.setPixelSize(height);
-            font.setFamilies(QStringList{family,"Microsoft YaHei UI","Microsoft YaHei","SimHei"});
             QFontMetrics metrics(font);
             const int sampleWidth=metrics.horizontalAdvance(sample);
             const QString shown=metrics.elidedText(family,Qt::ElideRight,std::max(1,option.rect.width()-8-sampleWidth));
