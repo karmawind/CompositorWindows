@@ -189,12 +189,17 @@ public:
         const QString key=family+"|"+QString::number(height)+"|"+color.name()+"|"+QString::number(option.rect.width());
         auto found=cache_.constFind(key);
         if(found==cache_.cend()){
+            // 预览 = 字体名 + 中文样字(永东:覆盖基本笔画,直观展示该字体的中文渲染与回退效果)
+            static const QString sample=QString::fromUtf8("  永东");
             QFont font(family);font.setPixelSize(height);
+            font.setFamilies(QStringList{family,"Microsoft YaHei UI","Microsoft YaHei","SimHei"});
             QFontMetrics metrics(font);
-            const QString shown=metrics.elidedText(family,Qt::ElideRight,std::max(1,option.rect.width()-8));
-            QPixmap pixmap(std::max(1,metrics.horizontalAdvance(shown)+2),std::max(1,metrics.height()+2));
+            const int sampleWidth=metrics.horizontalAdvance(sample);
+            const QString shown=metrics.elidedText(family,Qt::ElideRight,std::max(1,option.rect.width()-8-sampleWidth));
+            const QString full=shown+sample;
+            QPixmap pixmap(std::max(1,metrics.horizontalAdvance(full)+2),std::max(1,metrics.height()+2));
             pixmap.fill(Qt::transparent);
-            QPainter mark(&pixmap);mark.setFont(font);mark.setPen(color);mark.drawText(QRect(0,0,pixmap.width(),pixmap.height()),Qt::AlignVCenter|Qt::AlignLeft,shown);
+            QPainter mark(&pixmap);mark.setFont(font);mark.setPen(color);mark.drawText(QRect(0,0,pixmap.width(),pixmap.height()),Qt::AlignVCenter|Qt::AlignLeft,full);
             if(cache_.size()>512)cache_.clear();
             found=cache_.insert(key,pixmap);
         }
