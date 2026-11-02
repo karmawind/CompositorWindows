@@ -191,7 +191,7 @@ public:
         if(found==cache_.cend()){
             // 预览 = 字体名 + 中文样字(永东)。不设 families 回退链:QFontMetrics 会按
             // 回退链里行高最大的字体计算,把行撑高;绘制时 Qt 自动按字形回退即可。
-            static const QString sample=QString::fromUtf8("  永东");
+            static const QString sample=QString::fromUtf8("  老高牛逼");
             QFont font(family);font.setPixelSize(height);
             QFontMetrics metrics(font);
             const int sampleWidth=metrics.horizontalAdvance(sample);
