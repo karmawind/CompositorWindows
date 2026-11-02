@@ -9,12 +9,12 @@ extern "C" {
 namespace compositor {
 LevelsPreviewHistogramResult levelsPreviewHistogram(const Raster& source,const Transform& mapping,
     const Document& document,const std::function<bool()>& cancelled){
-    auto check=[&]{if(cancelled&&cancelled())throw std::runtime_error("Histogram cancelled");};check();
+    auto check=[&]{if(cancelled&&cancelled())throw std::runtime_error("直方图已取消");};check();
     if(source.width<1||source.height<1||source.width>30000||source.height>30000||
        uint64_t(source.width)*source.height>100000000||!mapping.valid()||
        source.tiles.size()!=size_t((source.width+255)/256)*size_t((source.height+255)/256)||
        std::any_of(source.tiles.begin(),source.tiles.end(),[](const auto& tile){return !tile;}))
-        throw std::invalid_argument("Invalid Levels preview source");
+        throw std::invalid_argument("无效的色阶预览源");
     const double factor=std::min(1.,8000./std::max(source.width,source.height));
     LevelsPreviewHistogramResult result;
     result.width=std::max(1,int(source.width*factor));result.height=std::max(1,int(source.height*factor));

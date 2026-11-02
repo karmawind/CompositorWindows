@@ -7,7 +7,7 @@
 #include <QJsonParseError>
 namespace compositor::effects_tools {
 namespace {
-constexpr const char* names[]{"RGB","Red","Green","Blue"};
+constexpr const char* names[]{"RGB","红色","绿色","蓝色"};
 size_t index(LevelsChannel c){if(int(c)<0||int(c)>3)throw std::runtime_error("Invalid curve channel");return size_t(c);}
 Point clamped(Point p){if(!std::isfinite(p.x)||!std::isfinite(p.y))throw std::runtime_error("Invalid curve control point");return {std::clamp(p.x,0.,255.),std::clamp(p.y,0.,255.)};}
 QJsonObject parse(std::string_view text){if(text.size()>4*1024*1024)throw std::runtime_error("Adjustment JSON exceeds budget");QJsonParseError error;auto doc=QJsonDocument::fromJson(QByteArray(text.data(),qsizetype(text.size())),&error);if(error.error!=QJsonParseError::NoError||!doc.isObject())throw std::runtime_error("Invalid adjustment JSON");return doc.object();}

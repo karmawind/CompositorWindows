@@ -42,7 +42,7 @@ std::optional<filters::SourceSelection> filterSelection(const Document&doc,const
         for(Point p:std::array<Point,4>{{{box.x,box.y},{box.x+box.width,box.y},{box.x+box.width,box.y+box.height},{box.x,box.y+box.height}}}){auto u=layer.transform.toUnit(p);x0=std::min(x0,u.x*rect.width);x1=std::max(x1,u.x*rect.width);y0=std::min(y0,u.y*rect.height);y1=std::max(y1,u.y*rect.height);}
         if(!box.empty()){rect={int(std::floor(x0)),int(std::floor(y0)),int(std::ceil(x1)-std::floor(x0)),int(std::ceil(y1)-std::floor(y0))};}
     }
-    if(rect.width<1||rect.height<1||rect.width>30000||rect.height>30000||uint64_t(rect.width)*rect.height>100000000)throw std::runtime_error("Selection exceeds source allocation limits");
+    if(rect.width<1||rect.height<1||rect.width>30000||rect.height>30000||uint64_t(rect.width)*rect.height>100000000)throw std::runtime_error("选区超出源分配限制");
     auto mapping=filters::placedGrid(layer.transform,layer.raster->width,layer.raster->height,rect);
     return filters::SourceSelection{editing::mappedCoverage(doc,mapping,rect.width,rect.height),rect.x,rect.y};
 }
@@ -75,14 +75,14 @@ Layer carryFilterMask(const Layer& original,Layer layer,const filters::Request& 
     const auto width=layer.raster->width,height=layer.raster->height;
     const auto pixels=uint64_t(width)*height;
     if(width<1||height<1||width>30000||height>30000||pixels>100000000||pixels>job.limits.maxWorkingBytes)
-        throw std::runtime_error("The expanded filter mask exceeds its allocation budget");
+        throw std::runtime_error("展开后的滤镜蒙版超出其分配预算");
     auto grown=std::make_shared<GrayRaster>();grown->width=width;grown->height=height;grown->pixels.resize(size_t(pixels));
     const auto exterior=graphics::maskBackground(*mask.raster);
     graphics::DownsampleCache reduction;
     const double covered=original.transform.width/std::max(1.,padded->width)*width;
     const auto reduced=reduction.image(mask.raster,covered/mask.raster->width);
     for(int y=0;y<height;++y){
-        if(job.limits.cancelled&&job.limits.cancelled())throw std::runtime_error("Filter cancelled");
+        if(job.limits.cancelled&&job.limits.cancelled())throw std::runtime_error("滤镜已取消");
         for(int x=0;x<width;++x){
             const auto point=padded->fromUnit({(x+.5)/width,(y+.5)/height});
             const auto value=graphics::sampleMask(*reduced,original.transform.toUnit(point),Transform::Sampling::High,exterior);
@@ -104,7 +104,7 @@ std::function<Layer(const Layer&)> filterMerge(const Layer& rendered,const Layer
         return carryFilterMask(current,std::move(layer),job,rendered.raster!=original.raster||rendered.transform!=original.transform);
     };
 }
-QStringList filterKindNames(){return {"Gaussian Blur","Motion Blur","Add Noise","Lens Correction","Content-Aware Fill","Vignette","Bloom","Tonal Contrast","Dither","Scanlines","Camera Raw Filter"};}
+QStringList filterKindNames(){return {"高斯模糊","动感模糊","添加杂色","镜头校正","内容识别填充","晕影","辉光","色调对比","抖动","Scanlines","Camera Raw 滤镜"};}
 filters::Request buildFilterRequest(EditorProject& project,const Document& before,const Layer& layer,filters::Kind kind){
     filters::Request request;request.settings=project.toolState.filterSettings.pixels;request.cameraRaw=project.toolState.filterSettings.cameraRaw.normalized();
     request.kind=kind;request.deepSource=layer.deep;request.source=layer.raster?layer.raster:Raster::filled(before.width,before.height);
@@ -155,7 +155,7 @@ class FilterPanel final:public ui::EditPanelSession {
     QVBoxLayout layout_;
     QFormLayout fields_;
     QLabel thumbnail_,status_;
-    QCheckBox preview_{"Preview"};
+    QCheckBox preview_{"预览"};
     QDialogButtonBox buttons_{QDialogButtonBox::Apply|QDialogButtonBox::Cancel};
     QPushButton* apply_{};
     QTimer debounce_;
@@ -209,7 +209,7 @@ class FilterPanel final:public ui::EditPanelSession {
         cancelled_=std::make_shared<std::atomic_bool>(false);
         auto job=request_;job.preview=!committing_;job.limits.cancelled=[token=cancelled_]{return token->load();};
         if(job.kind==filters::Kind::CameraRaw&&job.preview){job.previewMaxEdge=refine_?2048:1024;job.cameraRawView.scopeLimit=refine_?0:512;}
-        status_.setText(committing_?"Applying filter…":"Updating preview…");
+        status_.setText(committing_?"正在应用滤镜…":"正在更新预览…");
         worker_.setFuture(QtConcurrent::run([job,before=before_,original=original_]{
             FilterOutput out;out.full=!job.preview;
             try{auto prepared=filteredLayer(original,job);auto document=before;
@@ -241,15 +241,15 @@ public:
         layout_.addLayout(&fields_);thumbnail_.setObjectName("filterPreview");layout_.addWidget(&thumbnail_);thumbnail_.hide();
         preview_.setObjectName("filterPreviewEnabled");preview_.setChecked(true);layout_.addWidget(&preview_);
         status_.setWordWrap(true);status_.setStyleSheet("color: #989ba3; font-size: 11px;");layout_.addWidget(&status_);
-        if(cameraRaw&&request_.selection){auto* note=new QLabel("Limited to the selection");note->setObjectName("cameraRawSelection");layout_.addWidget(note);}
+        if(cameraRaw&&request_.selection){auto* note=new QLabel("仅限选区");note->setObjectName("cameraRawSelection");layout_.addWidget(note);}
         layout_.addWidget(&buttons_);apply_=buttons_.button(cameraRaw?QDialogButtonBox::Ok:QDialogButtonBox::Apply);apply_->setEnabled(false);apply_->setDefault(true);buttons_.button(QDialogButtonBox::Cancel)->setAutoDefault(false);
         layout_.setContentsMargins(18,16,18,16);layout_.setSpacing(12);fields_.setVerticalSpacing(12);
         debounce_.setSingleShot(true);debounce_.setInterval(120);
         const filters::Settings factory{};
         auto number=[this](const QString& label,double& value,double low,double high,int decimals,double fallback){
-            auto* spin=new ui::PropertyNumber;spin->setRange(low,high);spin->setDecimals(decimals);const int stepDecimals=label=="Radius"||label=="Amount"?1:0;spin->setSingleStep(std::pow(10.,-stepDecimals));spin->setValue(value);spin->setAccessibleName(label);auto* row=new QWidget;auto* layout=new QHBoxLayout(row);layout->setContentsMargins(0,0,0,0);
-            auto* slider=new ui::TrackSlider(Qt::Horizontal);slider->setRange(0,10000);slider->setAccessibleName(label+" slider");
-            const bool logarithmic=label=="Radius"||label=="Distance"||label=="Amount";
+            auto* spin=new ui::PropertyNumber;spin->setRange(low,high);spin->setDecimals(decimals);const int stepDecimals=label=="半径"||label=="数量"?1:0;spin->setSingleStep(std::pow(10.,-stepDecimals));spin->setValue(value);spin->setAccessibleName(label);auto* row=new QWidget;auto* layout=new QHBoxLayout(row);layout->setContentsMargins(0,0,0,0);
+            auto* slider=new ui::TrackSlider(Qt::Horizontal);slider->setRange(0,10000);slider->setAccessibleName(label+"滑块");
+            const bool logarithmic=label=="半径"||label=="距离"||label=="数量";
             const double first=logarithmic?std::log(low):low,last=logarithmic?std::log(high):high;
             auto position=[first,last,logarithmic](double v){return int(std::lround(((logarithmic?std::log(v):v)-first)/(last-first)*10000));};
             slider->setValue(position(spin->value()));slider->setDefaultValue(position(fallback));layout->addWidget(slider,1);layout->addWidget(spin);fields_.addRow(label,row);
@@ -258,16 +258,16 @@ public:
             connect(spin,&QDoubleSpinBox::valueChanged,&dialog_,[this,field=&value](double next){*field=next;change();});
         };
         switch(request_.kind){
-        case filters::Kind::GaussianBlur:number("Radius",request_.settings.radius,.1,250,1,factory.radius);break;
-        case filters::Kind::MotionBlur:number("Angle",request_.settings.angle,-90,90,1,factory.angle);number("Distance",request_.settings.distance,1,2000,1,factory.distance);break;
-        case filters::Kind::AddNoise:{number("Amount",request_.settings.amount,.1,400,1,factory.amount);auto* gaussian=new QCheckBox("Gaussian");auto* mono=new QCheckBox("Monochromatic");gaussian->setChecked(request_.settings.gaussian);mono->setChecked(request_.settings.monochromatic);fields_.addRow(gaussian);fields_.addRow(mono);connect(gaussian,&QCheckBox::toggled,&dialog_,[this](bool value){request_.settings.gaussian=value;change();});connect(mono,&QCheckBox::toggled,&dialog_,[this](bool value){request_.settings.monochromatic=value;change();});break;}
-        case filters::Kind::LensCorrection:number("Distortion",request_.settings.distortion,-100,100,1,factory.distortion);break;
+        case filters::Kind::GaussianBlur:number("半径",request_.settings.radius,.1,250,1,factory.radius);break;
+        case filters::Kind::MotionBlur:number("角度",request_.settings.angle,-90,90,1,factory.angle);number("距离",request_.settings.distance,1,2000,1,factory.distance);break;
+        case filters::Kind::AddNoise:{number("数量",request_.settings.amount,.1,400,1,factory.amount);auto* gaussian=new QCheckBox("高斯");auto* mono=new QCheckBox("单色");gaussian->setChecked(request_.settings.gaussian);mono->setChecked(request_.settings.monochromatic);fields_.addRow(gaussian);fields_.addRow(mono);connect(gaussian,&QCheckBox::toggled,&dialog_,[this](bool value){request_.settings.gaussian=value;change();});connect(mono,&QCheckBox::toggled,&dialog_,[this](bool value){request_.settings.monochromatic=value;change();});break;}
+        case filters::Kind::LensCorrection:number("畸变",request_.settings.distortion,-100,100,1,factory.distortion);break;
         case filters::Kind::ContentAwareFill:break;
-        case filters::Kind::Vignette:number("Strength",request_.settings.vignette,0,100,1,factory.vignette);number("Midpoint",request_.settings.vignetteMidpoint,0,1,2,factory.vignetteMidpoint);break;
-        case filters::Kind::Bloom:number("Strength",request_.settings.bloom,0,100,1,factory.bloom);number("Threshold",request_.settings.bloomThreshold,0,1,2,factory.bloomThreshold);break;
-        case filters::Kind::TonalContrast:number("Strength",request_.settings.tonal,-100,100,1,factory.tonal);break;
+        case filters::Kind::Vignette:number("强度",request_.settings.vignette,0,100,1,factory.vignette);number("Midpoint",request_.settings.vignetteMidpoint,0,1,2,factory.vignetteMidpoint);break;
+        case filters::Kind::Bloom:number("强度",request_.settings.bloom,0,100,1,factory.bloom);number("Threshold",request_.settings.bloomThreshold,0,1,2,factory.bloomThreshold);break;
+        case filters::Kind::TonalContrast:number("强度",request_.settings.tonal,-100,100,1,factory.tonal);break;
         case filters::Kind::Dither:break;
-        case filters::Kind::Scanlines:number("Strength",request_.settings.scanline,0,100,1,factory.scanline);number("Glow",request_.settings.scanlineGlow,0,100,1,factory.scanlineGlow);break;
+        case filters::Kind::Scanlines:number("强度",request_.settings.scanline,0,100,1,factory.scanline);number("发光",request_.settings.scanlineGlow,0,100,1,factory.scanlineGlow);break;
         case filters::Kind::CameraRaw:break;
         }
         if(cameraRaw){
@@ -288,7 +288,7 @@ public:
                 return;
             }
             if(result.full){committed_=std::move(result.document);dialog_.accept();return;}
-            completedPreview_=std::make_shared<const Document>(std::move(*result.document));if(raw_&&result.scope)raw_->setScope(*result.scope);publishPreview();if(!result.thumbnail.isNull())thumbnail_.setPixmap(QPixmap::fromImage(result.thumbnail));status_.setText("Preview");apply_->setEnabled(true);
+            completedPreview_=std::make_shared<const Document>(std::move(*result.document));if(raw_&&result.scope)raw_->setScope(*result.scope);publishPreview();if(!result.thumbnail.isNull())thumbnail_.setPixmap(QPixmap::fromImage(result.thumbnail));status_.setText("预览");apply_->setEnabled(true);
             if(request_.kind==filters::Kind::CameraRaw&&!refine_){refine_=true;start();}
         });
         connect(apply_,&QPushButton::clicked,&dialog_,[this]{
@@ -363,11 +363,11 @@ void MainWindow::runFilter(int kindIndex,bool repeating){
     auto* p=current();auto* layer=active();const bool vignette=kindIndex==int(filters::Kind::Vignette);
     if((!repeating&&editPanel_)||!p||!p->document||!layer||layer->group||!layer->adjustmentJson.empty()||(!layer->raster&&!vignette))return;
     const auto names=filterKindNames();
-    if(kindIndex<0||kindIndex>=names.size())throw std::runtime_error("Unsupported filter kind");
+    if(kindIndex<0||kindIndex>=names.size())throw std::runtime_error("不支持的滤镜类型");
     const auto kind=filters::Kind(kindIndex);
     if(repeating&&!canRunFilterKind(*p,kind))return;
     if(kind==filters::Kind::ContentAwareFill&&!p->document->selection)return;
-    if(layer->deep&&layer->deep->isHdr()&&!filters::supportsHdr(kind))throw std::runtime_error("Use Layer > Convert HDR to 16-Bit before this spatial filter");
+    if(layer->deep&&layer->deep->isHdr()&&!filters::supportsHdr(kind))throw std::runtime_error("使用此空间滤镜前请先使用“图层 > 将 HDR 转换为 16 位”");
     const auto before=*p->document;const auto original=*layer;
     auto request=buildFilterRequest(*p,before,original,kind);
     if(repeating){

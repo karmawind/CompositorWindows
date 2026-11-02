@@ -18,10 +18,10 @@ QString keysText(const QList<QKeySequence>& keys){QStringList text;for(const aut
 }
 KeyboardShortcutDialog::KeyboardShortcutDialog(QWidget* parent,const CommandRegistry& registry,Commit commit)
     :QDialog(parent),defaults_(registry.defaultShortcuts()),draft_(registry.shortcuts()),commit_(std::move(commit)){
-    setObjectName("keyboardShortcutDialog");setWindowTitle("Keyboard Shortcuts");resize(640,640);
+    setObjectName("keyboardShortcutDialog");setWindowTitle("键盘快捷键");resize(640,640);
     auto* layout=new QVBoxLayout(this);
-    search_=new QLineEdit;search_->setObjectName("shortcutSearch");search_->setPlaceholderText("Search commands");search_->setClearButtonEnabled(true);layout->addWidget(search_);
-    list_=new QTreeWidget;list_->setObjectName("shortcutList");list_->setColumnCount(3);list_->setHeaderLabels({"Command","Menu","Shortcut"});list_->setRootIsDecorated(false);list_->setAccessibleName("Commands and shortcuts");
+    search_=new QLineEdit;search_->setObjectName("shortcutSearch");search_->setPlaceholderText("搜索命令");search_->setClearButtonEnabled(true);layout->addWidget(search_);
+    list_=new QTreeWidget;list_->setObjectName("shortcutList");list_->setColumnCount(3);list_->setHeaderLabels({"命令","菜单","快捷键"});list_->setRootIsDecorated(false);list_->setAccessibleName("命令与快捷键");
     list_->header()->setSectionResizeMode(0,QHeaderView::Stretch);
     for(const auto& item:registry.listCommands()){
         if(!draft_.count(item.id))continue;
@@ -29,15 +29,15 @@ KeyboardShortcutDialog::KeyboardShortcutDialog(QWidget* parent,const CommandRegi
     }
     layout->addWidget(list_,1);
     auto* editor=new QHBoxLayout;
-    primary_=new QKeySequenceEdit;primary_->setObjectName("shortcutPrimary");primary_->setMaximumSequenceLength(1);primary_->setAccessibleName("Shortcut");
-    secondary_=new QKeySequenceEdit;secondary_->setObjectName("shortcutSecondary");secondary_->setMaximumSequenceLength(1);secondary_->setAccessibleName("Alternate shortcut");
-    clear_=new QPushButton("Clear");clear_->setObjectName("shortcutClear");
-    editor->addWidget(new QLabel("Shortcut"));editor->addWidget(primary_,1);editor->addWidget(new QLabel("Alternate"));editor->addWidget(secondary_,1);editor->addWidget(clear_);
+    primary_=new QKeySequenceEdit;primary_->setObjectName("shortcutPrimary");primary_->setMaximumSequenceLength(1);primary_->setAccessibleName("快捷键");
+    secondary_=new QKeySequenceEdit;secondary_->setObjectName("shortcutSecondary");secondary_->setMaximumSequenceLength(1);secondary_->setAccessibleName("备用快捷键");
+    clear_=new QPushButton("清除");clear_->setObjectName("shortcutClear");
+    editor->addWidget(new QLabel("快捷键"));editor->addWidget(primary_,1);editor->addWidget(new QLabel("备用"));editor->addWidget(secondary_,1);editor->addWidget(clear_);
     layout->addLayout(editor);
     status_=new QLabel;status_->setObjectName("shortcutStatus");status_->setWordWrap(true);layout->addWidget(status_);
     auto* buttons=new QHBoxLayout;
-    auto* restore=new QPushButton("Restore Defaults");restore->setObjectName("shortcutRestoreDefaults");
-    auto* cancel=new QPushButton("Cancel");cancel->setObjectName("shortcutCancel");
+    auto* restore=new QPushButton("恢复默认值");restore->setObjectName("shortcutRestoreDefaults");
+    auto* cancel=new QPushButton("取消");cancel->setObjectName("shortcutCancel");
     save_=new QPushButton("Save");save_->setObjectName("shortcutSave");save_->setDefault(true);
     buttons->addWidget(restore);buttons->addStretch(1);buttons->addWidget(cancel);buttons->addWidget(save_);
     layout->addLayout(buttons);
@@ -79,16 +79,16 @@ void KeyboardShortcutDialog::validate(){
     for(const auto&[id,keys]:draft_)for(const auto& key:keys)if(const auto problem=shortcutProblem(key);!problem.isEmpty()){problems.push_back(label(id)+": "+problem);flagged.insert(id);}
     for(const auto& conflict:findShortcutConflicts(draft_)){
         QStringList names;for(const auto& id:conflict.ids){names.push_back(label(id));flagged.insert(id);}
-        problems.push_back(conflict.key.toString(QKeySequence::NativeText)+" is assigned to "+names.join(" and ")+".");
+        problems.push_back(conflict.key.toString(QKeySequence::NativeText)+" 已分配给 "+names.join(" 和 ")+".");
     }
     for(int i=0;i<list_->topLevelItemCount();++i){auto* row=list_->topLevelItem(i);row->setForeground(2,flagged.count(row->data(0,Qt::UserRole).toString())?QBrush(QColor(232,72,72)):list_->palette().text());}
     save_->setEnabled(problems.isEmpty());
-    status_->setText(problems.isEmpty()?QString{}:"Save is unavailable until each shortcut is unique and valid. Change or clear these assignments:\n"+problems.join("\n"));
+    status_->setText(problems.isEmpty()?QString{}:"在每个快捷键都唯一且有效之前无法保存。请更改或清除这些分配：\n"+problems.join("\n"));
 }
 void KeyboardShortcutDialog::save(){
     validate();if(!save_->isEnabled())return;
     QString error;
     if(commit_&&commit_(draft_,&error)){accept();return;}
-    status_->setText(error.isEmpty()?"The shortcuts could not be saved. Your previous shortcuts are still active.":error);
+    status_->setText(error.isEmpty()?"无法保存快捷键。原有的快捷键仍然有效。":error);
 }
 }

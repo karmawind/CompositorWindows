@@ -21,22 +21,22 @@ namespace {
 class GridSettingsDialog final:public QDialog {
 public:
     GridSettingsDialog(const editing::LayoutGrid& grid,QWidget* parent):QDialog(parent),value_(grid){
-        setWindowTitle("Grid Settings");
+        setWindowTitle("网格设置");
         auto*form=new QFormLayout(this);
-        spacing_=new QDoubleSpinBox(this);spacing_->setRange(1,100000);spacing_->setDecimals(2);spacing_->setSuffix(" px");spacing_->setValue(grid.spacing);spacing_->setAccessibleName("Grid spacing");
-        form->addRow("Major spacing",spacing_);
-        subdivisions_=new QSpinBox(this);subdivisions_->setRange(1,64);subdivisions_->setValue(grid.subdivisions);subdivisions_->setAccessibleName("Grid subdivisions");
-        form->addRow("Subdivisions",subdivisions_);
-        opacity_=new QSpinBox(this);opacity_->setRange(0,100);opacity_->setSuffix(" %");opacity_->setValue(int(std::lround(grid.opacity*100)));opacity_->setAccessibleName("Grid opacity");
-        form->addRow("Opacity",opacity_);
-        color_=new QPushButton(this);color_->setAccessibleName("Grid color");
+        spacing_=new QDoubleSpinBox(this);spacing_->setRange(1,100000);spacing_->setDecimals(2);spacing_->setSuffix(" px");spacing_->setValue(grid.spacing);spacing_->setAccessibleName("网格间距");
+        form->addRow("主间距",spacing_);
+        subdivisions_=new QSpinBox(this);subdivisions_->setRange(1,64);subdivisions_->setValue(grid.subdivisions);subdivisions_->setAccessibleName("网格细分");
+        form->addRow("细分",subdivisions_);
+        opacity_=new QSpinBox(this);opacity_->setRange(0,100);opacity_->setSuffix(" %");opacity_->setValue(int(std::lround(grid.opacity*100)));opacity_->setAccessibleName("网格不透明度");
+        form->addRow("不透明度",opacity_);
+        color_=new QPushButton(this);color_->setAccessibleName("网格颜色");
         setColor(grid.color);
         connect(color_,&QPushButton::clicked,this,[this]{
             const auto current=QColor(value_.color[0],value_.color[1],value_.color[2]);
-            const auto picked=QColorDialog::getColor(current,this,"Grid Color");
+            const auto picked=QColorDialog::getColor(current,this,"网格颜色");
             if(picked.isValid())setColor({uint8_t(picked.red()),uint8_t(picked.green()),uint8_t(picked.blue())});
         });
-        form->addRow("Color",color_);
+        form->addRow("颜色",color_);
         auto*buttons=new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,this);
         connect(buttons,&QDialogButtonBox::accepted,this,&QDialog::accept);
         connect(buttons,&QDialogButtonBox::rejected,this,&QDialog::reject);
@@ -64,26 +64,26 @@ private:
 }
 
 void MainWindow::setupLayoutGridActions(QMenu* view){
-    auto*layout=action(view,"Layout Grid",{},[this]{
+    auto*layout=action(view,"布局网格",{},[this]{
         if(!canvas())return;
         auto grid=canvas()->layoutGrid();grid.visible=!grid.visible;canvas()->setLayoutGrid(grid);refreshSnapControls();
     });
     layout->setObjectName("viewLayoutGrid");layout->setCheckable(true);
-    action(view,"Grid Settings…",{},[this]{showGridSettings();})->setObjectName("viewGridSettings");
+    action(view,"网格设置…",{},[this]{showGridSettings();})->setObjectName("viewGridSettings");
     view->addSeparator();
     auto*snap=action(view,"Snap",{},[this]{auto policy=snapPolicy_;policy.enabled=!policy.enabled;setSnapPolicy(policy);});
     snap->setObjectName("viewSnap");snap->setCheckable(true);
-    auto*targets=view->addMenu("Snap To");
+    auto*targets=view->addMenu("对齐到");
     const auto target=[this,targets](const char* id,const char* label,bool editing::SnapPolicy::*field){
         auto*item=action(targets,label,{},[this,field]{auto policy=snapPolicy_;policy.*field=!(policy.*field);setSnapPolicy(policy);});
         item->setObjectName(id);item->setCheckable(true);
     };
     target("snapGrid","Grid",&editing::SnapPolicy::grid);
     target("snapGuides","Guides",&editing::SnapPolicy::guides);
-    target("snapLayerEdges","Layer Edges",&editing::SnapPolicy::layerEdges);
-    target("snapLayerCenters","Layer Centers",&editing::SnapPolicy::layerCenters);
-    target("snapDocumentEdges","Document Edges",&editing::SnapPolicy::documentEdges);
-    target("snapDocumentCenter","Document Center",&editing::SnapPolicy::documentCenter);
+    target("snapLayerEdges","图层边缘",&editing::SnapPolicy::layerEdges);
+    target("snapLayerCenters","图层中心",&editing::SnapPolicy::layerCenters);
+    target("snapDocumentEdges","文档边缘",&editing::SnapPolicy::documentEdges);
+    target("snapDocumentCenter","文档中心",&editing::SnapPolicy::documentCenter);
     refreshSnapControls();
 }
 

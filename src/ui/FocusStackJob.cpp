@@ -42,32 +42,32 @@ private:
 }
 std::shared_ptr<const Raster> runFocusStack(const std::vector<std::filesystem::path>& files,const ImportDecoder& decode,
     const std::function<bool()>& cancelled,std::uint64_t maxWorkingBytes){
-    if(!decode)throw std::invalid_argument("Image decoder is required");
-    if(files.size()<2)throw std::runtime_error("Select at least two images to focus stack");
-    if(files.size()>editing::maxFocusStackFrames)throw std::runtime_error("Focus stacking accepts at most 16 images");
+    if(!decode)throw std::invalid_argument("需要图像解码器");
+    if(files.size()<2)throw std::runtime_error("请至少选择两张图像以进行焦点堆栈");
+    if(files.size()>editing::maxFocusStackFrames)throw std::runtime_error("焦点堆栈最多支持 16 张图像");
     imaging::ImportOptions options;options.cancelled=cancelled;options.maxWorkingBytes=maxWorkingBytes;
     std::vector<imaging::RgbaImage> frames;frames.reserve(files.size());
     for(const auto& file:files){
         const auto name=QString::fromStdWString(file.filename().wstring()).toStdString();
-        if(cancelled&&cancelled())throw std::runtime_error("Focus stack cancelled");
+        if(cancelled&&cancelled())throw std::runtime_error("焦点堆栈已取消");
         imaging::DecodedImage decoded;
         try{decoded=decode(file,options);imaging::validate(decoded.image);}
         catch(const std::exception& error){
-            if(cancelled&&cancelled())throw std::runtime_error("Focus stack cancelled");
+            if(cancelled&&cancelled())throw std::runtime_error("焦点堆栈已取消");
             if(frames.empty())throw std::runtime_error(name+": "+error.what());
-            throw std::runtime_error(name+": "+error.what()+"; every image must be "+std::to_string(frames.front().width)+"x"
-                +std::to_string(frames.front().height)+" like the first image");
+            throw std::runtime_error(name+": "+error.what()+"；每张图像必须是 "+std::to_string(frames.front().width)+"x"
+                +std::to_string(frames.front().height)+"，与第一张图像相同");
         }
         if(frames.empty()){
             // Bound the whole stack from the first frame before decoding the others.
             if(editing::focusStackWorkingBytes(decoded.image.width,decoded.image.height,files.size())>maxWorkingBytes)
-                throw std::runtime_error("These images are too large to focus stack together");
+                throw std::runtime_error("这些图像过大，无法一起进行焦点堆栈");
             // Later frames must match the first, so the decoder rejects a larger one before allocating its pixels.
             options.remainingPixels=std::uint64_t(decoded.image.width)*decoded.image.height;
             options.maxSide=std::max(decoded.image.width,decoded.image.height);
         }else if(decoded.image.width!=frames.front().width||decoded.image.height!=frames.front().height){
-            throw std::runtime_error(name+": size "+std::to_string(decoded.image.width)+"x"+std::to_string(decoded.image.height)
-                +" differs from the first image ("+std::to_string(frames.front().width)+"x"+std::to_string(frames.front().height)+")");
+            throw std::runtime_error(name+"：大小 "+std::to_string(decoded.image.width)+"x"+std::to_string(decoded.image.height)
+                +"，与第一张图像不同 ("+std::to_string(frames.front().width)+"x"+std::to_string(frames.front().height)+")");
         }
         frames.push_back(std::move(decoded.image));
     }
@@ -83,8 +83,8 @@ struct FocusStackJob::Impl {
     std::shared_ptr<std::atomic_bool> cancelled=std::make_shared<std::atomic_bool>(false);
     QFutureWatcher<Result> watcher;
     QProgressDialog progress;
-    explicit Impl(QWidget* parent):progress("Focus stacking images…","Cancel",0,0,parent){
-        progress.setObjectName("focusStackProgress");progress.setWindowTitle("Focus Stack");
+    explicit Impl(QWidget* parent):progress("正在进行焦点堆栈…","取消",0,0,parent){
+        progress.setObjectName("focusStackProgress");progress.setWindowTitle("焦点堆栈");
         // Already styled, so the chrome handler keeps Qt's layout; otherwise the label and Cancel button are hidden.
         progress.setProperty("studioChrome",true);
         progress.setBar(new BusyBar(&progress));
@@ -94,7 +94,7 @@ struct FocusStackJob::Impl {
 };
 FocusStackJob::FocusStackJob(std::vector<std::filesystem::path> files,Host host,QWidget* parent,ImportDecoder decode)
     :QObject(parent),impl_(std::make_unique<Impl>(parent)){
-    if(!host.commit||!host.settled||!host.error||!decode)throw std::invalid_argument("Incomplete focus stack host");
+    if(!host.commit||!host.settled||!host.error||!decode)throw std::invalid_argument("焦点堆栈宿主不完整");
     setObjectName("focusStackJob");impl_->host=std::move(host);
     connect(&impl_->progress,&QProgressDialog::canceled,this,[this]{cancel();});
     connect(&impl_->watcher,&QFutureWatcher<Impl::Result>::finished,this,[this]{

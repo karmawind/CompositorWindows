@@ -45,7 +45,7 @@ IDWriteTextFormat* rulerTextFormat(){
     return format.Get();
 }
 }
-NativeCanvas::NativeCanvas(bool warp,QWidget*parent):QWidget(parent),warp_(warp){ui::installCanvasAccessibility();setAttribute(Qt::WA_NativeWindow);setAttribute(Qt::WA_PaintOnScreen);setAttribute(Qt::WA_NoSystemBackground);setFocusPolicy(Qt::StrongFocus);setMouseTracking(true);setAccessibleName("Image canvas");setMinimumSize(160,120);selectionTimer_=new QTimer(this);selectionTimer_->setObjectName("selectionAntsTimer");selectionTimer_->setTimerType(Qt::PreciseTimer);selectionTimer_->setInterval(120);connect(selectionTimer_,&QTimer::timeout,this,[this]{selectionPhase_=(selectionPhase_+1)%8;update();});navigatorTimer_=new QTimer(this);navigatorTimer_->setObjectName("navigatorTimer");navigatorTimer_->setSingleShot(true);navigatorTimer_->setInterval(300);connect(navigatorTimer_,&QTimer::timeout,this,[this]{refreshNavigator();});synchronizeViewport();}
+NativeCanvas::NativeCanvas(bool warp,QWidget*parent):QWidget(parent),warp_(warp){ui::installCanvasAccessibility();setAttribute(Qt::WA_NativeWindow);setAttribute(Qt::WA_PaintOnScreen);setAttribute(Qt::WA_NoSystemBackground);setFocusPolicy(Qt::StrongFocus);setMouseTracking(true);setAccessibleName("图像画布");setMinimumSize(160,120);selectionTimer_=new QTimer(this);selectionTimer_->setObjectName("selectionAntsTimer");selectionTimer_->setTimerType(Qt::PreciseTimer);selectionTimer_->setInterval(120);connect(selectionTimer_,&QTimer::timeout,this,[this]{selectionPhase_=(selectionPhase_+1)%8;update();});navigatorTimer_=new QTimer(this);navigatorTimer_->setObjectName("navigatorTimer");navigatorTimer_->setSingleShot(true);navigatorTimer_->setInterval(300);connect(navigatorTimer_,&QTimer::timeout,this,[this]{refreshNavigator();});synchronizeViewport();}
 NativeCanvas::~NativeCanvas(){selectionTimer_->stop();navigatorTimer_->stop();if(viewportTimer_)viewportTimer_->stop();profileWatcher_.reset();if(profileWindow_)profileWindow_->removeEventFilter(this);QObject::disconnect(profileScreenConnection_);releaseDevice();}
 void NativeCanvas::releaseDevice(){checkerBrush_.Reset();checkerScale_=0;selectionGeometry_.Reset();selectionMatrix_.reset();brushPreviewBitmap_.Reset();brushPreviewSource_.reset();textBitmap_.Reset();textRasterSource_.reset();navigatorBitmap_.Reset();resetPresentationResources();displayTiles_.clear();image_.Reset();target_.Reset();if(context_)context_->SetTarget(nullptr);context_.Reset();d2device_.Reset();factory_.Reset();swap_.Reset();immediate_.Reset();device_.Reset();}
 void NativeCanvas::ensureChecker(){
@@ -87,7 +87,7 @@ void NativeCanvas::drawMoveSprite(double scale){
     D2D1_MATRIX_3X2_F previous{};context_->GetTransform(&previous);
     context_->SetTransform(D2D1::Matrix3x2F((axisX.x-origin.x)/width,(axisX.y-origin.y)/width,(axisY.x-origin.x)/height,(axisY.y-origin.y)/height,origin.x,origin.y));
     for(int ty=0;ty<image.height;ty+=256)for(int tx=0;tx<image.width;tx+=256){int tw=std::min(256,image.width-tx),th=std::min(256,image.height-ty);const size_t index=size_t(ty/256)*((image.width+255)/256)+size_t(tx/256);if(index>=image.tiles.size()||!image.tiles[index])continue;auto tile=image.tiles[index];auto found=displayTiles_.find(tile.get());
-        if(found==displayTiles_.end()){if(displayTiles_.size()>=1024)displayTiles_.erase(displayTiles_.begin());DisplayTile display;display.source=tile;auto props=D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE,D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM,D2D1_ALPHA_MODE_PREMULTIPLIED));check(context_->CreateBitmap(D2D1::SizeU(256,256),tile->pixels.data(),256*4,&props,&display.bitmap),"Move preview tile");found=displayTiles_.emplace(tile.get(),std::move(display)).first;}
+        if(found==displayTiles_.end()){if(displayTiles_.size()>=1024)displayTiles_.erase(displayTiles_.begin());DisplayTile display;display.source=tile;auto props=D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE,D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM,D2D1_ALPHA_MODE_PREMULTIPLIED));check(context_->CreateBitmap(D2D1::SizeU(256,256),tile->pixels.data(),256*4,&props,&display.bitmap),"移动预览图块");found=displayTiles_.emplace(tile.get(),std::move(display)).first;}
         // tx and ty are source-pixel offsets, already advanced by one tile.
         // Multiplying them by 256 again sends every tile but the first
         // outside the layer; the placement matrix supplies the view transform.
@@ -243,8 +243,8 @@ void NativeCanvas::drawLayoutGrid(){
     const auto [red,green,blue]=layoutGrid_.color;
     const float alpha=float(layoutGrid_.opacity);
     ComPtr<ID2D1SolidColorBrush> major,minor;
-    check(context_->CreateSolidColorBrush(D2D1::ColorF(red/255.f,green/255.f,blue/255.f,alpha),&major),"Layout grid brush");
-    check(context_->CreateSolidColorBrush(D2D1::ColorF(red/255.f,green/255.f,blue/255.f,alpha*.5f),&minor),"Layout grid minor brush");
+    check(context_->CreateSolidColorBrush(D2D1::ColorF(red/255.f,green/255.f,blue/255.f,alpha),&major),"布局网格画笔");
+    check(context_->CreateSolidColorBrush(D2D1::ColorF(red/255.f,green/255.f,blue/255.f,alpha*.5f),&minor),"布局网格次级画笔");
     const auto low=mapping.toDocument({double(clip.left),double(clip.top)}),high=mapping.toDocument({double(clip.right),double(clip.bottom)});
     const double lineStep=minorVisible?layoutGrid_.step():layoutGrid_.spacing;
     const long long subdivisions=layoutGrid_.subdivisions;
@@ -434,7 +434,7 @@ if(!cameraRawGuides_.empty()&&documentWidth_>0&&documentHeight_>0){
     }
     context_->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 }
-if((transformOverlay_||distortionOverlay_)&&documentWidth_>0&&documentHeight_>0){auto overlay=distortionOverlay_?editing_transform::OverlayGeometry::fromCorners(*distortionOverlay_,viewMapping()):editing_transform::OverlayGeometry::fromTransform(*transformOverlay_,viewMapping());ComPtr<ID2D1SolidColorBrush> line,fill;check(context_->CreateSolidColorBrush(D2D1::ColorF(.3f,.7f,1),&line),"Transform outline");check(context_->CreateSolidColorBrush(D2D1::ColorF(1,1,1),&fill),"Transform handle");auto point=[](Point p){return D2D1::Point2F(float(p.x),float(p.y));};for(int i=0;i<4;++i)context_->DrawLine(point(overlay.outline[i]),point(overlay.outline[(i+1)%4]),line.Get(),1);for(auto h:overlay.handles){auto box=D2D1::RectF(float(h.x-3),float(h.y-3),float(h.x+3),float(h.y+3));context_->FillRectangle(box,fill.Get());context_->DrawRectangle(box,line.Get(),1);}if(overlay.showsRotation){context_->DrawLine(point(overlay.handles[1]),point(overlay.rotationHandle),line.Get(),1);context_->FillEllipse(D2D1::Ellipse(point(overlay.rotationHandle),4,4),fill.Get());context_->DrawEllipse(D2D1::Ellipse(point(overlay.rotationHandle),4,4),line.Get(),1);}}
+if((transformOverlay_||distortionOverlay_)&&documentWidth_>0&&documentHeight_>0){auto overlay=distortionOverlay_?editing_transform::OverlayGeometry::fromCorners(*distortionOverlay_,viewMapping()):editing_transform::OverlayGeometry::fromTransform(*transformOverlay_,viewMapping());ComPtr<ID2D1SolidColorBrush> line,fill;check(context_->CreateSolidColorBrush(D2D1::ColorF(.3f,.7f,1),&line),"变换轮廓");check(context_->CreateSolidColorBrush(D2D1::ColorF(1,1,1),&fill),"变换控制柄");auto point=[](Point p){return D2D1::Point2F(float(p.x),float(p.y));};for(int i=0;i<4;++i)context_->DrawLine(point(overlay.outline[i]),point(overlay.outline[(i+1)%4]),line.Get(),1);for(auto h:overlay.handles){auto box=D2D1::RectF(float(h.x-3),float(h.y-3),float(h.x+3),float(h.y+3));context_->FillRectangle(box,fill.Get());context_->DrawRectangle(box,line.Get(),1);}if(overlay.showsRotation){context_->DrawLine(point(overlay.handles[1]),point(overlay.rotationHandle),line.Get(),1);context_->FillEllipse(D2D1::Ellipse(point(overlay.rotationHandle),4,4),fill.Get());context_->DrawEllipse(D2D1::Ellipse(point(overlay.rotationHandle),4,4),line.Get(),1);}}
 if(brushCursor_){
     const auto& cursor=*brushCursor_;const auto center=D2D1::Point2F(float(cursor.center.x),float(cursor.center.y));const float radius=float(cursor.diameter/2);
     ComPtr<ID2D1SolidColorBrush> black,white;check(context_->CreateSolidColorBrush(D2D1::ColorF(0,0,0),&black),"Brush cursor black");check(context_->CreateSolidColorBrush(D2D1::ColorF(1,1,1),&white),"Brush cursor white");
@@ -442,7 +442,7 @@ if(brushCursor_){
     const auto circle=D2D1::Ellipse(center,radius,radius);
     if(cursor.preview&&cursor.opacity>0){
         const auto& image=*cursor.preview;
-        if(image.width<1||image.height<1||image.width>1024||image.height>1024)throw std::invalid_argument("Invalid clone cursor bitmap extent");
+        if(image.width<1||image.height<1||image.width>1024||image.height>1024)throw std::invalid_argument("无效的仿制光标位图范围");
         if(brushPreviewSource_!=cursor.preview||!brushPreviewBitmap_){
             std::vector<Pixel> pixels(size_t(image.width)*image.height);
             for(int y=0;y<image.height;++y)for(int x=0;x<image.width;++x)pixels[size_t(y)*image.width+x]=image.pixel(x,y);
@@ -540,7 +540,7 @@ void NativeCanvas::recreateDevice(){releaseDevice();error_.clear();update();}
 QImage NativeCanvas::captureRendered(){
     // Read the freshly rendered back buffer before Present advances the flip chain.
     draw(false);
-    if(!device_||!swap_)throw std::runtime_error("No canvas graphics device");
+    if(!device_||!swap_)throw std::runtime_error("无画布图形设备");
     ComPtr<ID3D11Texture2D> source;
     check(swap_->GetBuffer(0,IID_PPV_ARGS(&source)),"Canvas capture buffer");
     D3D11_TEXTURE2D_DESC desc{};source->GetDesc(&desc);
@@ -626,15 +626,15 @@ void NativeCanvas::ensureNavigatorBitmap(){
     std::vector<Pixel> pixels(size_t(image.width)*size_t(image.height));
     for(int y=0;y<image.height;++y)for(int x=0;x<image.width;++x)pixels[size_t(y)*size_t(image.width)+size_t(x)]=image.pixel(x,y);
     auto properties=D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE,D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM,D2D1_ALPHA_MODE_PREMULTIPLIED));
-    check(context_->CreateBitmap(D2D1::SizeU(UINT32(image.width),UINT32(image.height)),pixels.data(),UINT32(image.width*4),&properties,&navigatorBitmap_),"Navigator bitmap");
+    check(context_->CreateBitmap(D2D1::SizeU(UINT32(image.width),UINT32(image.height)),pixels.data(),UINT32(image.width*4),&properties,&navigatorBitmap_),"导航器位图");
 }
 void NativeCanvas::drawNavigator(){
     const auto placement=navigatorPlacement();if(!placement.visible||!context_)return;
     const auto map=D2D1::RectF(float(placement.map.left()),float(placement.map.top()),float(placement.map.right()),float(placement.map.bottom()));
     ComPtr<ID2D1SolidColorBrush> shade,border,viewport;
-    check(context_->CreateSolidColorBrush(D2D1::ColorF(.09f,.1f,.12f,.92f),&shade),"Navigator shade");
-    check(context_->CreateSolidColorBrush(D2D1::ColorF(1,1,1,.45f),&border),"Navigator border");
-    check(context_->CreateSolidColorBrush(D2D1::ColorF(1,1,1,.95f),&viewport),"Navigator viewport");
+    check(context_->CreateSolidColorBrush(D2D1::ColorF(.09f,.1f,.12f,.92f),&shade),"导航器阴影");
+    check(context_->CreateSolidColorBrush(D2D1::ColorF(1,1,1,.45f),&border),"导航器边框");
+    check(context_->CreateSolidColorBrush(D2D1::ColorF(1,1,1,.95f),&viewport),"导航器视口");
     context_->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
     context_->FillRectangle(map,shade.Get());
     ensureNavigatorBitmap();
@@ -733,24 +733,24 @@ void NativeCanvas::drawTextOverlay(){
     if(!textOverlay_||!context_||!factory_||documentWidth_<=0)return;
     const auto& overlay=*textOverlay_;const auto mapping=viewMapping();
     auto viewOf=[&](double x,double y){auto point=mapping.toView({x,y});return D2D1::Point2F(float(point.x),float(point.y));};
-    ComPtr<ID2D1SolidColorBrush> fill,caret;    check(context_->CreateSolidColorBrush(D2D1::ColorF(0.2f,0.55f,1.f,0.45f),&fill),"Text selection");check(context_->CreateSolidColorBrush(D2D1::ColorF(0.15f,0.45f,1.f),&caret),"Text caret");
+    ComPtr<ID2D1SolidColorBrush> fill,caret;    check(context_->CreateSolidColorBrush(D2D1::ColorF(0.2f,0.55f,1.f,0.45f),&fill),"文本选择");check(context_->CreateSolidColorBrush(D2D1::ColorF(0.15f,0.45f,1.f),&caret),"文本插入点");
     context_->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
     if(overlay.raster&&overlay.raster->width>0&&overlay.raster->height>0&&overlay.raster->width<=30000&&overlay.raster->height<=30000){
         if(textRasterSource_!=overlay.raster||!textBitmap_){
             const auto& image=*overlay.raster;std::vector<Pixel> pixels(size_t(image.width)*image.height);
             for(int y=0;y<image.height;++y)for(int x=0;x<image.width;++x)pixels[size_t(y)*image.width+x]=image.pixel(x,y);
             auto properties=D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE,D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM,D2D1_ALPHA_MODE_PREMULTIPLIED));
-            textBitmap_.Reset();check(context_->CreateBitmap(D2D1::SizeU(UINT32(image.width),UINT32(image.height)),pixels.data(),UINT32(image.width*4),&properties,&textBitmap_),"Text overlay bitmap");textRasterSource_=overlay.raster;
+            textBitmap_.Reset();check(context_->CreateBitmap(D2D1::SizeU(UINT32(image.width),UINT32(image.height)),pixels.data(),UINT32(image.width*4),&properties,&textBitmap_),"文本覆盖位图");textRasterSource_=overlay.raster;
         }
         const auto origin=viewOf(overlay.originX,overlay.originY),opposite=viewOf(overlay.originX+overlay.width,overlay.originY+overlay.height);
         context_->DrawBitmap(textBitmap_.Get(),D2D1::RectF(origin.x,origin.y,opposite.x,opposite.y),1,D2D1_INTERPOLATION_MODE_LINEAR);
     }
     for(const auto& quad:overlay.selection){
-        ComPtr<ID2D1PathGeometry> path;check(factory_->CreatePathGeometry(&path),"Text selection");
-        ComPtr<ID2D1GeometrySink> sink;check(path->Open(&sink),"Text selection");
+        ComPtr<ID2D1PathGeometry> path;check(factory_->CreatePathGeometry(&path),"文本选择");
+        ComPtr<ID2D1GeometrySink> sink;check(path->Open(&sink),"文本选择");
         sink->BeginFigure(viewOf(quad.x0,quad.y0),D2D1_FIGURE_BEGIN_FILLED);
         sink->AddLine(viewOf(quad.x1,quad.y1));sink->AddLine(viewOf(quad.x2,quad.y2));sink->AddLine(viewOf(quad.x3,quad.y3));
-        sink->EndFigure(D2D1_FIGURE_END_CLOSED);check(sink->Close(),"Text selection");
+        sink->EndFigure(D2D1_FIGURE_END_CLOSED);check(sink->Close(),"文本选择");
         context_->FillGeometry(path.Get(),fill.Get());
     }
     if(overlay.showFrame){for(int i=0;i<4;++i){const auto& a=overlay.frame[size_t(i)];const auto& b=overlay.frame[size_t((i+1)%4)];context_->DrawLine(viewOf(a.x,a.y),viewOf(b.x,b.y),caret.Get(),std::max(1.f,float(pointsPerPixel())));}for(const auto& handle:overlay.handles){const auto center=viewOf(handle.x,handle.y);context_->FillRectangle(D2D1::RectF(center.x-4,center.y-4,center.x+4,center.y+4),caret.Get());}}

@@ -91,7 +91,7 @@ void MainWindow::initializeCommands(){
 }
 void MainWindow::bindCommand(QAction* action,const QString& menu,const QString& label,std::function<void()> invoke){
     const auto* spec=ui::commandSpec(menu,label);
-    if(!spec){action->setEnabled(false);action->setProperty("unregisteredCommand",true);qWarning()<<"Unregistered command"<<menu<<label;return;}
+    if(!spec){action->setEnabled(false);action->setProperty("unregisteredCommand",true);qWarning()<<"未注册的命令"<<menu<<label;return;}
     commands_->bind(action,*spec,[this,invoke=std::move(invoke)]{
         try{invoke();}catch(const std::exception& error){QMessageBox::critical(this,"Compositor",error.what());}
     });

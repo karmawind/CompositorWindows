@@ -1,0 +1,425 @@
+[
+ {
+  "s": "color: #989ba3; font-size: 11px;",
+  "n": 3,
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp",
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/FilterActions.cpp"
+  ]
+ },
+ {
+  "s": "将 HDR 转换为 16 位",
+  "n": 3,
+  "f": [
+   "src/ui/LastFilterJob.cpp",
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "打开 Compositor 项目",
+  "n": 2,
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "导入 PSD",
+  "n": 2,
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "Mac 风格标题栏",
+  "n": 2,
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "16-bit channels were preserved.\\n",
+  "n": 1,
+  "f": [
+   "src/imaging/psd/PsdDocument.cpp"
+  ]
+ },
+ {
+  "s": " stays as pixels: ",
+  "n": 1,
+  "f": [
+   "src/imaging/psd/PsdDocument.cpp"
+  ]
+ },
+ {
+  "s": " could not be imported: ",
+  "n": 1,
+  "f": [
+   "src/imaging/psd/PsdDocument.cpp"
+  ]
+ },
+ {
+  "s": "PSD 不包含受支持的图像",
+  "n": 1,
+  "f": [
+   "src/imaging/psd/PsdDocument.cpp"
+  ]
+ },
+ {
+  "s": " layer(s).\\n",
+  "n": 1,
+  "f": [
+   "src/imaging/psd/PsdDocument.cpp"
+  ]
+ },
+ {
+  "s": "去除背景无法加载其运行时。请修复或重新安装 Compositor。",
+  "n": 1,
+  "f": [
+   "src/imaging/SubjectDialog.cpp"
+  ]
+ },
+ {
+  "s": "Compositor Windows",
+  "n": 1,
+  "f": [
+   "src/main.cpp"
+  ]
+ },
+ {
+  "s": "Camera Raw 滤镜",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentActions.cpp"
+  ]
+ },
+ {
+  "s": "原始 RGB 直方图和色阶控制柄",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp"
+  ]
+ },
+ {
+  "s": "levelsSample%1",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp"
+  ]
+ },
+ {
+  "s": "levelsAuto%1",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp"
+  ]
+ },
+ {
+  "s": "hue%1Color",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp"
+  ]
+ },
+ {
+  "s": "colorLevel%1",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "colorBalanceSlider%1",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "#6bbcc3, stop:1 #db6868",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "#c879c5, stop:1 #7bb878",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "#d5c46b, stop:1 #738cda",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "QSlider::groove:horizontal { height: 6px; border-radius: 3px; background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 %1); } QSlider::sub-page:horizontal { background: transparent; }",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "hueValue%1",
+  "n": 1,
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "QWidget#cameraRawPanel QScrollArea, QWidget#cameraRawPanel QScrollArea > QWidget > QWidget { background: transparent; border: 0; }",
+  "n": 1,
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "background:%1; border-radius:14px;",
+  "n": 1,
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "native picker ignored because another picker is active",
+  "n": 1,
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "Clear Menu is not in the command catalog",
+  "n": 1,
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "JPEG 质量",
+  "n": 1,
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "%1 × %2 英寸，%3 DPI（%4 × %5 px）",
+  "n": 1,
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "导入 HDR 图像",
+  "n": 1,
+  "f": [
+   "src/ui/ImportActions.cpp"
+  ]
+ },
+ {
+  "s": "Copy destination control is unavailable",
+  "n": 1,
+  "f": [
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "选择图像；Ctrl+单击选择 Alpha，Ctrl+Shift 添加，Ctrl+Alt 减去",
+  "n": 1,
+  "f": [
+   "src/ui/LayerPanel.cpp"
+  ]
+ },
+ {
+  "s": "选择蒙版；Shift+单击启用/禁用；Ctrl+单击选择黑色区域；Alt+拖动复制蒙版",
+  "n": 1,
+  "f": [
+   "src/ui/LayerPanel.cpp"
+  ]
+ },
+ {
+  "s": "Ctrl+]",
+  "n": 1,
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Ctrl+[",
+  "n": 1,
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "关于 Compositor",
+  "n": 1,
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "<h3>Compositor Windows Preview</h3><p>An independent Windows port of Compositor by Robbie Tilton. Ported behavior follows upstream 1.0.4 through 1.4.5. The dependency pin remains the 1.0.4 commit a19db90. Mac equivalence is unverified.</p><p><a href=\\\"https://github.com/robbietilton/Compositor\\\">Original Compositor project</a><br>Copyright Wonder Assembly LLC. MIT source.</p><p>This independent port is not endorsed by the upstream author.</p><p>Qt and other dependency notices accompany this package.</p>",
+  "n": 1,
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "%1 × %2 px  ·  %3 ppi",
+  "n": 1,
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "paletteRGB%1",
+  "n": 1,
+  "f": [
+   "src/ui/PaletteDialog.cpp"
+  ]
+ },
+ {
+  "s": "QToolButton { padding: 0; border: 0; min-width: 0; min-height: 0; background: transparent; }",
+  "n": 1,
+  "f": [
+   "src/ui/PaletteSwatches.cpp"
+  ]
+ },
+ {
+  "s": " DPI",
+  "n": 1,
+  "f": [
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "%1 × %2 px · sRGB",
+  "n": 1,
+  "f": [
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "RAW 显影 – ",
+  "n": 1,
+  "f": [
+   "src/ui/RawImportDialog.cpp"
+  ]
+ },
+ {
+  "s": "RAW 预览",
+  "n": 1,
+  "f": [
+   "src/ui/RawImportDialog.cpp"
+  ]
+ },
+ {
+  "s": "不可用：此处使用的 LibRaw 解码器不应用镜头配置文件。",
+  "n": 1,
+  "f": [
+   "src/ui/RawImportDialog.cpp"
+  ]
+ },
+ {
+  "s": "镜头校正不可用：此处使用的 LibRaw 解码器不应用任何镜头配置文件。",
+  "n": 1,
+  "f": [
+   "src/ui/RawImportDialog.cpp"
+  ]
+ },
+ {
+  "s": "color: #c42b1c;",
+  "n": 1,
+  "f": [
+   "src/ui/RawImportDialog.cpp"
+  ]
+ },
+ {
+  "s": "润饰前请使用“图层 > 将 HDR 转换为 16 位”",
+  "n": 1,
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "请先按住 Alt 单击仿制图章要复制的源位置。",
+  "n": 1,
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Compositor %1 已可用，当前运行的是 %2。\\n\\n安装仍需手动完成：请从发布页面下载新的 MSI 或便携版程序包。Compositor 本身不会校验下载内容。",
+  "n": 1,
+  "f": [
+   "src/ui/UpdateActions.cpp"
+  ]
+ },
+ {
+  "s": "Compositor 会检查 GitHub 上的新稳定版本，并提供其下载页面的链接。要更新，请安装新的 MSI 或解压新的便携版下载包。",
+  "n": 1,
+  "f": [
+   "src/ui/UpdatePanel.cpp"
+  ]
+ },
+ {
+  "s": "Compositor 每天会向 GitHub 查询一次最新的稳定版本。安装仍需手动进行。",
+  "n": 1,
+  "f": [
+   "src/ui/UpdatePanel.cpp"
+  ]
+ },
+ {
+  "s": "重启 Compositor",
+  "n": 1,
+  "f": [
+   "src/ui/UpdatePanel.cpp"
+  ]
+ },
+ {
+  "s": "更新已安装。准备就绪后请重启 Compositor。",
+  "n": 1,
+  "f": [
+   "src/ui/UpdatePanel.cpp"
+  ]
+ },
+ {
+  "s": "更新已安装完毕。准备就绪后请重启 Compositor。",
+  "n": 1,
+  "f": [
+   "src/ui/UpdatePanel.cpp"
+  ]
+ },
+ {
+  "s": "QWidget { font-family: \\\"%1\\\", \\\"Microsoft YaHei UI\\\", \\\"Microsoft YaHei\\\", sans-serif; font-size: 13px; }\\n",
+  "n": 1,
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "font-weight: 600; padding-left: 12px; color: #eff0f2;",
+  "n": 1,
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "在左侧显示彩色窗口控制按钮。关闭后将使用原生 Windows 标题栏。",
+  "n": 1,
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "应用程序命令行超出 Windows 限制",
+  "n": 1,
+  "f": [
+   "src/update/Updater.cpp"
+  ]
+ }
+]

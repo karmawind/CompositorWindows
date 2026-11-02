@@ -89,109 +89,109 @@ const std::vector<CommandSpec>& commandCatalog(){
         using C=CommandClass;using G=CommandGate;using P=CommandPreparation;using T=TextCommand;
         std::vector<CommandSpec> list;
         auto add=[&](const char*id,const char*menu,const char*label,const char*key,C category,G gate,P preparation,const char*source,T text=T::None){list.push_back({QString::fromUtf8(id),QString::fromUtf8(menu),QString::fromUtf8(label),QString::fromUtf8(key),category,gate,preparation,text,QString::fromUtf8(source)});};
-        add("file.new","File","New Canvas…","Ctrl+N",C::Workspace,G::WorkspaceSwitch,P::ProjectOperation,"Compositor/Document/ProjectWorkspace.swift:53");
-        add("file.open","File","Open Project…","Ctrl+O",C::Workspace,G::WorkspaceSwitch,P::ProjectOperation,"Compositor/Document/ProjectWorkspace.swift:59");
-        add("file.clear_recent","Open Recent","Clear Menu","",C::Application,G::Always,P::None,"Compositor/CompositorApp.swift (73dc0f4)");
-        add("file.import","File","Import Image…","",C::Document,G::Import,P::None,"Compositor/CompositorApp.swift:58");
-        add("file.focus_stack","File","Focus Stack Images…","",C::Document,G::Import,P::ProjectOperation,"Windows addition (issue #24)");
-        add("file.export","File","Export Image…","Ctrl+Shift+E",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:68");
-        add("file.save","File","Save Project","Ctrl+S",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:62");
-        add("file.save_as","File","Save Project As…","Ctrl+Shift+S",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:64");
-        add("file.close","File","Close Project","Ctrl+W",C::Workspace,G::WorkspaceSwitch,P::ProjectOperation,"Compositor/Document/ProjectWorkspace.swift:107");
-        add("app.exit","File","Exit","Alt+F4",C::Application,G::WorkspaceSwitch,P::None,"Compositor/IO/CompositorApplicationDelegate.swift:39");
-        add("app.about","Help","About Compositor","",C::Application,G::Always,P::None,"Native Windows application information");
-        add("help.check_updates","Help","Check for Updates…","",C::Application,G::Always,P::None,"Windows signed development updater");
-        add("edit.undo","Edit","Undo","Ctrl+Z",C::Document,G::Undo,P::None,"Compositor/Document/EditorSession.swift:444",T::Undo);
-        add("edit.redo","Edit","Redo","Ctrl+Shift+Z",C::Document,G::Redo,P::None,"Compositor/Document/EditorSession.swift:444",T::Redo);
-        add("clipboard.cut","Clipboard","Cut","Ctrl+X",C::Pixels,G::Cut,P::FinishAppearance,"Compositor/CompositorApp.swift:113",T::Cut);
-        add("clipboard.copy","Clipboard","Copy","Ctrl+C",C::Pixels,G::Copy,P::None,"Compositor/CompositorApp.swift:120",T::Copy);
-        add("clipboard.paste","Clipboard","Paste","Ctrl+V",C::Pixels,G::Paste,P::FinishAppearance,"Compositor/CompositorApp.swift:127",T::Paste);
-        add("clipboard.copy_merged","Clipboard","Copy Merged","Ctrl+Shift+C",C::Pixels,G::CopyMerged,P::None,"Compositor/Document/SelectionClipboard.swift:55");
-        add("layer.via_copy","Clipboard","Layer via Copy","Ctrl+J",C::Layer,G::Duplicate,P::FinishAppearance,"Compositor/CompositorApp.swift:228");
-        add("pixels.clear","Clipboard","Clear","",C::Pixels,G::Clear,P::FinishAppearance,"Compositor/CompositorApp.swift:149");
-        add("selection.all","Select","All","Ctrl+A",C::Selection,G::Layers,P::None,"Compositor/Document/Selection.swift:230",T::SelectAll);
-        add("selection.deselect","Select","Deselect","Ctrl+D",C::Selection,G::Selection,P::FinishAppearance,"Compositor/CompositorApp.swift:162");
-        add("selection.inverse","Select","Inverse","Ctrl+Shift+I",C::Selection,G::Selection,P::FinishAppearance,"Compositor/CompositorApp.swift:164");
-        add("selection.expand","Select","Expand…","",C::Selection,G::ModifySelection,P::FinishAppearance,"Compositor/Document/Selection.swift:274");
-        add("selection.contract","Select","Contract…","",C::Selection,G::ModifySelection,P::FinishAppearance,"Compositor/Document/Selection.swift:274");
-        add("pixels.fill","Image","Fill…","",C::Pixels,G::Paint,P::FinishAppearance,"Compositor/Document/SelectionEdits.swift:35");
-        add("pixels.invert","Image","Invert","Ctrl+I",C::Pixels,G::Invert,P::CommitTransformAndGradient,"Compositor/Document/SelectionEdits.swift:77");
-        add("image.trim","Image","Trim","",C::Document,G::DocumentOperation,P::FinishAppearance,"Compositor/Document/Canvas.swift");
-        add("image.rotate_clockwise","Image","Rotate 90° Clockwise","",C::Document,G::DocumentOperation,P::FinishAppearance,"Windows canvas rotation (issue #20)");
-        add("image.rotate_counterclockwise","Image","Rotate 90° Counterclockwise","",C::Document,G::DocumentOperation,P::FinishAppearance,"Windows canvas rotation (issue #20)");
-        add("selection.feather","Select","Feather…","",C::Selection,G::ModifySelection,P::FinishAppearance,"Compositor/Document/Selection.swift");
-        add("selection.color_range","Select","Color Range…","",C::Selection,G::ModifySelection,P::FinishAppearance,"Compositor/Document/Selection.swift");
-        add("view.guides","View","Guides","",C::View,G::Always,P::None,"Compositor/Document/Guides.swift");
-        add("view.mac_title_bar","Appearance","Mac-style title bar","",C::View,G::Always,P::None,"Windows title bar preference");
-        add("view.snap","View","Snap","",C::View,G::Always,P::None,"Compositor/Document/Guides.swift");
-        add("view.layout_grid","View","Layout Grid","",C::View,G::Document,P::None,"Windows layout grid (issue #11)");
-        add("view.grid_settings","View","Grid Settings…","",C::View,G::Document,P::None,"Windows layout grid (issue #11)");
-        add("view.snap_grid","Snap To","Grid","",C::View,G::Always,P::None,"Windows layout grid (issue #11)");
-        add("view.snap_guides","Snap To","Guides","",C::View,G::Always,P::None,"Windows layout grid (issue #11)");
-        add("view.snap_layer_edges","Snap To","Layer Edges","",C::View,G::Always,P::None,"Windows layout grid (issue #11)");
-        add("view.snap_layer_centers","Snap To","Layer Centers","",C::View,G::Always,P::None,"Windows layout grid (issue #11)");
-        add("view.snap_document_edges","Snap To","Document Edges","",C::View,G::Always,P::None,"Windows layout grid (issue #11)");
-        add("view.snap_document_center","Snap To","Document Center","",C::View,G::Always,P::None,"Windows layout grid (issue #11)");
-        add("layer.text","Layer","Text Layer…","",C::Layer,G::Layers,P::FinishAppearance,"Compositor/Document/Text.swift");
-        add("help.shortcuts","Help","Keyboard Shortcuts…","",C::Application,G::Always,P::None,"Windows shortcut window");
-        add("help.command_palette","Help","Command Palette…","Ctrl+Shift+P",C::Application,G::Always,P::None,"Windows command search");
-        add("view.fit","View","Fit Canvas","Ctrl+0",C::View,G::Document,P::None,"Compositor/CompositorApp.swift:87");
-        add("view.actual","View","Actual Pixels","Ctrl+1",C::View,G::Document,P::None,"Compositor/CompositorApp.swift:88");
-        add("view.pixel_grid","View","Pixel Grid","",C::View,G::Always,P::None,"Compositor/CompositorApp.swift:93");
-        add("view.rulers","View","Rulers","Ctrl+R",C::View,G::Always,P::None,"Windows canvas rulers");
-        add("view.canvas_only","View","Canvas-Only Full Screen","F11",C::View,G::Document,P::None,"Windows canvas-only full screen (issue #12)");
-        add("canvas.size","Canvas","Canvas Size…","Ctrl+Alt+C",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:196");
-        add("canvas.image_size","Canvas","Image Size…","Ctrl+Alt+I",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:199");
-        add("canvas.flip_horizontal","Canvas","Flip Canvas Horizontally","",C::Document,G::Layers,P::FinishAppearance,"Compositor/CompositorApp.swift:204");
-        add("canvas.flip_vertical","Canvas","Flip Canvas Vertically","",C::Document,G::Layers,P::FinishAppearance,"Compositor/CompositorApp.swift:206");
-        add("canvas.crop_tool","Canvas","Crop Tool","",C::Tool,G::Tool,P::None,"Compositor/Document/EditorSession.swift:282");
-        add("crop.apply","Canvas","Apply Crop","",C::Pending,G::ApplyCrop,P::None,"Compositor/Document/Crop.swift:187");
-        add("crop.cancel","Canvas","Cancel Crop","",C::Pending,G::ApplyCrop,P::None,"Compositor/Document/Crop.swift:178");
-        add("layer.new","Layer","New Layer","Ctrl+Shift+N",C::Layer,G::Layers,P::FinishAppearance,"Compositor/CompositorApp.swift:241");
-        add("layer.duplicate","Layer","Duplicate Layer","Ctrl+Shift+J",C::Layer,G::Duplicate,P::FinishAppearance,"Compositor/CompositorApp.swift:228");
-        add("layer.convert_hdr","Layer","Convert HDR to 16-Bit…","",C::Layer,G::HdrLayer,P::None,"HDR workflow (issue #29)");
-        add("layer.rename","Layer","Rename Layer…","",C::Layer,G::ActiveLayer,P::FinishAppearance,"Compositor/CompositorApp.swift:243");
-        add("layer.delete","Layer","Delete Layer","",C::Layer,G::ActiveLayer,P::FinishAppearance,"Compositor/CompositorApp.swift:263");
-        add("layer.raise","Layer","Raise Layer","Ctrl+]",C::Layer,G::MoveUp,P::FinishAppearance,"Compositor/CompositorApp.swift:249");
-        add("layer.lower","Layer","Lower Layer","Ctrl+[",C::Layer,G::MoveDown,P::FinishAppearance,"Compositor/CompositorApp.swift:251");
-        add("layer.new_group","Layer","New Group","",C::Layer,G::Layers,P::FinishAppearance,"Compositor/Document/LayerGroups.swift");
-        add("layer.group","Layer","Group Selected","Ctrl+G",C::Layer,G::Layers,P::FinishAppearance,"Compositor/CompositorApp.swift:237");
-        add("layer.ungroup","Layer","Ungroup","Shift+Ctrl+G",C::Layer,G::Layers,P::FinishAppearance,"Compositor/Document/LayerGroups.swift");
-        add("layer.move_out","Layer","Move Out of Group","",C::Layer,G::Parent,P::FinishAppearance,"Compositor/CompositorApp.swift:239");
-        add("layer.clipping","Layer","Create / Release Clipping Mask","Ctrl+Alt+G",C::Layer,G::Clipping,P::FinishAppearance,"Compositor/CompositorApp.swift:232");
-        add("layer.merge","Layer","Merge Layers","Ctrl+E",C::Layer,G::Merge,P::FinishAppearance,"Compositor/CompositorApp.swift:254");
-        add("layer.copy_project","Layer","Copy Layer to Project…","",C::Workspace,G::OtherProject,P::FinishAppearance,"Compositor/Document/ProjectWorkspace.swift:158");
-        const char*maskLabels[]{"Add White Mask (Reveal Selection)","Add Black Mask (Hide Selection)","Reveal All","Hide All","Enable / Disable Mask","Link / Unlink Mask","Delete Mask","Edit Image","Edit Mask","Select Image Alpha","Select Mask Black Areas"};
+        add("file.new","文件","新建画布…","Ctrl+N",C::Workspace,G::WorkspaceSwitch,P::ProjectOperation,"Compositor/Document/ProjectWorkspace.swift:53");
+        add("file.open","文件","打开项目…","Ctrl+O",C::Workspace,G::WorkspaceSwitch,P::ProjectOperation,"Compositor/Document/ProjectWorkspace.swift:59");
+        add("file.clear_recent","最近打开","清除菜单","",C::Application,G::Always,P::None,"Compositor/CompositorApp.swift (73dc0f4)");
+        add("file.import","文件","导入图像…","",C::Document,G::Import,P::None,"Compositor/CompositorApp.swift:58");
+        add("file.focus_stack","文件","焦点堆栈图像…","",C::Document,G::Import,P::ProjectOperation,"Windows 新增（issue #24）");
+        add("file.export","文件","导出图像…","Ctrl+Shift+E",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:68");
+        add("file.save","文件","保存项目","Ctrl+S",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:62");
+        add("file.save_as","文件","项目另存为…","Ctrl+Shift+S",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:64");
+        add("file.close","文件","关闭项目","Ctrl+W",C::Workspace,G::WorkspaceSwitch,P::ProjectOperation,"Compositor/Document/ProjectWorkspace.swift:107");
+        add("app.exit","文件","Exit","Alt+F4",C::Application,G::WorkspaceSwitch,P::None,"Compositor/IO/CompositorApplicationDelegate.swift:39");
+        add("app.about","帮助","关于 Compositor","",C::Application,G::Always,P::None,"原生 Windows 应用程序信息");
+        add("help.check_updates","帮助","检查更新…","",C::Application,G::Always,P::None,"Windows 已签名开发更新程序");
+        add("edit.undo","编辑","撤销","Ctrl+Z",C::Document,G::Undo,P::None,"Compositor/Document/EditorSession.swift:444",T::Undo);
+        add("edit.redo","编辑","重做","Ctrl+Shift+Z",C::Document,G::Redo,P::None,"Compositor/Document/EditorSession.swift:444",T::Redo);
+        add("clipboard.cut","剪贴板","剪切","Ctrl+X",C::Pixels,G::Cut,P::FinishAppearance,"Compositor/CompositorApp.swift:113",T::Cut);
+        add("clipboard.copy","剪贴板","复制","Ctrl+C",C::Pixels,G::Copy,P::None,"Compositor/CompositorApp.swift:120",T::Copy);
+        add("clipboard.paste","剪贴板","粘贴","Ctrl+V",C::Pixels,G::Paste,P::FinishAppearance,"Compositor/CompositorApp.swift:127",T::Paste);
+        add("clipboard.copy_merged","剪贴板","合并拷贝","Ctrl+Shift+C",C::Pixels,G::CopyMerged,P::None,"Compositor/Document/SelectionClipboard.swift:55");
+        add("layer.via_copy","剪贴板","通过拷贝的图层","Ctrl+J",C::Layer,G::Duplicate,P::FinishAppearance,"Compositor/CompositorApp.swift:228");
+        add("pixels.clear","剪贴板","清除","",C::Pixels,G::Clear,P::FinishAppearance,"Compositor/CompositorApp.swift:149");
+        add("selection.all","选择","All","Ctrl+A",C::Selection,G::Layers,P::None,"Compositor/Document/Selection.swift:230",T::SelectAll);
+        add("selection.deselect","选择","Deselect","Ctrl+D",C::Selection,G::Selection,P::FinishAppearance,"Compositor/CompositorApp.swift:162");
+        add("selection.inverse","选择","Inverse","Ctrl+Shift+I",C::Selection,G::Selection,P::FinishAppearance,"Compositor/CompositorApp.swift:164");
+        add("selection.expand","选择","扩展…","",C::Selection,G::ModifySelection,P::FinishAppearance,"Compositor/Document/Selection.swift:274");
+        add("selection.contract","选择","收缩…","",C::Selection,G::ModifySelection,P::FinishAppearance,"Compositor/Document/Selection.swift:274");
+        add("pixels.fill","图像","填充…","",C::Pixels,G::Paint,P::FinishAppearance,"Compositor/Document/SelectionEdits.swift:35");
+        add("pixels.invert","图像","反相","Ctrl+I",C::Pixels,G::Invert,P::CommitTransformAndGradient,"Compositor/Document/SelectionEdits.swift:77");
+        add("image.trim","图像","裁切","",C::Document,G::DocumentOperation,P::FinishAppearance,"Compositor/Document/Canvas.swift");
+        add("image.rotate_clockwise","图像","顺时针旋转 90°","",C::Document,G::DocumentOperation,P::FinishAppearance,"Windows 画布旋转（issue #20）");
+        add("image.rotate_counterclockwise","图像","逆时针旋转 90°","",C::Document,G::DocumentOperation,P::FinishAppearance,"Windows 画布旋转（issue #20）");
+        add("selection.feather","选择","羽化…","",C::Selection,G::ModifySelection,P::FinishAppearance,"Compositor/Document/Selection.swift");
+        add("selection.color_range","选择","色彩范围…","",C::Selection,G::ModifySelection,P::FinishAppearance,"Compositor/Document/Selection.swift");
+        add("view.guides","查看","Guides","",C::View,G::Always,P::None,"Compositor/Document/Guides.swift");
+        add("view.mac_title_bar","外观","Mac 风格标题栏","",C::View,G::Always,P::None,"Windows 标题栏首选项");
+        add("view.snap","查看","Snap","",C::View,G::Always,P::None,"Compositor/Document/Guides.swift");
+        add("view.layout_grid","查看","布局网格","",C::View,G::Document,P::None,"Windows 布局网格 (issue #11)");
+        add("view.grid_settings","查看","网格设置…","",C::View,G::Document,P::None,"Windows 布局网格 (issue #11)");
+        add("view.snap_grid","对齐到","Grid","",C::View,G::Always,P::None,"Windows 布局网格 (issue #11)");
+        add("view.snap_guides","对齐到","Guides","",C::View,G::Always,P::None,"Windows 布局网格 (issue #11)");
+        add("view.snap_layer_edges","对齐到","图层边缘","",C::View,G::Always,P::None,"Windows 布局网格 (issue #11)");
+        add("view.snap_layer_centers","对齐到","图层中心","",C::View,G::Always,P::None,"Windows 布局网格 (issue #11)");
+        add("view.snap_document_edges","对齐到","文档边缘","",C::View,G::Always,P::None,"Windows 布局网格 (issue #11)");
+        add("view.snap_document_center","对齐到","文档中心","",C::View,G::Always,P::None,"Windows 布局网格 (issue #11)");
+        add("layer.text","图层","文本图层…","",C::Layer,G::Layers,P::FinishAppearance,"Compositor/Document/Text.swift");
+        add("help.shortcuts","帮助","键盘快捷键…","",C::Application,G::Always,P::None,"Windows 快捷键窗口");
+        add("help.command_palette","帮助","命令面板…","Ctrl+Shift+P",C::Application,G::Always,P::None,"Windows 命令搜索");
+        add("view.fit","查看","适合画布","Ctrl+0",C::View,G::Document,P::None,"Compositor/CompositorApp.swift:87");
+        add("view.actual","查看","实际像素","Ctrl+1",C::View,G::Document,P::None,"Compositor/CompositorApp.swift:88");
+        add("view.pixel_grid","查看","像素网格","",C::View,G::Always,P::None,"Compositor/CompositorApp.swift:93");
+        add("view.rulers","查看","Rulers","Ctrl+R",C::View,G::Always,P::None,"Windows 画布标尺");
+        add("view.canvas_only","查看","仅画布全屏","F11",C::View,G::Document,P::None,"Windows 仅画布全屏（issue #12）");
+        add("canvas.size","画布","画布大小…","Ctrl+Alt+C",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:196");
+        add("canvas.image_size","画布","图像大小…","Ctrl+Alt+I",C::Document,G::DocumentOperation,P::ProjectOperation,"Compositor/CompositorApp.swift:199");
+        add("canvas.flip_horizontal","画布","水平翻转画布","",C::Document,G::Layers,P::FinishAppearance,"Compositor/CompositorApp.swift:204");
+        add("canvas.flip_vertical","画布","垂直翻转画布","",C::Document,G::Layers,P::FinishAppearance,"Compositor/CompositorApp.swift:206");
+        add("canvas.crop_tool","画布","裁剪工具","",C::Tool,G::Tool,P::None,"Compositor/Document/EditorSession.swift:282");
+        add("crop.apply","画布","应用裁剪","",C::Pending,G::ApplyCrop,P::None,"Compositor/Document/Crop.swift:187");
+        add("crop.cancel","画布","取消裁剪","",C::Pending,G::ApplyCrop,P::None,"Compositor/Document/Crop.swift:178");
+        add("layer.new","图层","新建图层","Ctrl+Shift+N",C::Layer,G::Layers,P::FinishAppearance,"Compositor/CompositorApp.swift:241");
+        add("layer.duplicate","图层","复制图层","Ctrl+Shift+J",C::Layer,G::Duplicate,P::FinishAppearance,"Compositor/CompositorApp.swift:228");
+        add("layer.convert_hdr","图层","将 HDR 转换为 16 位…","",C::Layer,G::HdrLayer,P::None,"HDR workflow (issue #29)");
+        add("layer.rename","图层","重命名图层…","",C::Layer,G::ActiveLayer,P::FinishAppearance,"Compositor/CompositorApp.swift:243");
+        add("layer.delete","图层","删除图层","",C::Layer,G::ActiveLayer,P::FinishAppearance,"Compositor/CompositorApp.swift:263");
+        add("layer.raise","图层","上移图层","Ctrl+]",C::Layer,G::MoveUp,P::FinishAppearance,"Compositor/CompositorApp.swift:249");
+        add("layer.lower","图层","下移图层","Ctrl+[",C::Layer,G::MoveDown,P::FinishAppearance,"Compositor/CompositorApp.swift:251");
+        add("layer.new_group","图层","新建编组","",C::Layer,G::Layers,P::FinishAppearance,"Compositor/Document/LayerGroups.swift");
+        add("layer.group","图层","编组所选图层","Ctrl+G",C::Layer,G::Layers,P::FinishAppearance,"Compositor/CompositorApp.swift:237");
+        add("layer.ungroup","图层","取消编组","Shift+Ctrl+G",C::Layer,G::Layers,P::FinishAppearance,"Compositor/Document/LayerGroups.swift");
+        add("layer.move_out","图层","移出编组","",C::Layer,G::Parent,P::FinishAppearance,"Compositor/CompositorApp.swift:239");
+        add("layer.clipping","图层","创建 / 释放剪贴蒙版","Ctrl+Alt+G",C::Layer,G::Clipping,P::FinishAppearance,"Compositor/CompositorApp.swift:232");
+        add("layer.merge","图层","合并图层","Ctrl+E",C::Layer,G::Merge,P::FinishAppearance,"Compositor/CompositorApp.swift:254");
+        add("layer.copy_project","图层","将图层复制到项目…","",C::Workspace,G::OtherProject,P::FinishAppearance,"Compositor/Document/ProjectWorkspace.swift:158");
+        const char*maskLabels[]{"添加白色蒙版（显示选区）","添加黑色蒙版（隐藏选区）","显示全部","隐藏全部","启用 / 停用蒙版","链接 / 取消链接蒙版","删除蒙版","编辑图像","编辑蒙版","选择图像 Alpha","选择蒙版黑色区域"};
         const char*maskIds[]{"mask.add_white","mask.add_black","mask.reveal_all","mask.hide_all","mask.enabled","mask.linked","mask.delete","mask.edit_image","mask.edit_mask","mask.load_alpha","mask.load_black"};
-        for(int i=0;i<11;++i)add(maskIds[i],"Mask",maskLabels[i],"",C::Layer,i<4?G::AddMask:i==7?G::SingleLayer:i==9?G::ImageAlpha:G::Mask,P::None,"Compositor/Document/LayerMask.swift:221");
-        add("transform.free","Transform","Free Transform","Ctrl+T",C::Layer,G::Transform,P::FinishAppearance,"Compositor/CompositorApp.swift:226");
-        add("transform.distort","Transform","Distort","",C::Layer,G::TransformDraft,P::FinishAppearance,"Compositor/Document/Distort.swift:188");
-        add("transform.draft_flip_horizontal","Transform Options","Flip H","",C::Layer,G::TransformDraft,P::FinishAppearance,"Compositor/Document/EditorSession.swift:310");
-        add("transform.draft_flip_vertical","Transform Options","Flip V","",C::Layer,G::TransformDraft,P::FinishAppearance,"Compositor/Document/EditorSession.swift:310");
-        add("transform.apply","Transform","Apply Transform","",C::Pending,G::ApplyTransform,P::None,"Compositor/Rendering/EditorCanvas.swift:1496");
-        add("transform.cancel","Transform","Cancel Transform","",C::Pending,G::ApplyTransform,P::None,"Compositor/Rendering/EditorCanvas.swift:1493");
-        add("transform.flip_horizontal","Transform","Flip Layer Horizontally","",C::Layer,G::Transform,P::FinishAppearance,"Compositor/CompositorApp.swift:257");
-        add("transform.flip_vertical","Transform","Flip Layer Vertically","",C::Layer,G::Transform,P::FinishAppearance,"Compositor/CompositorApp.swift:259");
-        add("transform.scale","Transform","Scale…","",C::Layer,G::TransformDraft,P::FinishAppearance,"Compositor/Document/EditorSession.swift:246");
-        const char*adjustments[]{"Hue/Saturation…","Levels…","Curves…","Exposure…","Gradient Map…","Grain…","Invert…","Black and White…","Color Balance…","Gaussian Blur…","Motion Blur…","Add Noise…"};
+        for(int i=0;i<11;++i)add(maskIds[i],"蒙版",maskLabels[i],"",C::Layer,i<4?G::AddMask:i==7?G::SingleLayer:i==9?G::ImageAlpha:G::Mask,P::None,"Compositor/Document/LayerMask.swift:221");
+        add("transform.free","变换","自由变换","Ctrl+T",C::Layer,G::Transform,P::FinishAppearance,"Compositor/CompositorApp.swift:226");
+        add("transform.distort","变换","扭曲","",C::Layer,G::TransformDraft,P::FinishAppearance,"Compositor/Document/Distort.swift:188");
+        add("transform.draft_flip_horizontal","变换选项","水平翻转","",C::Layer,G::TransformDraft,P::FinishAppearance,"Compositor/Document/EditorSession.swift:310");
+        add("transform.draft_flip_vertical","变换选项","垂直翻转","",C::Layer,G::TransformDraft,P::FinishAppearance,"Compositor/Document/EditorSession.swift:310");
+        add("transform.apply","变换","应用变换","",C::Pending,G::ApplyTransform,P::None,"Compositor/Rendering/EditorCanvas.swift:1496");
+        add("transform.cancel","变换","取消变换","",C::Pending,G::ApplyTransform,P::None,"Compositor/Rendering/EditorCanvas.swift:1493");
+        add("transform.flip_horizontal","变换","水平翻转图层","",C::Layer,G::Transform,P::FinishAppearance,"Compositor/CompositorApp.swift:257");
+        add("transform.flip_vertical","变换","垂直翻转图层","",C::Layer,G::Transform,P::FinishAppearance,"Compositor/CompositorApp.swift:259");
+        add("transform.scale","变换","缩放…","",C::Layer,G::TransformDraft,P::FinishAppearance,"Compositor/Document/EditorSession.swift:246");
+        const char*adjustments[]{"色相/饱和度…","色阶…","曲线…","曝光度…","渐变映射…","颗粒…","反相…","黑白…","色彩平衡…","高斯模糊…","动感模糊…","添加杂色…"};
         const char*slugs[]{"hue_saturation","levels","curves","exposure","gradient_map","grain","invert","black_white","color_balance","gaussian","motion","noise"};
-        for(int i=0;i<12;++i){auto id=QString("adjust.%1").arg(slugs[i]).toUtf8();add(id.constData(),"Adjustments",adjustments[i],i==0?"Ctrl+U":i==1?"Ctrl+L":i==2?"Ctrl+M":"",C::Adjustment,G::Adjust,P::CommitTransformAndGradient,"Compositor/Document/HueSaturation.swift:414");id=QString("adjust.new.%1").arg(slugs[i]).toUtf8();add(id.constData(),"New Adjustment Layer",adjustments[i],"",C::Adjustment,G::NewAdjustment,P::FinishAppearance,"Compositor/CompositorApp.swift:217");}
-        add("adjust.edit","Adjustments","Edit Adjustment Layer…","",C::Adjustment,G::EditAdjustment,P::FinishAppearance,"Compositor/CompositorApp.swift:222");
-        add("filter.last","Filters","Last Filter","Ctrl+Alt+F",C::Adjustment,G::RepeatLastFilter,P::CommitTransformAndGradient,"Compositor/Document/Filters.swift:541");
-        const char*filters[]{"Gaussian Blur…","Motion Blur…","Add Noise…","Lens Correction…","Content-Aware Fill…","Vignette…","Bloom…","Tonal Contrast…","Dither…","Scanlines…","Camera Raw Filter…","Remove Background…"};
+        for(int i=0;i<12;++i){auto id=QString("adjust.%1").arg(slugs[i]).toUtf8();add(id.constData(),"调整",adjustments[i],i==0?"Ctrl+U":i==1?"Ctrl+L":i==2?"Ctrl+M":"",C::Adjustment,G::Adjust,P::CommitTransformAndGradient,"Compositor/Document/HueSaturation.swift:414");id=QString("adjust.new.%1").arg(slugs[i]).toUtf8();add(id.constData(),"新建调整图层",adjustments[i],"",C::Adjustment,G::NewAdjustment,P::FinishAppearance,"Compositor/CompositorApp.swift:217");}
+        add("adjust.edit","调整","编辑调整图层…","",C::Adjustment,G::EditAdjustment,P::FinishAppearance,"Compositor/CompositorApp.swift:222");
+        add("filter.last","滤镜","上次滤镜","Ctrl+Alt+F",C::Adjustment,G::RepeatLastFilter,P::CommitTransformAndGradient,"Compositor/Document/Filters.swift:541");
+        const char*filters[]{"高斯模糊…","动感模糊…","添加杂色…","镜头校正…","内容识别填充…","晕影…","泛光…","色调对比…","仿色…","扫描线…","Camera Raw 滤镜…","去除背景…"};
         const char*filterIds[]{"filter.gaussian","filter.motion","filter.noise","filter.lens","filter.content_aware","filter.vignette","filter.bloom","filter.tonal","filter.dither","filter.scanlines","filter.camera_raw","filter.subject"};
-        for(int i=0;i<12;++i)add(filterIds[i],"Filters",filters[i],i==4?"Shift+Delete":"",C::Adjustment,i==4?G::ContentAwareFill:G::Adjust,P::CommitTransformAndGradient,"Compositor/Document/Filters.swift:299");
-        const char*toolLabels[]{"Move (V)","Hand (H)","Marquee (M)","Lasso (L)","Polygon","Wand (W)","Brush (B)","Eraser (E)","Clone (S)","Heal (J)","Retouch (R)","Gradient (G)","Shape (U)","Crop (C)","Eyedropper (I)","Zoom (Z)","Type (T)"};
+        for(int i=0;i<12;++i)add(filterIds[i],"滤镜",filters[i],i==4?"Shift+Delete":"",C::Adjustment,i==4?G::ContentAwareFill:G::Adjust,P::CommitTransformAndGradient,"Compositor/Document/Filters.swift:299");
+        const char*toolLabels[]{"移动 (V)","抓手 (H)","选框 (M)","套索 (L)","多边形","魔棒 (W)","画笔 (B)","橡皮擦 (E)","仿制图章 (S)","修复 (J)","润饰 (R)","渐变 (G)","形状 (U)","裁剪 (C)","吸管 (I)","缩放 (Z)","文本 (T)"};
         const char*toolIds[]{"move","hand","marquee","lasso","polygon","wand","brush","eraser","clone","heal","retouch","gradient","shape","crop","eyedropper","zoom","type"};
         const char*toolKeys[]{"V","H","M","L","","W","B","E","S","J","R","G","U","C","I","Z","T"};
-        for(int i=0;i<17;++i){auto id=QString("tool.%1").arg(toolIds[i]).toUtf8();add(id.constData(),"Tools",toolLabels[i],toolKeys[i],C::Tool,G::Tool,P::None,"Compositor/Rendering/EditorCanvas.swift:1520");}
-        add("palette.foreground","Tools","Foreground","",C::Tool,G::Palette,P::None,"Compositor/Document/ColorPalette.swift:25");
-        add("palette.background","Tools","Background","",C::Tool,G::Palette,P::None,"Compositor/Document/ColorPalette.swift:25");
-        add("palette.swap","Tools","Swap (X)","X",C::Tool,G::Palette,P::None,"Compositor/Document/ColorPalette.swift:25");
-        add("palette.defaults","Tools","Default (D)","D",C::Tool,G::Palette,P::None,"Compositor/Document/ColorPalette.swift:25");
-        add("gradient.apply","Drawing Options","Apply Gradient","",C::Pending,G::ApplyGradient,P::None,"Compositor/Rendering/EditorCanvas.swift:1485");
-        add("gradient.cancel","Drawing Options","Cancel Gradient","",C::Pending,G::ApplyGradient,P::None,"Compositor/Rendering/EditorCanvas.swift:1482");
-        add("shape.style","Drawing Options","Update Shape Style","",C::Layer,G::ShapeStyle,P::FinishAppearance,"Compositor/Document/ShapeTool.swift");
+        for(int i=0;i<17;++i){auto id=QString("tool.%1").arg(toolIds[i]).toUtf8();add(id.constData(),"工具",toolLabels[i],toolKeys[i],C::Tool,G::Tool,P::None,"Compositor/Rendering/EditorCanvas.swift:1520");}
+        add("palette.foreground","工具","Foreground","",C::Tool,G::Palette,P::None,"Compositor/Document/ColorPalette.swift:25");
+        add("palette.background","工具","背景","",C::Tool,G::Palette,P::None,"Compositor/Document/ColorPalette.swift:25");
+        add("palette.swap","工具","切换颜色 (X)","X",C::Tool,G::Palette,P::None,"Compositor/Document/ColorPalette.swift:25");
+        add("palette.defaults","工具","默认 (D)","D",C::Tool,G::Palette,P::None,"Compositor/Document/ColorPalette.swift:25");
+        add("gradient.apply","绘图选项","应用渐变","",C::Pending,G::ApplyGradient,P::None,"Compositor/Rendering/EditorCanvas.swift:1485");
+        add("gradient.cancel","绘图选项","取消渐变","",C::Pending,G::ApplyGradient,P::None,"Compositor/Rendering/EditorCanvas.swift:1482");
+        add("shape.style","绘图选项","更新形状样式","",C::Layer,G::ShapeStyle,P::FinishAppearance,"Compositor/Document/ShapeTool.swift");
         return list;
     }();
     return catalog;
@@ -199,7 +199,7 @@ const std::vector<CommandSpec>& commandCatalog(){
 namespace {
 QString normalized(QString value){return value.remove('&').trimmed();}
 QString portable(const QKeySequence& key){return key.toString(QKeySequence::PortableText);}
-// Labels such as "Type (T)" carry the shipped key; replace that suffix with the effective key, or drop it when cleared.
+// Labels such as "文本 (T)" carry the shipped key; replace that suffix with the effective key, or drop it when cleared.
 QString hinted(const QString& text,const QList<QKeySequence>& defaults,const QList<QKeySequence>& keys){
     if(defaults.isEmpty())return text;const auto suffix=" ("+portable(defaults.front())+")";if(!text.endsWith(suffix))return text;
     return text.chopped(suffix.size())+(keys.isEmpty()?QString{}:" ("+keys.front().toString(QKeySequence::NativeText)+")");
@@ -260,7 +260,7 @@ CommandRegistry::CommandRegistry(QWidget*owner,StateProvider state,Prepare prepa
 }
 CommandRegistry::~CommandRegistry(){if(qApp)qApp->removeEventFilter(this);}
 void CommandRegistry::bind(QAction*action,const CommandSpec&spec,std::function<void()>invoke,Enabled extra){
-    if(!action||spec.id.isEmpty()||!invoke)throw std::invalid_argument("Invalid command binding");
+    if(!action||spec.id.isEmpty()||!invoke)throw std::invalid_argument("无效的命令绑定");
     if(std::any_of(entries_.begin(),entries_.end(),[&](const Entry&e){return e.action==action;}))throw std::invalid_argument("Action already registered");
     action->setProperty("commandId",spec.id);action->setProperty("commandSource",spec.source);if(action->objectName().isEmpty())action->setObjectName("command."+spec.id);
     if(!spec.windowsShortcut.isEmpty())action->setShortcut(QKeySequence(spec.windowsShortcut));
@@ -304,17 +304,17 @@ namespace {
 QList<QKeySequence> unique(const QList<QKeySequence>& keys){QList<QKeySequence> result;for(const auto& key:keys)if(!key.isEmpty()&&!result.contains(key))result.push_back(key);return result;}
 }
 QString shortcutProblem(const QKeySequence& key){
-    if(key.isEmpty())return "The shortcut is empty.";
-    if(key.count()!=1)return portable(key)+" has more than one key combination; use a single combination.";
+    if(key.isEmpty())return "快捷键为空。";
+    if(key.count()!=1)return portable(key)+" 包含多个组合键；请使用单一组合。";
     const auto combination=key[0];const int code=combination.key();
-    if(code==Qt::Key_unknown||code==Qt::Key_Control||code==Qt::Key_Shift||code==Qt::Key_Alt||code==Qt::Key_Meta||code==Qt::Key_AltGr)return "Add a key to the modifiers.";
+    if(code==Qt::Key_unknown||code==Qt::Key_Control||code==Qt::Key_Shift||code==Qt::Key_Alt||code==Qt::Key_Meta||code==Qt::Key_AltGr)return "请为修饰键添加一个按键。";
     const auto mods=combination.keyboardModifiers()&~Qt::KeypadModifier;
     const bool plain=(mods&~Qt::ShiftModifier)==Qt::NoModifier;
     // Keys the canvas keeps for its own gestures: Escape, Tab, Enter, Space pan, digit opacity, bracket brush size, arrow nudges,
     // and Delete/Backspace with or without Alt/Ctrl/Shift (delete, fills). Shift+Delete stays assignable: it is Content-Aware Fill's shipped command key.
     const bool canvasKey=code==Qt::Key_Escape||code==Qt::Key_Tab||code==Qt::Key_Backtab||code==Qt::Key_Return||code==Qt::Key_Enter||code==Qt::Key_Space||(code>=Qt::Key_0&&code<=Qt::Key_9)||code==Qt::Key_BracketLeft||code==Qt::Key_BracketRight||code==Qt::Key_BraceLeft||code==Qt::Key_BraceRight;
     const bool arrow=code==Qt::Key_Left||code==Qt::Key_Right||code==Qt::Key_Up||code==Qt::Key_Down;
-    if(arrow||(plain&&canvasKey)||((code==Qt::Key_Delete||code==Qt::Key_Backspace)&&!(code==Qt::Key_Delete&&mods==Qt::ShiftModifier)))return portable(key)+" is reserved for canvas editing.";
+    if(arrow||(plain&&canvasKey)||((code==Qt::Key_Delete||code==Qt::Key_Backspace)&&!(code==Qt::Key_Delete&&mods==Qt::ShiftModifier)))return portable(key)+" 已保留用于画布编辑。";
     return {};
 }
 std::vector<ShortcutConflict> findShortcutConflicts(const ShortcutMap& shortcuts){
@@ -328,11 +328,11 @@ bool CommandRegistry::applyShortcuts(const ShortcutMap& changes,QString* error){
     auto fail=[&](const QString& message){if(error)*error=message;return false;};
     auto merged=shortcuts_;
     for(const auto&[id,keys]:changes){
-        if(!defaults_.count(id))return fail("Unknown command "+id+".");
+        if(!defaults_.count(id))return fail("未知命令 "+id+".");
         for(const auto& key:keys)if(const auto problem=shortcutProblem(key);!problem.isEmpty())return fail(problem);
         merged[id]=unique(keys);
     }
-    if(const auto conflicts=findShortcutConflicts(merged);!conflicts.empty())return fail(portable(conflicts.front().key)+" is assigned to more than one command: "+conflicts.front().ids.join(", ")+".");
+    if(const auto conflicts=findShortcutConflicts(merged);!conflicts.empty())return fail(portable(conflicts.front().key)+" 已分配给多个命令："+conflicts.front().ids.join(", ")+".");
     shortcuts_=std::move(merged);
     for(const auto& e:entries_)if(e.action&&e.carriesShortcut)e.action->setShortcuts(shortcuts_[e.spec.id]);
     refreshShortcutHints();
@@ -349,7 +349,7 @@ bool CommandRegistry::saveShortcuts(const ShortcutMap& changes,QSettings& settin
     if(saved)return true;
     write([&]{for(const auto&[key,value]:stored)settings.setValue(key,value);});
     applyShortcuts(previous);
-    if(error)*error="The shortcut settings could not be written. Your previous shortcuts are still active.";
+    if(error)*error="无法写入快捷键设置。原有的快捷键仍然有效。";
     return false;
 }
 bool CommandRegistry::restoreShortcuts(QSettings& settings){

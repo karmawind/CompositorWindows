@@ -19,11 +19,11 @@ extern "C" {
 namespace compositor::editing {
 using Microsoft::WRL::ComPtr;
 namespace {
-void check(HRESULT hr) { if (FAILED(hr)) throw std::runtime_error("Direct2D selection operation failed: " + std::to_string(uint32_t(hr))); }
-void sizeCheck(int w,int h) { if(w<1||h<1||w>30000||h>30000||uint64_t(w)*h>100000000) throw std::runtime_error("Selection raster exceeds pixel budget"); }
-void grayCheck(const GrayRaster& g) { if(!g.validStorage()) throw std::runtime_error("Invalid selection coverage"); }
-void pointCheck(Point p) { if(!std::isfinite(p.x)||!std::isfinite(p.y)||std::abs(p.x)>10000000||std::abs(p.y)>10000000) throw std::runtime_error("Invalid selection coordinate"); }
-void rectCheck(Rect r) { pointCheck({r.x,r.y}); pointCheck({r.x+r.width,r.y+r.height}); if(r.width<0||r.height<0)throw std::runtime_error("Invalid selection rectangle"); }
+void check(HRESULT hr) { if (FAILED(hr)) throw std::runtime_error("Direct2D 选区操作失败： " + std::to_string(uint32_t(hr))); }
+void sizeCheck(int w,int h) { if(w<1||h<1||w>30000||h>30000||uint64_t(w)*h>100000000) throw std::runtime_error("选区栅格超出像素预算"); }
+void grayCheck(const GrayRaster& g) { if(!g.validStorage()) throw std::runtime_error("无效的选区覆盖范围"); }
+void pointCheck(Point p) { if(!std::isfinite(p.x)||!std::isfinite(p.y)||std::abs(p.x)>10000000||std::abs(p.y)>10000000) throw std::runtime_error("无效的选区坐标"); }
+void rectCheck(Rect r) { pointCheck({r.x,r.y}); pointCheck({r.x+r.width,r.y+r.height}); if(r.width<0||r.height<0)throw std::runtime_error("无效的选区矩形"); }
 ComPtr<ID2D1Factory> factory() {
     static const auto value=[] { ComPtr<ID2D1Factory> f; check(D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED,f.GetAddressOf())); return f; }();
     return value;
@@ -116,7 +116,7 @@ SelectionOutline SelectionOutline::ellipse(Rect r,bool aa) {
     return SelectionOutline(std::make_shared<Impl>(Impl{g,aa}));
 }
 SelectionOutline SelectionOutline::roundedRectangle(Rect r,double radius,bool aa){
-    rectCheck(r);if(!std::isfinite(radius))throw std::runtime_error("Invalid corner radius");radius=std::min({std::max(0.,radius),r.width/2,r.height/2});if(radius==0||r.empty())return rectangle(r,aa);
+    rectCheck(r);if(!std::isfinite(radius))throw std::runtime_error("无效的圆角半径");radius=std::min({std::max(0.,radius),r.width/2,r.height/2});if(radius==0||r.empty())return rectangle(r,aa);
     ComPtr<ID2D1RoundedRectangleGeometry> g;auto rounded=D2D1::RoundedRect(D2D1::RectF(float(r.x),float(r.y),float(r.x+r.width),float(r.y+r.height)),float(radius),float(radius));check(factory()->CreateRoundedRectangleGeometry(rounded,&g));return SelectionOutline(std::make_shared<Impl>(Impl{g,aa}));
 }
 SelectionOutline SelectionOutline::fromCoverage(const GrayRaster& mask,bool aa){
@@ -129,14 +129,14 @@ SelectionOutline SelectionOutline::fromCoverage(const GrayRaster& mask,bool aa){
     }
     grayCheck(mask);int32_t* rawPoints=nullptr;int32_t* rawLoops=nullptr;size_t pointCount=0,loopCount=0;int status=wand_trace(mask.pixels.data(),size_t(mask.width),size_t(mask.height),&rawPoints,&pointCount,&rawLoops,&loopCount);
     std::unique_ptr<int32_t,decltype(&std::free)> points(rawPoints,&std::free),loops(rawLoops,&std::free);
-    if(status==-2)throw std::runtime_error("Selection is too detailed to outline; reduce coverage detail");if(status!=0)throw std::runtime_error("Selection outline allocation failed");
-    if(loopCount==0)return SelectionOutline(std::make_shared<Impl>(Impl{emptyGeometry(),aa}));if(!points||!loops)throw std::runtime_error("Invalid traced selection");
+    if(status==-2)throw std::runtime_error("选区细节过多，无法绘制轮廓；请减少覆盖细节");if(status!=0)throw std::runtime_error("选区轮廓分配失败");
+    if(loopCount==0)return SelectionOutline(std::make_shared<Impl>(Impl{emptyGeometry(),aa}));if(!points||!loops)throw std::runtime_error("无效的描摹选区");
     ComPtr<ID2D1PathGeometry> path;check(factory()->CreatePathGeometry(&path));ComPtr<ID2D1GeometrySink> sink;check(path->Open(&sink));sink->SetFillMode(D2D1_FILL_MODE_WINDING);size_t index=0;
-    for(size_t loop=0;loop<loopCount;++loop){int32_t length=rawLoops[loop];if(length<3||size_t(length)>pointCount-index)throw std::runtime_error("Invalid traced selection loop");sink->BeginFigure(D2D1::Point2F(float(rawPoints[index*2]),float(rawPoints[index*2+1])),D2D1_FIGURE_BEGIN_FILLED);for(size_t i=1;i<size_t(length);++i)sink->AddLine(D2D1::Point2F(float(rawPoints[(index+i)*2]),float(rawPoints[(index+i)*2+1])));sink->EndFigure(D2D1_FIGURE_END_CLOSED);index+=size_t(length);}
+    for(size_t loop=0;loop<loopCount;++loop){int32_t length=rawLoops[loop];if(length<3||size_t(length)>pointCount-index)throw std::runtime_error("无效的描摹选区环");sink->BeginFigure(D2D1::Point2F(float(rawPoints[index*2]),float(rawPoints[index*2+1])),D2D1_FIGURE_BEGIN_FILLED);for(size_t i=1;i<size_t(length);++i)sink->AddLine(D2D1::Point2F(float(rawPoints[(index+i)*2]),float(rawPoints[(index+i)*2+1])));sink->EndFigure(D2D1_FIGURE_END_CLOSED);index+=size_t(length);}
     check(sink->Close());return SelectionOutline(std::make_shared<Impl>(Impl{path,aa}));
 }
 SelectionOutline SelectionOutline::polygon(std::span<const Point> points,bool aa) {
-    if(points.size()>1000000)throw std::runtime_error("Selection path exceeds point budget");
+    if(points.size()>1000000)throw std::runtime_error("选区路径超出点数预算");
     for(auto p:points)pointCheck(p);
     if(points.size()<3)return SelectionOutline(std::make_shared<Impl>(Impl{emptyGeometry(),aa}));
     ComPtr<ID2D1PathGeometry> g;check(factory()->CreatePathGeometry(&g));ComPtr<ID2D1GeometrySink> sink;check(g->Open(&sink));sink->SetFillMode(D2D1_FILL_MODE_WINDING);
@@ -148,7 +148,7 @@ Rect SelectionOutline::bounds()const {
     if(!impl_||!impl_->geometry)return {};
     D2D1_RECT_F r{};HRESULT hr=E_FAIL;unsigned code=0;
     const int status=geometryBounds(impl_->geometry.Get(),&r,&hr,&code);
-    if(status<0)throw std::runtime_error("Direct2D selection operation failed: "+std::to_string(code));
+    if(status<0)throw std::runtime_error("Direct2D 选区操作失败： "+std::to_string(code));
     if(!status)return {};
     check(hr);
     if(r.right<=r.left||r.bottom<=r.top)return {};return {r.left,r.top,double(r.right)-r.left,double(r.bottom)-r.top};
@@ -170,7 +170,7 @@ SelectionOutline SelectionOutline::combined(const SelectionOutline& other,Select
     check(impl_->geometry->CombineWithGeometry(other.impl_->geometry.Get(),combine,nullptr,sink.Get()));check(sink->Close());
     return SelectionOutline(std::make_shared<Impl>(Impl{g,aa}));
 }
-SelectionOutline SelectionOutline::clipped(int w,int h)const {if(w<1||h<1||w>30000||h>30000)throw std::runtime_error("Invalid canvas size");return combined(rectangle({0,0,double(w),double(h)}),SelectionMode::Intersect,impl_->aa);}
+SelectionOutline SelectionOutline::clipped(int w,int h)const {if(w<1||h<1||w>30000||h>30000)throw std::runtime_error("无效的画布大小");return combined(rectangle({0,0,double(w),double(h)}),SelectionMode::Intersect,impl_->aa);}
 SelectionOutline SelectionOutline::moved(Point offset)const {
     pointCheck(offset);offset={std::round(offset.x),std::round(offset.y)};
     auto b=bounds();if(!b.empty()){pointCheck({b.x+offset.x,b.y+offset.y});pointCheck({b.x+b.width+offset.x,b.y+b.height+offset.y});}
@@ -178,7 +178,7 @@ SelectionOutline SelectionOutline::moved(Point offset)const {
     return SelectionOutline(std::make_shared<Impl>(Impl{g,impl_->aa}));
 }
 SelectionOutline SelectionOutline::transformed(const Transform& transform,int width,int height)const {
-    if(width<1||height<1||width>30000||height>30000||!transform.valid())throw std::runtime_error("Invalid selection outline transform");
+    if(width<1||height<1||width>30000||height>30000||!transform.valid())throw std::runtime_error("无效的选区轮廓变换");
     auto extent=bounds();if(extent.empty())return *this;
     for(auto point:std::array<Point,4>{{{extent.x,extent.y},{extent.x+extent.width,extent.y},{extent.x,extent.y+extent.height},{extent.x+extent.width,extent.y+extent.height}}})pointCheck(transform.fromUnit({point.x/width,point.y/height}));
     auto origin=transform.fromUnit({0,0}),right=transform.fromUnit({1,0}),bottom=transform.fromUnit({0,1});
@@ -186,21 +186,21 @@ SelectionOutline SelectionOutline::transformed(const Transform& transform,int wi
     ComPtr<ID2D1TransformedGeometry> geometry;check(factory()->CreateTransformedGeometry(impl_->geometry.Get(),matrix,&geometry));return SelectionOutline(std::make_shared<Impl>(Impl{geometry,impl_->aa}));
 }
 SelectionOutline SelectionOutline::resized(double delta,int w,int h)const {
-    if(!std::isfinite(delta))throw std::runtime_error("Invalid selection expansion");if(empty()||delta==0||std::abs(delta)>500)return *this;
+    if(!std::isfinite(delta))throw std::runtime_error("无效的选区扩展");if(empty()||delta==0||std::abs(delta)>500)return *this;
     ComPtr<ID2D1StrokeStyle> style;auto properties=D2D1::StrokeStyleProperties(D2D1_CAP_STYLE_ROUND,D2D1_CAP_STYLE_ROUND,D2D1_CAP_STYLE_ROUND,D2D1_LINE_JOIN_ROUND,10);check(factory()->CreateStrokeStyle(properties,nullptr,0,&style));
     ComPtr<ID2D1PathGeometry> band;check(factory()->CreatePathGeometry(&band));ComPtr<ID2D1GeometrySink> sink;check(band->Open(&sink));sink->SetFillMode(D2D1_FILL_MODE_WINDING);check(impl_->geometry->Widen(float(std::abs(delta)*2),style.Get(),nullptr,sink.Get()));check(sink->Close());
     SelectionOutline widened(std::make_shared<Impl>(Impl{band,impl_->aa}));auto result=combined(widened,delta>0?SelectionMode::Add:SelectionMode::Subtract,impl_->aa);return delta>0?result.clipped(w,h):result;
 }
 SelectionOutline SelectionOutline::mirrored(bool horizontally,double axis)const {
-    if(!std::isfinite(axis)||std::abs(axis)>1000000)throw std::runtime_error("Invalid selection mirror axis");auto matrix=horizontally?D2D1::Matrix3x2F(-1,0,0,1,float(2*axis),0):D2D1::Matrix3x2F(1,0,0,-1,0,float(2*axis));ComPtr<ID2D1TransformedGeometry> geometry;check(factory()->CreateTransformedGeometry(impl_->geometry.Get(),matrix,&geometry));return SelectionOutline(std::make_shared<Impl>(Impl{geometry,impl_->aa}));
+    if(!std::isfinite(axis)||std::abs(axis)>1000000)throw std::runtime_error("无效的选区镜像轴");auto matrix=horizontally?D2D1::Matrix3x2F(-1,0,0,1,float(2*axis),0):D2D1::Matrix3x2F(1,0,0,-1,0,float(2*axis));ComPtr<ID2D1TransformedGeometry> geometry;check(factory()->CreateTransformedGeometry(impl_->geometry.Get(),matrix,&geometry));return SelectionOutline(std::make_shared<Impl>(Impl{geometry,impl_->aa}));
 }
 std::shared_ptr<const GrayRaster> SelectionOutline::rasterize(int w,int h)const {
-    if(w<1||h<1||w>30000||h>30000)throw std::runtime_error("Invalid selection dimensions");
+    if(w<1||h<1||w>30000||h>30000)throw std::runtime_error("无效的选区尺寸");
     if(uint64_t(w)*h>100000000){auto out=std::make_shared<GrayRaster>();out->width=w;out->height=h;out->source=std::make_shared<OutlineCoverage>(*this,w,h);return out;}
     return rasterizeRegion(0,0,w,h);
 }
 SelectionOutline SelectionOutline::affineMapped(std::array<double,6> m)const{
-    for(auto v:m)if(!std::isfinite(v)||std::abs(v)>1e7)throw std::runtime_error("Invalid selection affine matrix");
+    for(auto v:m)if(!std::isfinite(v)||std::abs(v)>1e7)throw std::runtime_error("无效的选区仿射矩阵");
     ComPtr<ID2D1TransformedGeometry> g;check(factory()->CreateTransformedGeometry(impl_->geometry.Get(),D2D1::Matrix3x2F(float(m[0]),float(m[1]),float(m[2]),float(m[3]),float(m[4]),float(m[5])),&g));
     return SelectionOutline(std::make_shared<Impl>(Impl{g,impl_->aa}));
 }
@@ -208,13 +208,13 @@ std::vector<std::pair<Point,Point>> SelectionOutline::boundarySegments()const{
     ComPtr<BoundarySink> sink;sink.Attach(new BoundarySink);check(impl_->geometry->Simplify(D2D1_GEOMETRY_SIMPLIFICATION_OPTION_LINES,nullptr,.25f,sink.Get()));check(sink->Close());return std::move(sink->segments);
 }
 void SelectionOutline::writeGeometry(ID2D1SimplifiedGeometrySink* sink,const std::array<float,6>& m)const{
-    if(!sink)throw std::invalid_argument("Missing selection geometry sink");
-    for(const auto value:m)if(!std::isfinite(value))throw std::invalid_argument("Invalid selection view transform");
+    if(!sink)throw std::invalid_argument("缺少选区几何接收器");
+    for(const auto value:m)if(!std::isfinite(value))throw std::invalid_argument("无效的选区视图变换");
     const auto transform=D2D1::Matrix3x2F(m[0],m[1],m[2],m[3],m[4],m[5]);
     check(impl_->geometry->Simplify(D2D1_GEOMETRY_SIMPLIFICATION_OPTION_CUBICS_AND_LINES,&transform,.25f,sink));
 }
 SelectionOutline SelectionOutline::projected(const std::function<Point(Point)>& map)const{
-    if(!map)throw std::runtime_error("Missing selection projection");
+    if(!map)throw std::runtime_error("缺少选区投影");
     ComPtr<ID2D1PathGeometry> g;check(factory()->CreatePathGeometry(&g));ComPtr<ID2D1GeometrySink> sink;check(g->Open(&sink));sink->SetFillMode(D2D1_FILL_MODE_WINDING);
     bool open=false;Point first,last;
     for(const auto& [a,b]:boundarySegments()){
@@ -239,7 +239,7 @@ std::shared_ptr<const GrayRaster> SelectionOutline::rasterizeRegion(int ox,int o
         target->SetAntialiasMode(impl_->aa?D2D1_ANTIALIAS_MODE_PER_PRIMITIVE:D2D1_ANTIALIAS_MODE_ALIASED);
         target->BeginDraw();target->Clear(D2D1::ColorF(0,0,0,0));target->SetTransform(D2D1::Matrix3x2F::Translation(float(-x-ox),float(-y-oy)));target->FillGeometry(impl_->geometry.Get(),white.Get());check(target->EndDraw());
         WICRect rect{0,0,tw,th};ComPtr<IWICBitmapLock> lock;check(bitmap->Lock(&rect,WICBitmapLockRead,&lock));UINT stride{},length{};BYTE* bytes{};check(lock->GetStride(&stride));check(lock->GetDataPointer(&length,&bytes));
-        if(uint64_t(stride)*(th-1)+uint64_t(tw)*4>length)throw std::runtime_error("Invalid WIC selection stride");
+        if(uint64_t(stride)*(th-1)+uint64_t(tw)*4>length)throw std::runtime_error("无效的 WIC 选区步长");
         for(int row=0;row<th;++row)for(int col=0;col<tw;++col)out->pixels[size_t(y+row)*w+x+col]=bytes[size_t(row)*stride+col*4+3];
     }
     return out;
@@ -254,10 +254,10 @@ std::optional<SelectionOutline> applySelection(const std::optional<SelectionOutl
 std::optional<SelectionOutline> finishSelection(const std::optional<SelectionOutline>& current,const SelectionOutline& draft,SelectionMode mode,int w,int h,bool aa){if(draft.empty())return mode==SelectionMode::Replace?std::nullopt:current;return applySelection(current,draft,mode,w,h,aa);}
 std::optional<SelectionOutline> inverseSelection(const std::optional<SelectionOutline>& current,int w,int h){if(!current)return {};return SelectionOutline::rectangle({0,0,double(w),double(h)}).combined(*current,SelectionMode::Subtract,current->antialiased());}
 std::optional<Selection> rasterSelection(const std::optional<SelectionOutline>& outline,int w,int h){if(!outline)return {};return Selection{outline->rasterize(w,h),std::make_shared<SelectionOutline>(*outline)};}
-bool appendLassoPoint(std::vector<Point>& points,Point p){if(!std::isfinite(p.x)||!std::isfinite(p.y))return false;pointCheck(p);if(!points.empty()&&std::hypot(p.x-points.back().x,p.y-points.back().y)<.25)return false;if(points.size()>=1000000)throw std::runtime_error("Selection path exceeds point budget");points.push_back(p);return true;}
+bool appendLassoPoint(std::vector<Point>& points,Point p){if(!std::isfinite(p.x)||!std::isfinite(p.y))return false;pointCheck(p);if(!points.empty()&&std::hypot(p.x-points.back().x,p.y-points.back().y)<.25)return false;if(points.size()>=1000000)throw std::runtime_error("选区路径超出点数预算");points.push_back(p);return true;}
 Rect coverageBounds(const GrayRaster& g){const auto b=g.nonzeroBounds();return {double(b.x),double(b.y),double(b.width),double(b.height)};}
 std::optional<Selection> moveSelectionCoverage(const std::optional<Selection>& original,Point offset){
-    if(!original)return {};if(!original->coverage)throw std::runtime_error("Present selection has no coverage");grayCheck(*original->coverage);pointCheck(offset);int dx=int(std::round(offset.x)),dy=int(std::round(offset.y));if(dx==0&&dy==0)return original;
+    if(!original)return {};if(!original->coverage)throw std::runtime_error("当前选区没有覆盖区域");grayCheck(*original->coverage);pointCheck(offset);int dx=int(std::round(offset.x)),dy=int(std::round(offset.y));if(dx==0&&dy==0)return original;
     const auto& g=*original->coverage;if(original->outline)return rasterSelection(original->outline->moved(offset),g.width,g.height);
     if(g.source){
         if(auto outline=g.source->vectorOutline())return rasterSelection(outline->moved(offset),g.width,g.height);
@@ -267,10 +267,10 @@ std::optional<Selection> moveSelectionCoverage(const std::optional<Selection>& o
     auto out=std::make_shared<GrayRaster>();out->width=g.width;out->height=g.height;out->pixels.resize(g.pixels.size());for(int y=0;y<g.height;++y)for(int x=0;x<g.width;++x)out->pixels[size_t(y)*g.width+x]=g.pixel(x-dx,y-dy);return Selection{out};
 }
 std::shared_ptr<const GrayRaster> mappedCoverage(const Document& doc,const Transform& transform,int w,int h,bool clipCanvas,CoverageSampling sampling){
-    sizeCheck(w,h);if(!transform.valid()||doc.width<1||doc.height<1||doc.width>30000||doc.height>30000)throw std::runtime_error("Invalid selection mapping");
+    sizeCheck(w,h);if(!transform.valid()||doc.width<1||doc.height<1||doc.width>30000||doc.height>30000)throw std::runtime_error("无效的选区映射");
     if(!doc.selection&&!clipCanvas)return {};
-    const GrayRaster* src=doc.selection?doc.selection->coverage.get():nullptr;if(doc.selection&&!src)throw std::runtime_error("Present selection has no coverage");
-    if(src){grayCheck(*src);if(src->width!=doc.width||src->height!=doc.height)throw std::runtime_error("Selection must match document dimensions");}
+    const GrayRaster* src=doc.selection?doc.selection->coverage.get():nullptr;if(doc.selection&&!src)throw std::runtime_error("当前选区没有覆盖区域");
+    if(src){grayCheck(*src);if(src->width!=doc.width||src->height!=doc.height)throw std::runtime_error("选区必须与文档尺寸一致");}
     auto out=std::make_shared<GrayRaster>();out->width=w;out->height=h;out->pixels.resize(size_t(w)*h);
     auto origin=transform.fromUnit({0,0}),right=transform.fromUnit({1,0}),bottom=transform.fromUnit({0,1});
     Point stepX{(right.x-origin.x)/w,(right.y-origin.y)/w},stepY{(bottom.x-origin.x)/h,(bottom.y-origin.y)/h};

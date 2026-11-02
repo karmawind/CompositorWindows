@@ -62,7 +62,7 @@ std::optional<SelectionGestureResult> SelectionGesture::finish(const std::option
         return SelectionGestureResult{current,{},false};
     }
     if(!current&&(saved.mode==SelectionMode::Subtract||saved.mode==SelectionMode::Intersect))return SelectionGestureResult{current,{},false};
-    const auto name=saved.kind==LassoKind::Freehand?"Lasso":saved.kind==LassoKind::Polygonal?"Polygonal Lasso":saved.kind==LassoKind::Ellipse?"Elliptical Marquee":"Rectangular Marquee";
+    const auto name=saved.kind==LassoKind::Freehand?"套索":saved.kind==LassoKind::Polygonal?"多边形套索":saved.kind==LassoKind::Ellipse?"椭圆选框":"矩形选框";
     return SelectionGestureResult{applySelection(current,shape,saved.mode,width,height,aa),name,true};
 }
 Point selectionMoveOffset(Point start,Point current,bool shift){

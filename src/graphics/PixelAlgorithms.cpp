@@ -22,7 +22,7 @@ struct KernelCancellation {
     auto function() const -> int (*)(void*) { return callback ? poll : nullptr; }
     void finish(int result) const {
         if (exception) std::rethrow_exception(exception);
-        if (result == -2) throw std::runtime_error("Filter cancelled");
+        if (result == -2) throw std::runtime_error("滤镜已取消");
     }
 };
 void check(size_t size, uint32_t w, uint32_t h, size_t stride, size_t channels) {
@@ -134,7 +134,7 @@ bool contentFill(Rgba8View v,ConstGray8View mask,const Cancellation& cancelled) 
     if(result<0) throw std::bad_alloc(); return result!=0;
 }
 void spotHeal(Rgba8View v,ConstGray8View mask,float opacity,int mode,uint32_t seed) {
-    sameSize(v,mask); range(opacity,0,1,"Healing opacity"); if(mode<0 || mode>2) throw std::invalid_argument("Healing mode");
+    sameSize(v,mask); range(opacity,0,1,"Healing opacity"); if(mode<0 || mode>2) throw std::invalid_argument("修复模式");
     auto coverage=packed(mask);
     if(spot_heal(v.bytes.data(),coverage.data(),v.width,v.height,v.stride,opacity,mode,seed)<0) throw std::bad_alloc();
 }

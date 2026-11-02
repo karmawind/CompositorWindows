@@ -27,7 +27,7 @@ public:
     std::function<double()> read;
     std::function<void(double)> write;
     double maximum{100};
-    QString unit{QStringLiteral(" percent")};
+    QString unit{QStringLiteral(" 百分比")};
     bool scalar{};
     using QWidget::QWidget;
     double valueNumber() const { return read ? read() : 0; }
@@ -90,16 +90,16 @@ public:
     std::array<PaletteValueWidget*,2> axes{};
     ColorField(bool strip,QWidget*parent):PaletteValueWidget(parent),hue(strip){
         installPaletteAccessibility();scalar=hue;setFixedSize(hue?34:256,256);setFocusPolicy(Qt::StrongFocus);
-        setAccessibleName(hue?"Hue":"Saturation and brightness");
+        setAccessibleName(hue?"色相":"饱和度和亮度");
         if(hue){
-            scalar=true;maximum=360;unit=QStringLiteral(" degrees");
+            scalar=true;maximum=360;unit=QStringLiteral(" 度");
             read=[this]{return value.hue;};write=[this](double next){if(componentChanged)componentChanged(0,next);};
-            setAccessibleDescription("Up and Down change hue by one degree. Hold Shift for ten degrees.");
+            setAccessibleDescription("按上、下方向键可将色相调整 1 度；按住 Shift 键可调整 10 度。");
         }else{
-            setAccessibleDescription("Left and Right change saturation. Up and Down change brightness. Hold Shift for ten percent.");
+            setAccessibleDescription("左右方向键更改饱和度，上下方向键更改亮度。按住 Shift 可按 10% 幅度调整。");
             for(size_t index=0;index<axes.size();++index){
                 auto* axis=axes[index]=new PaletteValueWidget(this);axis->scalar=true;
-                axis->setAccessibleName(index==0?"Saturation":"Brightness");
+                axis->setAccessibleName(index==0?"饱和度":"亮度");
                 axis->setObjectName(index==0?"paletteSaturation":"paletteBrightness");
                 axis->setGeometry(rect());axis->setAttribute(Qt::WA_TransparentForMouseEvents);axis->setAttribute(Qt::WA_NoSystemBackground);axis->setFocusPolicy(Qt::NoFocus);
                 axis->read=[this,index]{return (index==0?value.saturation:value.brightness)*100;};
@@ -139,7 +139,7 @@ class PaletteChannel final : public QSpinBox {
 }
 struct PaletteDialog::Impl {
     PaletteDialog* owner;PickerHSB hsb;PaletteColor original;ColorField *field,*hue;std::array<QSpinBox*,3> channels{};QLineEdit*hex;QLabel*preview;
-    Impl(PaletteDialog*dialog,PaletteColor start):owner(dialog),original(start){hsb.setRGB(start);auto*row=new QHBoxLayout(owner);field=new ColorField(false,owner);field->setObjectName("paletteField");hue=new ColorField(true,owner);hue->setObjectName("paletteHue");row->addWidget(field);row->addWidget(hue);auto*side=new QVBoxLayout;row->addLayout(side);preview=new QLabel;preview->setFixedSize(96,64);preview->setAccessibleName("New and original colors");side->addWidget(preview);auto*grid=new QGridLayout;side->addLayout(grid);const char*labels[]{"Red","Green","Blue"};for(int i=0;i<3;++i){auto*spin=new PaletteChannel;channels[i]=spin;spin->setRange(0,255);spin->setObjectName(QString("paletteRGB%1").arg(i));spin->setAccessibleName(labels[i]);grid->addWidget(new QLabel(labels[i]),i,0);grid->addWidget(spin,i,1);connect(spin,&QSpinBox::valueChanged,owner,[this,i](int v){auto color=hsb.rgb().quantized();double*component[]{&color.red,&color.green,&color.blue};*component[i]=v/255.;hsb.setRGB(color);sync();});}hex=new QLineEdit;hex->setObjectName("paletteHex");hex->setAccessibleName("Hex color");grid->addWidget(new QLabel("#"),3,0);grid->addWidget(hex,3,1);connect(hex,&QLineEdit::editingFinished,owner,[this]{if(auto color=PaletteColor::fromHex(hex->text().toStdString()))hsb.setRGB(*color);sync();});side->addWidget(new QLabel("Click the canvas to sample"));auto*buttons=new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);side->addWidget(buttons);connect(buttons,&QDialogButtonBox::accepted,owner,&QDialog::accept);connect(buttons,&QDialogButtonBox::rejected,owner,&QDialog::reject);field->changed=[this](double x,double y){hsb.saturation=x;hsb.brightness=1-y;sync();};hue->changed=[this](double,double y){hsb.hue=(1-y)*360;sync();};field->componentChanged=hue->componentChanged=[this](int component,double next){if(component==0)hsb.hue=next;else if(component==1)hsb.saturation=next;else hsb.brightness=next;sync();};}
+    Impl(PaletteDialog*dialog,PaletteColor start):owner(dialog),original(start){hsb.setRGB(start);auto*row=new QHBoxLayout(owner);field=new ColorField(false,owner);field->setObjectName("paletteField");hue=new ColorField(true,owner);hue->setObjectName("paletteHue");row->addWidget(field);row->addWidget(hue);auto*side=new QVBoxLayout;row->addLayout(side);preview=new QLabel;preview->setFixedSize(96,64);preview->setAccessibleName("新颜色与原始颜色");side->addWidget(preview);auto*grid=new QGridLayout;side->addLayout(grid);const char*labels[]{"红色","绿色","蓝色"};for(int i=0;i<3;++i){auto*spin=new PaletteChannel;channels[i]=spin;spin->setRange(0,255);spin->setObjectName(QString("paletteRGB%1").arg(i));spin->setAccessibleName(labels[i]);grid->addWidget(new QLabel(labels[i]),i,0);grid->addWidget(spin,i,1);connect(spin,&QSpinBox::valueChanged,owner,[this,i](int v){auto color=hsb.rgb().quantized();double*component[]{&color.red,&color.green,&color.blue};*component[i]=v/255.;hsb.setRGB(color);sync();});}hex=new QLineEdit;hex->setObjectName("paletteHex");hex->setAccessibleName("十六进制颜色");grid->addWidget(new QLabel("#"),3,0);grid->addWidget(hex,3,1);connect(hex,&QLineEdit::editingFinished,owner,[this]{if(auto color=PaletteColor::fromHex(hex->text().toStdString()))hsb.setRGB(*color);sync();});side->addWidget(new QLabel("点击画布取样"));auto*buttons=new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);side->addWidget(buttons);connect(buttons,&QDialogButtonBox::accepted,owner,&QDialog::accept);connect(buttons,&QDialogButtonBox::rejected,owner,&QDialog::reject);field->changed=[this](double x,double y){hsb.saturation=x;hsb.brightness=1-y;sync();};hue->changed=[this](double,double y){hsb.hue=(1-y)*360;sync();};field->componentChanged=hue->componentChanged=[this](int component,double next){if(component==0)hsb.hue=next;else if(component==1)hsb.saturation=next;else hsb.brightness=next;sync();};}
     void sync(){auto color=hsb.rgb().quantized();const double values[]{color.red,color.green,color.blue};for(int i=0;i<3;++i){QSignalBlocker block(channels[i]);channels[i]->setValue(int(std::round(values[i]*255)));}if(!hex->hasFocus()){QSignalBlocker block(hex);hex->setText(QString::fromStdString(color.hex()));}field->changedValues(hsb);hue->changedValues(hsb);QPixmap swatch(preview->size());swatch.fill(rgb(original));QPainter p(&swatch);p.fillRect(0,0,swatch.width(),swatch.height()/2,rgb(color));p.end();preview->setPixmap(swatch);if(owner->onPreview)owner->onPreview(color);}
 };
 PaletteDialog::PaletteDialog(PaletteColor original,const QString&title,QWidget*parent):QDialog(parent,Qt::Tool),impl_(std::make_unique<Impl>(this,original)){impl_->sync();setWindowTitle(title);setModal(false);setSizeGripEnabled(false);layout()->setSizeConstraint(QLayout::SetFixedSize);}

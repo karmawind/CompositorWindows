@@ -30,17 +30,17 @@ void MainWindow::setupSelectionActions(){
     qApp->installEventFilter(this);
     selectionScrollTimer_=new QChronoTimer(this);selectionScrollTimer_->setTimerType(Qt::PreciseTimer);selectionScrollTimer_->setInterval(std::chrono::nanoseconds(16666667));
     connect(selectionScrollTimer_,&QChronoTimer::timeout,this,[this]{try{stepSelectionAutoscroll();}catch(const std::exception& error){pointerCancel();statusBar()->showMessage(error.what());}});
-    auto*menu=menuBar()->addMenu("&Select");
-    for(bool expand:{true,false})action(menu,expand?"Expand…":"Contract…",{},[this,expand]{
+    auto*menu=menuBar()->addMenu("选择(&S)");
+    for(bool expand:{true,false})action(menu,expand?"扩展…":"收缩…",{},[this,expand]{
         auto* p=current();if(!p||!p->document||!p->document->selection)return;
         auto& remembered=expand?selectionExpandAmount_:selectionContractAmount_;bool ok=false;
-        const auto amount=QInputDialog::getDouble(this,expand?"Expand Selection":"Contract Selection","Pixels",remembered,1,500,0,&ok);
+        const auto amount=QInputDialog::getDouble(this,expand?"扩展选区":"收缩选区","像素",remembered,1,500,0,&ok);
         if(ok){remembered=int(amount);if(auto* spin=findChild<QSpinBox*>(expand?"selectionExpandAmount":"selectionContractAmount")){const QSignalBlocker block(spin);spin->setValue(remembered);}resizeSelection(expand,amount);}
     });
-    action(menu,"All",QKeySequence::SelectAll,[this]{edit("Select All",[&](Document&d){d.selection=editing::rasterSelection(editing::SelectionOutline::rectangle({0,0,double(d.width),double(d.height)}),d.width,d.height);});});
+    action(menu,"All",QKeySequence::SelectAll,[this]{edit("全选",[&](Document&d){d.selection=editing::rasterSelection(editing::SelectionOutline::rectangle({0,0,double(d.width),double(d.height)}),d.width,d.height);});});
     action(menu,"Deselect",QKeySequence("Ctrl+D"),[this]{edit("Deselect",[](Document&d){d.selection.reset();});});
-    action(menu,"Feather…",{},[this]{auto*p=current();if(!p||!p->document||!p->document->selection)return;bool ok=false;auto radius=QInputDialog::getDouble(this,"Feather Selection","Radius",2,0,250,1,&ok);if(ok)edit("Feather",[radius](Document&d){if(d.selection)d.selection=editing::featherSelection(*d.selection,radius);});});
-    action(menu,"Color Range…",{},[this]{auto*p=current();auto*l=active();if(!p||!p->document||!l||!l->raster)return;bool ok=false;auto tolerance=QInputDialog::getInt(this,"Color Range","Tolerance",32,0,255,1,&ok);if(!ok)return;edit("Color Range",[l,tolerance](Document&d){auto mask=editing::colorRangeMask(*l->raster,l->raster->width/2,l->raster->height/2,tolerance);if(mask->width!=d.width||mask->height!=d.height)throw std::runtime_error("Color range needs a canvas-sized layer");d.selection=Selection{mask};});});
+    action(menu,"羽化…",{},[this]{auto*p=current();if(!p||!p->document||!p->document->selection)return;bool ok=false;auto radius=QInputDialog::getDouble(this,"羽化选区","半径",2,0,250,1,&ok);if(ok)edit("羽化",[radius](Document&d){if(d.selection)d.selection=editing::featherSelection(*d.selection,radius);});});
+    action(menu,"色彩范围…",{},[this]{auto*p=current();auto*l=active();if(!p||!p->document||!l||!l->raster)return;bool ok=false;auto tolerance=QInputDialog::getInt(this,"色彩范围","容差",32,0,255,1,&ok);if(!ok)return;edit("色彩范围",[l,tolerance](Document&d){auto mask=editing::colorRangeMask(*l->raster,l->raster->width/2,l->raster->height/2,tolerance);if(mask->width!=d.width||mask->height!=d.height)throw std::runtime_error("Color range needs a canvas-sized layer");d.selection=Selection{mask};});});
     action(menu,"Inverse",QKeySequence("Ctrl+Shift+I"),[this]{if(current()&&current()->document&&current()->document->selection)edit("Inverse",[](Document&d){
         if(d.selection->outline)d.selection=editing::rasterSelection(editing::inverseSelection(*d.selection->outline,d.width,d.height),d.width,d.height);
         else if(d.selection->coverage&&d.selection->coverage->source){
@@ -49,33 +49,33 @@ void MainWindow::setupSelectionActions(){
             d.selection=Selection{GrayRaster::sampled(d.width,d.height,{0,0,d.width,d.height},[input](int x,int y){return uint8_t(255-input->pixel(x,y));},input->retainedBytes(),std::move(outline))};
         }else{auto gray=std::make_shared<GrayRaster>();gray->width=d.width;gray->height=d.height;gray->pixels.resize(size_t(d.width)*d.height);for(size_t i=0;i<gray->pixels.size();++i)gray->pixels[i]=d.selection->coverage?255-d.selection->coverage->pixels[i]:255;d.selection=Selection{gray};}
     });});
-    auto*clipboard=menuBar()->addMenu("&Clipboard");
-    action(clipboard,"Cut",QKeySequence::Cut,[this]{copySelection(false,true);});
-    action(clipboard,"Copy",QKeySequence::Copy,[this]{copySelection(false);});
-    action(clipboard,"Copy Merged",QKeySequence("Ctrl+Shift+C"),[this]{copySelection(true);});
-    action(clipboard,"Paste",QKeySequence::Paste,[this]{pasteSelection();});
-    action(clipboard,"Layer via Copy",QKeySequence("Ctrl+J"),[this]{copySelection(false,false,true);});
-    action(clipboard,"Clear",{},[this]{pixelEdit(int(editing::PixelEdit::Clear));});
-    auto*bar=addToolBar("Selection Options");bar->setObjectName("selectionOptions");
-    auto*marquee=bar->addAction("Marquee (M)");bindCommand(marquee,"Tools","Marquee (M)",[this]{selectTool(Tool::Marquee);});commands_->releaseShortcut(marquee);
-    auto*shape=new QComboBox;shape->addItems({"Rectangle","Ellipse"});shape->setAccessibleName("Marquee shape");bar->addWidget(shape);connect(shape,&QComboBox::currentIndexChanged,this,[this](int v){if(selectionGesture_.active())pointerCancel();ellipse_=v==1;selectTool(Tool::Marquee);});
-    auto*lasso=bar->addAction("Lasso (L)");bindCommand(lasso,"Tools","Lasso (L)",[this]{selectTool(Tool::Lasso);});commands_->releaseShortcut(lasso);
-    auto*polygon=bar->addAction("Polygonal Lasso");bindCommand(polygon,"Tools","Polygon",[this]{selectTool(Tool::Polygon);});commands_->releaseShortcut(polygon);
-    auto*lassoKind=new QComboBox;lassoKind->setObjectName("lassoKind");lassoKind->setAccessibleName("Lasso kind");lassoKind->addItems({"Freehand","Polygonal"});bar->addWidget(lassoKind);
+    auto*clipboard=menuBar()->addMenu("剪贴板(&C)");
+    action(clipboard,"剪切",QKeySequence::Cut,[this]{copySelection(false,true);});
+    action(clipboard,"复制",QKeySequence::Copy,[this]{copySelection(false);});
+    action(clipboard,"合并拷贝",QKeySequence("Ctrl+Shift+C"),[this]{copySelection(true);});
+    action(clipboard,"粘贴",QKeySequence::Paste,[this]{pasteSelection();});
+    action(clipboard,"通过拷贝的图层",QKeySequence("Ctrl+J"),[this]{copySelection(false,false,true);});
+    action(clipboard,"清除",{},[this]{pixelEdit(int(editing::PixelEdit::Clear));});
+    auto*bar=addToolBar("选区选项");bar->setObjectName("selectionOptions");
+    auto*marquee=bar->addAction("选框 (M)");bindCommand(marquee,"工具","选框 (M)",[this]{selectTool(Tool::Marquee);});commands_->releaseShortcut(marquee);
+    auto*shape=new QComboBox;shape->addItems({"矩形","椭圆"});shape->setAccessibleName("选框形状");bar->addWidget(shape);connect(shape,&QComboBox::currentIndexChanged,this,[this](int v){if(selectionGesture_.active())pointerCancel();ellipse_=v==1;selectTool(Tool::Marquee);});
+    auto*lasso=bar->addAction("套索 (L)");bindCommand(lasso,"工具","套索 (L)",[this]{selectTool(Tool::Lasso);});commands_->releaseShortcut(lasso);
+    auto*polygon=bar->addAction("多边形套索");bindCommand(polygon,"工具","多边形",[this]{selectTool(Tool::Polygon);});commands_->releaseShortcut(polygon);
+    auto*lassoKind=new QComboBox;lassoKind->setObjectName("lassoKind");lassoKind->setAccessibleName("套索类型");lassoKind->addItems({"手绘","多边形"});bar->addWidget(lassoKind);
     connect(lassoKind,&QComboBox::currentIndexChanged,this,[this](int index){if(selectionGesture_.active())pointerCancel();lassoKind_=index?editing::LassoKind::Polygonal:editing::LassoKind::Freehand;selectTool(Tool::Lasso);});
     for(bool expand:{true,false}){
-        auto* button=bar->addAction(expand?"Expand":"Contract");bindCommand(button,"Select",expand?"Expand…":"Contract…",[this,expand]{resizeSelection(expand,expand?selectionExpandAmount_:selectionContractAmount_);});
-        auto* amount=new QSpinBox;amount->setObjectName(expand?"selectionExpandAmount":"selectionContractAmount");amount->setAccessibleName(expand?"Expand pixels":"Contract pixels");amount->setRange(1,500);amount->setValue(1);amount->setSuffix(" px");bar->addWidget(amount);
+        auto* button=bar->addAction(expand?"扩展":"收缩");bindCommand(button,"选择",expand?"扩展…":"收缩…",[this,expand]{resizeSelection(expand,expand?selectionExpandAmount_:selectionContractAmount_);});
+        auto* amount=new QSpinBox;amount->setObjectName(expand?"selectionExpandAmount":"selectionContractAmount");amount->setAccessibleName(expand?"扩展像素":"收缩像素");amount->setRange(1,500);amount->setValue(1);amount->setSuffix(" px");bar->addWidget(amount);
         connect(amount,&QSpinBox::valueChanged,this,[this,expand](int value){(expand?selectionExpandAmount_:selectionContractAmount_)=value;});
     }
-    auto*mode=new QComboBox;mode->setObjectName("selectionMode");mode->addItems({"New selection","Add","Subtract"});mode->setAccessibleName("Selection mode");bar->addWidget(mode);connect(mode,&QComboBox::currentIndexChanged,this,[this](int i){selectionMode_=editing::SelectionMode(i);});
-    auto*aa=new QCheckBox("Antialias");aa->setChecked(true);bar->addWidget(aa);connect(aa,&QCheckBox::toggled,this,[this](bool v){selectionAntialias_=v;});
-    auto*wandBar=addToolBar("Magic Wand Options");wandBar->setObjectName("wandOptions");auto*tolerance=new QSpinBox;tolerance->setRange(0,255);tolerance->setValue(32);tolerance->setPrefix("Tolerance ");tolerance->setAccessibleName("Wand tolerance");wandBar->addWidget(tolerance);connect(tolerance,&QSpinBox::valueChanged,this,[this](int v){wandTolerance_=v;});
-    auto*sample=new QComboBox;sample->addItems({"Point Sample","3 by 3 Average","5 by 5 Average"});sample->setAccessibleName("Wand sample size");wandBar->addWidget(sample);connect(sample,&QComboBox::currentIndexChanged,this,[this](int v){wandSampleRadius_=v;});auto*contiguous=new QCheckBox("Contiguous");contiguous->setChecked(true);wandBar->addWidget(contiguous);connect(contiguous,&QCheckBox::toggled,this,[this](bool v){wandContiguous_=v;});auto*all=new QCheckBox("Sample All Layers");wandBar->addWidget(all);connect(all,&QCheckBox::toggled,this,[this](bool v){wandAllLayers_=v;});
+    auto*mode=new QComboBox;mode->setObjectName("selectionMode");mode->addItems({"新选区","添加","减去"});mode->setAccessibleName("选区模式");bar->addWidget(mode);connect(mode,&QComboBox::currentIndexChanged,this,[this](int i){selectionMode_=editing::SelectionMode(i);});
+    auto*aa=new QCheckBox("消除锯齿");aa->setChecked(true);bar->addWidget(aa);connect(aa,&QCheckBox::toggled,this,[this](bool v){selectionAntialias_=v;});
+    auto*wandBar=addToolBar("魔棒选项");wandBar->setObjectName("wandOptions");auto*tolerance=new QSpinBox;tolerance->setRange(0,255);tolerance->setValue(32);tolerance->setPrefix("容差 ");tolerance->setAccessibleName("魔棒容差");wandBar->addWidget(tolerance);connect(tolerance,&QSpinBox::valueChanged,this,[this](int v){wandTolerance_=v;});
+    auto*sample=new QComboBox;sample->addItems({"取样点","3 × 3 平均","5 × 5 平均"});sample->setAccessibleName("魔棒取样大小");wandBar->addWidget(sample);connect(sample,&QComboBox::currentIndexChanged,this,[this](int v){wandSampleRadius_=v;});auto*contiguous=new QCheckBox("连续");contiguous->setChecked(true);wandBar->addWidget(contiguous);connect(contiguous,&QCheckBox::toggled,this,[this](bool v){wandContiguous_=v;});auto*all=new QCheckBox("对所有图层取样");wandBar->addWidget(all);connect(all,&QCheckBox::toggled,this,[this](bool v){wandAllLayers_=v;});
 }
 void MainWindow::resizeSelection(bool expand,double amount){
     if(!ui::commandEnabled(ui::CommandGate::ModifySelection,commandState()))return;
-    edit(expand?"Expand Selection":"Contract Selection",[&](Document& document){auto outline=outlineOf(document.selection);if(outline)document.selection=editing::rasterSelection(outline->resized(expand?amount:-amount,document.width,document.height),document.width,document.height);});
+    edit(expand?"扩展选区":"收缩选区",[&](Document& document){auto outline=outlineOf(document.selection);if(outline)document.selection=editing::rasterSelection(outline->resized(expand?amount:-amount,document.width,document.height),document.width,document.height);});
 }
 bool MainWindow::beginSelection(Point point,Qt::KeyboardModifiers modifiers,int clickCount){
     const bool selectionTool=tool_==Tool::Marquee||tool_==Tool::Lasso||tool_==Tool::Polygon||tool_==Tool::Wand;
@@ -97,7 +97,7 @@ bool MainWindow::beginSelection(Point point,Qt::KeyboardModifiers modifiers,int 
     if(mode==editing::SelectionMode::Replace&&inside){
         finishOpacityEdit();selectionOwner_=p;selectionBefore_=p->document->selection;press_=point;movingSelection_=true;
         selectionMoveBox_=before->bounds();
-        p->history.begin("Move Selection",p->document,p->active);refreshSelectionGesture();return true;
+        p->history.begin("移动选区",p->document,p->active);refreshSelectionGesture();return true;
     }
     if(tool_==Tool::Wand){runWand(point,modifiers);return true;}
     if(tool_==Tool::Marquee||tool_==Tool::Polygon)point=snapGesturePoint(point,modifiers);
@@ -246,13 +246,13 @@ void MainWindow::pixelEdit(int operation){
     if(!current()||!current()->document||!active())return;
     QColor color=foreground_;auto kind=editing::PixelEdit(operation);
     if(kind==editing::PixelEdit::Fill){color=QColorDialog::getColor(foreground_,this,"Fill");if(!color.isValid())return;foreground_=color;}
-    edit(kind==editing::PixelEdit::Fill?"Fill":kind==editing::PixelEdit::Invert?"Invert":"Clear",[&](Document&d){*active()=editing::editLayer(*active(),d,kind,{uint8_t(color.red()),uint8_t(color.green()),uint8_t(color.blue()),255},current()->maskSelected);});
+    edit(kind==editing::PixelEdit::Fill?"Fill":kind==editing::PixelEdit::Invert?"反相":"清除",[&](Document&d){*active()=editing::editLayer(*active(),d,kind,{uint8_t(color.red()),uint8_t(color.green()),uint8_t(color.blue()),255},current()->maskSelected);});
 }
 void MainWindow::addPixelLayer(std::shared_ptr<const Raster> raster,Point origin,const char* operation){
     if(!raster||!canEditLayers())return;
     edit(operation,[&](Document& document){
         Layer layer;layer.id=newId();layer.raster=std::move(raster);layer.transform={origin.x,origin.y,double(layer.raster->width),double(layer.raster->height)};
-        int number=1;while(std::any_of(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.name=="Layer "+std::to_string(number);}))++number;layer.name="Layer "+std::to_string(number);
+        int number=1;while(std::any_of(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.name=="图层 "+std::to_string(number);}))++number;layer.name="图层 "+std::to_string(number);
         auto selected=std::find_if(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.id==current()->active;});size_t insertion=document.layers.size();
         if(selected!=document.layers.end()){insertion=size_t(selected-document.layers.begin())+1;layer.parentId=selected->group?selected->id:selected->parentId;}
         current()->active=layer.id;current()->selected={layer.id};current()->maskSelected=false;
@@ -263,7 +263,7 @@ void MainWindow::copySelection(bool merged,bool cut,bool viaLayer){
     auto*p=current();if(!p||!p->document||(!merged&&!active()))return;
     if(viaLayer&&!p->document->selection){layerCommand(3);return;}
     auto result=editing::copyPixels(*p->document,merged?std::nullopt:std::optional<std::string_view>(p->active),SoftwareRenderer(),nullptr,p->maskSelected);if(!result)return;
-    if(viaLayer){addPixelLayer(result->raster,result->origin,"Layer via Copy");return;}
+    if(viaLayer){addPixelLayer(result->raster,result->origin,"通过拷贝的图层");return;}
     auto bytes=result->raster->rgba();QImage image(bytes.data(),result->raster->width,result->raster->height,result->raster->width*4,QImage::Format_RGBA8888_Premultiplied);auto*mime=new QMimeData;mime->setImageData(image.copy());QByteArray png;QBuffer buffer(&png);buffer.open(QIODevice::WriteOnly);image.save(&buffer,"PNG");mime->setData("image/png",png);mime->setData("application/x-compositor-origin",QJsonDocument(QJsonObject{{"x",result->origin.x},{"y",result->origin.y}}).toJson());QApplication::clipboard()->setMimeData(mime);
     if(cut)pixelEdit(int(editing::PixelEdit::Clear));
 }
@@ -273,6 +273,6 @@ void MainWindow::pasteSelection(){
     auto* project=current();if(!project||!project->document)return;
     const auto& document=*project->document;Point origin{std::floor((document.width-raster->width)/2.),std::floor((document.height-raster->height)/2.)};
     if(mime->hasFormat("application/x-compositor-origin")){const auto data=QJsonDocument::fromJson(mime->data("application/x-compositor-origin")).object();origin={data["x"].toDouble(),data["y"].toDouble()};}
-    addPixelLayer(std::move(raster),origin,"Paste");
+    addPixelLayer(std::move(raster),origin,"粘贴");
 }
 }

@@ -32,10 +32,10 @@ void MainWindow::applyLayerEdit(layers::EditResult result){
 }
 void MainWindow::newBlankLayer(){
     if(!canEditLayers())return;
-    edit("New Blank Layer",[this](Document& document){
+    edit("新建空白图层",[this](Document& document){
         Layer layer;layer.id=newId();layer.transform={0,0,double(document.width),double(document.height)};
-        int number=1;while(std::any_of(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.name=="Layer "+std::to_string(number);}))++number;
-        layer.name="Layer "+std::to_string(number);
+        int number=1;while(std::any_of(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.name=="图层 "+std::to_string(number);}))++number;
+        layer.name="图层 "+std::to_string(number);
         auto selected=std::find_if(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.id==current()->active;});
         size_t insertion=document.layers.size();
         if(selected!=document.layers.end()){
@@ -58,13 +58,13 @@ void MainWindow::finishVisibilitySwipe(){
 void MainWindow::layerCommand(int command){
     if(command==14){
         auto* p=current();auto* layer=active();if(!canEditLayers()||!p||!layer||!layer->deep||!layer->deep->isHdr()||layerSelection().ids.size()!=1)return;
-        QMessageBox confirmation(QMessageBox::Question,"Convert HDR to 16-Bit","Values brighter than white and negative colors will be clipped. This conversion can be undone.",QMessageBox::Ok|QMessageBox::Cancel,this);confirmation.setProperty("studioChrome",true);confirmation.setDefaultButton(QMessageBox::Cancel);if(confirmation.exec()!=QMessageBox::Ok)return;
+        QMessageBox confirmation(QMessageBox::Question,"将 HDR 转换为 16 位","比白色更亮的值和负值颜色将被裁剪。此转换可以撤销。",QMessageBox::Ok|QMessageBox::Cancel,this);confirmation.setProperty("studioChrome",true);confirmation.setDefaultButton(QMessageBox::Cancel);if(confirmation.exec()!=QMessageBox::Ok)return;
         const auto original=*layer;QPointer<NativeCanvas> token=p->canvas;ui::LastFilterJob::Host host;
         host.settled=[this,token]{if(!token)return;for(auto& project:projects_)if(project->canvas==token){project->projectBusy=false;refresh(false,false);break;}};
-        host.error=[this](const QString& error){QMessageBox::critical(this,"Convert HDR to 16-Bit",error);};
-        host.commit=[this,p,token,original](Layer converted){if(!token||current()!=p||p->canvas!=token||!p->document)return;auto target=std::find_if(p->document->layers.begin(),p->document->layers.end(),[&](const Layer& l){return l.id==original.id;});if(target==p->document->layers.end()||*target!=original)return;edit("Convert HDR to 16-Bit",[&](Document&){*target=std::move(converted);});};
+        host.error=[this](const QString& error){QMessageBox::critical(this,"将 HDR 转换为 16 位",error);};
+        host.commit=[this,p,token,original](Layer converted){if(!token||current()!=p||p->canvas!=token||!p->document)return;auto target=std::find_if(p->document->layers.begin(),p->document->layers.end(),[&](const Layer& l){return l.id==original.id;});if(target==p->document->layers.end()||*target!=original)return;edit("将 HDR 转换为 16 位",[&](Document&){*target=std::move(converted);});};
         p->projectBusy=true;refresh(false,false);
-        try{new ui::LastFilterJob([original](std::function<bool()> cancelled){auto layer=original;layer.deep=hdrTo16Bit(*original.deep,cancelled);layer.raster=rasterFromDeep(*layer.deep);return layer;},std::move(host),this,p,"Converting HDR pixels…");}
+        try{new ui::LastFilterJob([original](std::function<bool()> cancelled){auto layer=original;layer.deep=hdrTo16Bit(*original.deep,cancelled);layer.raster=rasterFromDeep(*layer.deep);return layer;},std::move(host),this,p,"正在转换 HDR 像素…");}
         catch(...){p->projectBusy=false;refresh(false,false);throw;}return;
     }
     applyGradient();if(transformSession_&&transformSession_->persistent)applyTransformSession();pointerCancel();
@@ -77,14 +77,14 @@ void MainWindow::layerCommand(int command){
         case 4:applyLayerEdit(layers::moveSibling(d,selection,1));break;
         case 5:applyLayerEdit(layers::moveSibling(d,selection,-1));break;
         case 6:{auto plan=layers::deletionPlan(d,selection);auto mode=layers::DeleteMode::Bake;
-            if(!plan.dependents.empty()){QMessageBox box(QMessageBox::Question,"Delete Layers","Other layers use the selected layers as clipping sources.",QMessageBox::Cancel,this);auto*bake=box.addButton("Bake Appearance",QMessageBox::AcceptRole);auto*release=box.addButton("Remove Clipping Links",QMessageBox::DestructiveRole);box.exec();if(box.clickedButton()==bake)mode=layers::DeleteMode::Bake;else if(box.clickedButton()==release)mode=layers::DeleteMode::RemoveLinks;else return;}
+            if(!plan.dependents.empty()){QMessageBox box(QMessageBox::Question,"删除图层","其他图层将所选图层用作剪贴源。",QMessageBox::Cancel,this);auto*bake=box.addButton("烘焙外观",QMessageBox::AcceptRole);auto*release=box.addButton("移除剪贴链接",QMessageBox::DestructiveRole);box.exec();if(box.clickedButton()==bake)mode=layers::DeleteMode::Bake;else if(box.clickedButton()==release)mode=layers::DeleteMode::RemoveLinks;else return;}
             applyLayerEdit(layers::erase(d,selection,mode));break;}
         case 7:applyLayerEdit(layers::toggleClipping(d,selection,p->active));break;
         case 8:mergeLayers();break;
         case 9:{
-            QStringList titles{"New Project"};std::vector<QPointer<QObject>> identities{nullptr};
+            QStringList titles{"新建项目"};std::vector<QPointer<QObject>> identities{nullptr};
             for(int i=0;i<int(projects_.size());++i)if(projects_[i].get()!=p&&!projects_[i]->importing&&!projects_[i]->projectBusy){identities.push_back(projects_[i]->canvas);titles.append(tabs_->tabText(i));}
-            QInputDialog dialog(this);dialog.setWindowTitle("Copy Layer to Project");dialog.setLabelText("Destination project");dialog.setComboBoxItems(titles);dialog.setComboBoxEditable(false);
+            QInputDialog dialog(this);dialog.setWindowTitle("复制图层到项目");dialog.setLabelText("目标项目");dialog.setComboBoxItems(titles);dialog.setComboBoxEditable(false);
             auto* choices=dialog.findChild<QComboBox*>();if(!choices)throw std::runtime_error("Copy destination control is unavailable");
             for(int i=0;i<int(identities.size());++i)choices->setItemData(i,QVariant::fromValue(identities[size_t(i)].data()));
             if(dialog.exec()!=QDialog::Accepted)return;
@@ -93,23 +93,23 @@ void MainWindow::layerCommand(int command){
             else{if(choices->currentIndex()!=0)return;target=&addEmptyProject(false);}
             const bool first=!target->document;Document destination;
             if(target->document)destination=*target->document;
-            else{destination.id=newId();destination.width=d.width;destination.height=d.height;Layer blank;blank.id=newId();blank.name="Layer 1";blank.transform={0,0,double(d.width),double(d.height)};destination.layers.push_back(blank);}
+            else{destination.id=newId();destination.width=d.width;destination.height=d.height;Layer blank;blank.id=newId();blank.name="图层 1";blank.transform={0,0,double(d.width),double(d.height)};destination.layers.push_back(blank);}
             auto result=layers::copySubtree(d,p->active,destination);
             ui::commitPreparedLayerCopy(*target,target->document,target->active,result.edit);
             for(int i=0;i<int(projects_.size());++i)if(projects_[i].get()==target)tabs_->setCurrentIndex(i);refresh();if(first)target->canvas->fit();break;
         }
         case 10:QTimer::singleShot(0,this,[this]{if(auto*item=layers_->currentItem())layers_->editItem(item,0);});break;
-        case 11:if(active()){edit("Layer Visibility",[this](Document&){active()->visible=!active()->visible;},false);if(auto* panel=ui::LayerPanelController::find(layers_))panel->syncVisibilityChrome();}break;
+        case 11:if(active()){edit("图层可见性",[this](Document&){active()->visible=!active()->visible;},false);if(auto* panel=ui::LayerPanelController::find(layers_))panel->syncVisibilityChrome();}break;
         case 12:applyLayerEdit(layers::releaseClipping(d,selection,p->active));break;
         case 13:applyLayerEdit(layers::ungroup(d,selection));break;
     }
 }
 void MainWindow::setupLayerActions(){
-    QMenu*menu=nullptr;for(auto*a:menuBar()->actions())if(a->text()=="&Layer")menu=a->menu();if(!menu)return;
-    action(menu,"New Group",{},[this]{layerCommand(0);});action(menu,"Group Selected",QKeySequence("Ctrl+G"),[this]{layerCommand(1);});action(menu,"Ungroup",QKeySequence("Shift+Ctrl+G"),[this]{layerCommand(13);});action(menu,"Move Out of Group",{},[this]{layerCommand(2);});
-    action(menu,"Text Layer…",{},[this]{if(!current()||!current()->document)return;selectTool(Tool::Text);beginText({32,32},true);});
-    action(menu,"Create / Release Clipping Mask",QKeySequence("Ctrl+Alt+G"),[this]{layerCommand(7);});action(menu,"Merge Layers",QKeySequence("Ctrl+E"),[this]{layerCommand(8);});action(menu,"Copy Layer to Project…",{},[this]{layerCommand(9);});
-    action(menu,"Convert HDR to 16-Bit…",{},[this]{layerCommand(14);});
+    QMenu*menu=nullptr;for(auto*a:menuBar()->actions())if(a->text()=="图层(&L)")menu=a->menu();if(!menu)return;
+    action(menu,"新建编组",{},[this]{layerCommand(0);});action(menu,"编组所选图层",QKeySequence("Ctrl+G"),[this]{layerCommand(1);});action(menu,"取消编组",QKeySequence("Shift+Ctrl+G"),[this]{layerCommand(13);});action(menu,"移出编组",{},[this]{layerCommand(2);});
+    action(menu,"文本图层…",{},[this]{if(!current()||!current()->document)return;selectTool(Tool::Text);beginText({32,32},true);});
+    action(menu,"创建 / 释放剪贴蒙版",QKeySequence("Ctrl+Alt+G"),[this]{layerCommand(7);});action(menu,"合并图层",QKeySequence("Ctrl+E"),[this]{layerCommand(8);});action(menu,"将图层复制到项目…",{},[this]{layerCommand(9);});
+    action(menu,"将 HDR 转换为 16 位…",{},[this]{layerCommand(14);});
     ui::LayerPanelController::Host host;
     host.dragOwner=[this]()->QObject*{auto*p=current();return p?p->canvas:nullptr;};
     host.prepare=[this]{if(refreshing_)return;applyGradient();if(transformSession_&&transformSession_->persistent)applyTransformSession();finishOpacityEdit();pointerCancel();};
@@ -125,7 +125,7 @@ void MainWindow::setupLayerActions(){
         if(!canEditLayers())return {};finishVisibilitySwipe();finishOpacityEdit();
         auto* project=current();auto& document=*project->document;
         auto found=std::find_if(document.layers.begin(),document.layers.end(),[&](const Layer& layer){return layer.id==id;});if(found==document.layers.end())return {};
-        const bool visible=!found->visible;visibilityOwner_=project;project->history.begin(visible?"Show Layer":"Hide Layer",project->document,project->active);
+        const bool visible=!found->visible;visibilityOwner_=project;project->history.begin(visible?"显示图层":"隐藏图层",project->document,project->active);
         found->visible=visible;refresh(true,false);if(auto* panel=ui::LayerPanelController::find(layers_))panel->syncVisibilityChrome();return visible;
     };
     host.setVisibilityInSwipe=[this](const std::string& id,bool visible){
@@ -150,33 +150,33 @@ void MainWindow::setupLayerActions(){
                 if(found==owner->document->layers.end())return;
                 const bool renamed=!name.empty()&&name!=found->name;if(!renamed&&visible==found->visible)return;
                 applyGradient();if(transformSession_&&transformSession_->persistent)applyTransformSession();pointerCancel();
-                const bool visibilityOnly=!renamed;edit(renamed?"Rename Layer":"Layer Visibility",[&](Document& document){for(auto& layer:document.layers)if(layer.id==id){layer.visible=visible;if(!name.empty())layer.name=name;}},!visibilityOnly);if(visibilityOnly)if(auto* panel=ui::LayerPanelController::find(layers_))panel->syncVisibilityChrome();
+                const bool visibilityOnly=!renamed;edit(renamed?"重命名图层":"图层可见性",[&](Document& document){for(auto& layer:document.layers)if(layer.id==id){layer.visible=visible;if(!name.empty())layer.name=name;}},!visibilityOnly);if(visibilityOnly)if(auto* panel=ui::LayerPanelController::find(layers_))panel->syncVisibilityChrome();
             }catch(const std::exception& error){statusBar()->showMessage(QString::fromUtf8(error.what()));}
         });
     });
     connect(layers_,&QTreeWidget::itemDoubleClicked,this,[this](QTreeWidgetItem*item,int column){if(!item||column!=0)return;const auto id=item->data(0,Qt::UserRole).toString().toStdString();selectLayerTarget(id,false);if(active()&&!active()->adjustmentJson.empty())adjust({},true,true);else if(auto* current=layers_->currentItem())layers_->editItem(current,0);});
-    auto*masks=menu->addMenu("Mask");masks->setObjectName("layerMaskMenu");
+    auto*masks=menu->addMenu("蒙版");masks->setObjectName("layerMaskMenu");
     struct Entry{const char* text;const char* name;ui::MaskCommand command;};
-    for(const auto& entry:std::vector<Entry>{{"Add White Mask (Reveal Selection)","maskAddReveal",ui::MaskCommand::AddReveal},{"Add Black Mask (Hide Selection)","maskAddHide",ui::MaskCommand::AddHide},{"Reveal All","maskRevealAll",ui::MaskCommand::RevealAll},{"Hide All","maskHideAll",ui::MaskCommand::HideAll},{"Enable / Disable Mask","maskToggleEnabled",ui::MaskCommand::ToggleEnabled},{"Link / Unlink Mask","maskToggleLink",ui::MaskCommand::ToggleLink},{"Delete Mask","maskDelete",ui::MaskCommand::Delete},{"Edit Image","maskEditImage",ui::MaskCommand::EditImage},{"Edit Mask","maskEditMask",ui::MaskCommand::EditMask},{"Select Image Alpha","maskLoadAlpha",ui::MaskCommand::LoadAlpha},{"Select Mask Black Areas","maskLoadBlack",ui::MaskCommand::LoadBlack}}){auto*a=action(masks,entry.text,{},[this,command=entry.command]{maskCommand(int(command));});a->setObjectName(entry.name);a->setProperty("maskCommand",int(entry.command));}
+    for(const auto& entry:std::vector<Entry>{{"添加白色蒙版（显示选区）","maskAddReveal",ui::MaskCommand::AddReveal},{"添加黑色蒙版（隐藏选区）","maskAddHide",ui::MaskCommand::AddHide},{"显示全部","maskRevealAll",ui::MaskCommand::RevealAll},{"隐藏全部","maskHideAll",ui::MaskCommand::HideAll},{"启用 / 停用蒙版","maskToggleEnabled",ui::MaskCommand::ToggleEnabled},{"链接 / 取消链接蒙版","maskToggleLink",ui::MaskCommand::ToggleLink},{"删除蒙版","maskDelete",ui::MaskCommand::Delete},{"编辑图像","maskEditImage",ui::MaskCommand::EditImage},{"编辑蒙版","maskEditMask",ui::MaskCommand::EditMask},{"选择图像 Alpha","maskLoadAlpha",ui::MaskCommand::LoadAlpha},{"选择蒙版黑色区域","maskLoadBlack",ui::MaskCommand::LoadBlack}}){auto*a=action(masks,entry.text,{},[this,command=entry.command]{maskCommand(int(command));});a->setObjectName(entry.name);a->setProperty("maskCommand",int(entry.command));}
 
-    auto*parent=layers_->parentWidget();auto*layout=qobject_cast<QVBoxLayout*>(parent->layout());if(layout){auto*editTarget=new QComboBox(parent);editTarget->setObjectName("layerEditTarget");editTarget->setAccessibleName("Layer editing target");editTarget->addItems({"Edit image","Edit mask"});layout->addWidget(editTarget);editTarget->hide();connect(editTarget,&QComboBox::currentIndexChanged,this,[this](int value){if(!refreshing_)maskCommand(int(value?ui::MaskCommand::EditMask:ui::MaskCommand::EditImage));});auto*footer=new QHBoxLayout;auto addButton=[&](QString text,QString name,std::function<void()> fn){auto*button=new QPushButton(text,parent);button->setObjectName(name);button->setAccessibleName(text);connect(button,&QPushButton::clicked,this,[this,fn]{try{fn();}catch(const std::exception&e){statusBar()->showMessage(e.what());}});footer->addWidget(button);};addButton("Group","layerGroupButton",[this]{layerCommand(1);});addButton("Add Mask","layerAddMaskButton",[this]{maskCommand(int(ui::MaskCommand::AddReveal));});auto*effectsButton=new QToolButton(parent);effectsButton->setObjectName("layerEffectsButton");effectsButton->setText("Effects");effectsButton->setAccessibleName("Effects");effectsButton->setPopupMode(QToolButton::InstantPopup);auto*effectsMenu=new QMenu(effectsButton);effectsMenu->setObjectName("layerEffectsMenu");const std::pair<const char*,int> effectKinds[]={{"Stroke",0},{"Drop Shadow",1},{"Color Overlay",2},{"Inner Shadow",3},{"Outer Glow",4},{"Inner Glow",5}};for(const auto& kind:effectKinds){auto*item=effectsMenu->addAction(kind.first);connect(item,&QAction::triggered,this,[this,which=kind.second]{editLayerEffect(which);});}effectsButton->setMenu(effectsMenu);footer->addWidget(effectsButton);addButton("Delete","layerDeleteButton",[this]{auto*p=current();if(p&&p->maskSelected&&layerSelection().ids.size()==1)maskCommand(int(ui::MaskCommand::Delete));else layerCommand(6);});layout->addLayout(footer);}}
+    auto*parent=layers_->parentWidget();auto*layout=qobject_cast<QVBoxLayout*>(parent->layout());if(layout){auto*editTarget=new QComboBox(parent);editTarget->setObjectName("layerEditTarget");editTarget->setAccessibleName("图层编辑目标");editTarget->addItems({"编辑图像","编辑蒙版"});layout->addWidget(editTarget);editTarget->hide();connect(editTarget,&QComboBox::currentIndexChanged,this,[this](int value){if(!refreshing_)maskCommand(int(value?ui::MaskCommand::EditMask:ui::MaskCommand::EditImage));});auto*footer=new QHBoxLayout;auto addButton=[&](QString text,QString name,std::function<void()> fn){auto*button=new QPushButton(text,parent);button->setObjectName(name);button->setAccessibleName(text);connect(button,&QPushButton::clicked,this,[this,fn]{try{fn();}catch(const std::exception&e){statusBar()->showMessage(e.what());}});footer->addWidget(button);};addButton("编组","layerGroupButton",[this]{layerCommand(1);});addButton("添加蒙版","layerAddMaskButton",[this]{maskCommand(int(ui::MaskCommand::AddReveal));});auto*effectsButton=new QToolButton(parent);effectsButton->setObjectName("layerEffectsButton");effectsButton->setText("效果");effectsButton->setAccessibleName("效果");effectsButton->setPopupMode(QToolButton::InstantPopup);auto*effectsMenu=new QMenu(effectsButton);effectsMenu->setObjectName("layerEffectsMenu");const std::pair<const char*,int> effectKinds[]={{"描边",0},{"投影",1},{"颜色叠加",2},{"内阴影",3},{"外发光",4},{"内发光",5}};for(const auto& kind:effectKinds){auto*item=effectsMenu->addAction(kind.first);connect(item,&QAction::triggered,this,[this,which=kind.second]{editLayerEffect(which);});}effectsButton->setMenu(effectsMenu);footer->addWidget(effectsButton);addButton("删除","layerDeleteButton",[this]{auto*p=current();if(p&&p->maskSelected&&layerSelection().ids.size()==1)maskCommand(int(ui::MaskCommand::Delete));else layerCommand(6);});layout->addLayout(footer);}}
 void MainWindow::editLayerEffect(int kind){
     auto* project=current();if(!project||!project->document||!canEditLayers())return;
     const auto id=project->active;if(id.empty())return;
     auto locate=[&]()->Layer*{auto found=std::find_if(project->document->layers.begin(),project->document->layers.end(),[&](const Layer& layer){return layer.id==id;});return found==project->document->layers.end()||found->group?nullptr:&*found;};
     auto* layer=locate();if(!layer)return;
     const Document original=*project->document;
-    const char* titles[]={"Stroke","Drop Shadow","Color Overlay","Inner Shadow","Outer Glow","Inner Glow"};
+    const char* titles[]={"描边","投影","颜色叠加","内阴影","外发光","内发光"};
     QDialog dialog(this);dialog.setWindowTitle(titles[std::clamp(kind,0,5)]);dialog.setObjectName("layerEffectDialog");
     auto* form=new QFormLayout(&dialog);
-    auto* enabled=new QCheckBox("Enabled",&dialog);enabled->setChecked(true);
+    auto* enabled=new QCheckBox("启用",&dialog);enabled->setChecked(true);
     auto* opacity=new QDoubleSpinBox(&dialog);opacity->setRange(0,1);opacity->setSingleStep(.05);opacity->setDecimals(2);
     auto* size=new QDoubleSpinBox(&dialog);size->setRange(0,250);size->setDecimals(1);
     auto* angle=new QDoubleSpinBox(&dialog);angle->setRange(-360,360);angle->setDecimals(1);
     auto* distance=new QDoubleSpinBox(&dialog);distance->setRange(0,30000);distance->setDecimals(1);
-    auto* position=new QComboBox(&dialog);position->addItems({"Outside","Center","Inside"});
-    auto* blend=new QComboBox(&dialog);for(const char* name:blendNames)blend->addItem(name);
-    auto* colorButton=new QPushButton("Color",&dialog);
+    auto* position=new QComboBox(&dialog);position->addItems({"外部","居中","内部"});
+    auto* blend=new QComboBox(&dialog);for(size_t bi=0;bi<blendNames.size();++bi)blend->addItem(QString::fromUtf8(blendDisplayName(bi)));
+    auto* colorButton=new QPushButton("颜色",&dialog);
     Pixel color{0,0,0,255};
     if(kind==0){enabled->setChecked(layer->effects.stroke.enabled||!layer->effects.specified);size->setValue(layer->effects.stroke.size);position->setCurrentIndex(layer->effects.stroke.position);color=layer->effects.stroke.color;}
     else if(kind==1||kind==3){auto& shadow=kind==1?layer->effects.dropShadow:layer->effects.innerShadow;enabled->setChecked(shadow.enabled||!layer->effects.specified);opacity->setValue(shadow.opacity);angle->setValue(shadow.angle);distance->setValue(shadow.distance);size->setValue(shadow.size);blend->setCurrentIndex(int(shadow.blend));color=shadow.color;}
@@ -195,16 +195,16 @@ void MainWindow::editLayerEffect(int kind){
         else refresh(true,false);
     };
     form->addRow(enabled);
-    if(kind!=0)form->addRow("Opacity",opacity);
-    if(kind!=2)form->addRow("Size",size);
-    if(kind==1||kind==3){form->addRow("Angle",angle);form->addRow("Distance",distance);}
+    if(kind!=0)form->addRow("不透明度",opacity);
+    if(kind!=2)form->addRow("大小",size);
+    if(kind==1||kind==3){form->addRow("角度",angle);form->addRow("距离",distance);}
     if(kind==0)form->addRow("Position",position);
     if(kind!=0)form->addRow("Blend",blend);
     form->addRow(colorButton);
     auto* buttons=new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,&dialog);form->addRow(buttons);
     connect(buttons,&QDialogButtonBox::accepted,&dialog,&QDialog::accept);connect(buttons,&QDialogButtonBox::rejected,&dialog,&QDialog::reject);
     connect(enabled,&QCheckBox::toggled,&dialog,republish);connect(opacity,qOverload<double>(&QDoubleSpinBox::valueChanged),&dialog,republish);connect(size,qOverload<double>(&QDoubleSpinBox::valueChanged),&dialog,republish);connect(angle,qOverload<double>(&QDoubleSpinBox::valueChanged),&dialog,republish);connect(distance,qOverload<double>(&QDoubleSpinBox::valueChanged),&dialog,republish);connect(position,&QComboBox::currentIndexChanged,&dialog,republish);connect(blend,&QComboBox::currentIndexChanged,&dialog,republish);
-    connect(colorButton,&QPushButton::clicked,&dialog,[&]{auto chosen=QColorDialog::getColor(QColor(color.r,color.g,color.b),&dialog,"Effect Color");if(!chosen.isValid())return;color={uint8_t(chosen.red()),uint8_t(chosen.green()),uint8_t(chosen.blue()),255};paint();republish();});
+    connect(colorButton,&QPushButton::clicked,&dialog,[&]{auto chosen=QColorDialog::getColor(QColor(color.r,color.g,color.b),&dialog,"效果颜色");if(!chosen.isValid())return;color={uint8_t(chosen.red()),uint8_t(chosen.green()),uint8_t(chosen.blue()),255};paint();republish();});
     republish();
     if(dialog.exec()!=QDialog::Accepted){*project->document=original;if(textSession_&&textSession_->owner==project&&textSession_->layerId==id)publishTextEdit();else refresh(false,false);return;}
     project->history.begin(titles[std::clamp(kind,0,5)],original,project->active);project->history.end(project->document,project->active);refresh();

@@ -216,26 +216,26 @@ std::pair<int,int> wordRange(const QString& text,int index){
 }
 }
 void MainWindow::setupTypeControls(){
-    auto* bar=addToolBar("Type Options");bar->setObjectName("typeOptions");
-    auto* fonts=new QFontComboBox;fonts->setObjectName("textFont");fonts->setAccessibleName("Text font");fonts->setFixedWidth(180);fonts->setItemDelegate(new FontFamilyDelegate(fonts));
-    fonts->setEditable(true);fonts->lineEdit()->setReadOnly(true);fonts->lineEdit()->setPlaceholderText("Multiple");
+    auto* bar=addToolBar("文本选项");bar->setObjectName("typeOptions");
+    auto* fonts=new QFontComboBox;fonts->setObjectName("textFont");fonts->setAccessibleName("文本字体");fonts->setFixedWidth(180);fonts->setItemDelegate(new FontFamilyDelegate(fonts));
+    fonts->setEditable(true);fonts->lineEdit()->setReadOnly(true);fonts->lineEdit()->setPlaceholderText("多种");
     fonts->setCurrentFont(QFont(QString::fromStdString(textDefaults_.fontFamily)));
-    auto* styles=new QComboBox;styles->setObjectName("textStyle");styles->setAccessibleName("Text style");styles->setFixedWidth(120);
-    styles->setEditable(true);styles->lineEdit()->setReadOnly(true);styles->lineEdit()->setPlaceholderText("Multiple");
+    auto* styles=new QComboBox;styles->setObjectName("textStyle");styles->setAccessibleName("文本样式");styles->setFixedWidth(120);
+    styles->setEditable(true);styles->lineEdit()->setReadOnly(true);styles->lineEdit()->setPlaceholderText("多种");
     openComboOnFieldClick(fonts);openComboOnFieldClick(styles);
     textFontBox_=fonts;textStyleBox_=styles;
-    auto* size=new ui::PropertyNumber;size->setObjectName("textSize");size->setAccessibleName("Text size");size->setRange(1,1000);size->setDecimals(0);size->setValue(textDefaults_.fontSize);size->setSuffix(" px");
+    auto* size=new ui::PropertyNumber;size->setObjectName("textSize");size->setAccessibleName("文本大小");size->setRange(1,1000);size->setDecimals(0);size->setValue(textDefaults_.fontSize);size->setSuffix(" px");
     size->releaseFocus=[this]{focusTextCanvas();};
-    auto* color=new QToolButton;color->setObjectName("textColor");color->setAccessibleName("Text color");color->setFixedSize(36,22);
+    auto* color=new QToolButton;color->setObjectName("textColor");color->setAccessibleName("文本颜色");color->setFixedSize(36,22);
     auto* align=new QButtonGroup(bar);align->setObjectName("textAlign");align->setExclusive(true);
     auto addAlign=[&](const char* name,const QString& label,TextAlignment value){auto* button=new QToolButton;button->setObjectName(name);button->setAccessibleName(label);button->setText(label);button->setCheckable(true);button->setAutoRaise(true);align->addButton(button,int(value));bar->addWidget(button);return button;};
-    auto* tracking=new ui::PropertyNumber;tracking->setObjectName("textTracking");tracking->setAccessibleName("Tracking");tracking->setRange(-100,1000);tracking->setDecimals(0);tracking->setValue(0);tracking->releaseFocus=[this]{focusTextCanvas();};
-    auto* leading=new QLineEdit;leading->setObjectName("textLeading");leading->setAccessibleName("Leading");leading->setPlaceholderText("Auto");leading->setFixedWidth(64);
-    auto* applyForeground=new QAction("Apply Text Color",this);applyForeground->setObjectName("textApplyForeground");
-    auto* cancel=bar->addAction("Cancel");cancel->setObjectName("textCancel");
-    auto* done=bar->addAction("Done");done->setObjectName("textDone");
+    auto* tracking=new ui::PropertyNumber;tracking->setObjectName("textTracking");tracking->setAccessibleName("字距");tracking->setRange(-100,1000);tracking->setDecimals(0);tracking->setValue(0);tracking->releaseFocus=[this]{focusTextCanvas();};
+    auto* leading=new QLineEdit;leading->setObjectName("textLeading");leading->setAccessibleName("行距");leading->setPlaceholderText("自动");leading->setFixedWidth(64);
+    auto* applyForeground=new QAction("应用文本颜色",this);applyForeground->setObjectName("textApplyForeground");
+    auto* cancel=bar->addAction("取消");cancel->setObjectName("textCancel");
+    auto* done=bar->addAction("完成");done->setObjectName("textDone");
     bar->addWidget(fonts);bar->addWidget(styles);bar->addWidget(size);bar->addWidget(color);
-    addAlign("textAlignLeft","Align left",TextAlignment::Left);addAlign("textAlignCenter","Align center",TextAlignment::Center);addAlign("textAlignRight","Align right",TextAlignment::Right);
+    addAlign("textAlignLeft","左对齐",TextAlignment::Left);addAlign("textAlignCenter","居中对齐",TextAlignment::Center);addAlign("textAlignRight","右对齐",TextAlignment::Right);
     bar->addWidget(tracking);bar->addWidget(leading);bar->addAction(cancel);bar->addAction(done);
     connect(fonts,&QFontComboBox::currentFontChanged,this,[this,fonts](const QFont& font){if(refreshing_||fonts->property("typePopupQuiet").toBool()||(fonts->view()&&fonts->view()->isVisible()))return;applyTextFont(font.family().toStdString());});
     auto* fontTimer=new QTimer(fonts);fontTimer->setSingleShot(true);fontTimer->setInterval(80);
@@ -274,7 +274,7 @@ void MainWindow::setupTypeControls(){
         const int start=std::min(textSession_->caret,textSession_->anchor),length=std::abs(textSession_->caret-textSession_->anchor);
         double red=0,green=0,blue=0;text::colorAt(textSession_->style,length>0?start:std::max(0,start-1),red,green,blue);
         colorBeforePicker_=textSession_->style;
-        auto* dialog=new PaletteDialog({red,green,blue},"Text Color",this);
+        auto* dialog=new PaletteDialog({red,green,blue},"文本颜色",this);
         dialog->onPreview=[this](effects_tools::PaletteColor color){previewTextColor(color.red,color.green,color.blue);};
         connect(dialog,&QDialog::finished,this,[this,dialog](int result){
             if(textSession_&&colorBeforePicker_){
@@ -303,19 +303,19 @@ void MainWindow::refreshTypeControls(){
     const auto family=length>0?text::uniformFont(style,start,length):text::fontAt(style,std::max(0,start-1));
     const auto variant=length>0?text::uniformStyle(style,start,length):text::styleAt(style,std::max(0,start-1));
     const bool mixed=length>0&&family.empty();
-    if(fonts){const QSignalBlocker block(fonts);if(const int marker=fonts->findText("Multiple");marker>=0&&!mixed)fonts->removeItem(marker);if(mixed){if(fonts->findText("Multiple")<0)fonts->insertItem(0,"Multiple");fonts->setCurrentIndex(fonts->findText("Multiple"));}else if(!family.empty()&&!(editing&&textSession_->fontPreviewOriginal)){const QString wanted=QString::fromStdString(family);if(fonts->currentFont().family()!=wanted)fonts->setCurrentFont(QFont(wanted));}fonts->setEnabled(tool_==Tool::Text||editing);}
+    if(fonts){const QSignalBlocker block(fonts);if(const int marker=fonts->findText("多种");marker>=0&&!mixed)fonts->removeItem(marker);if(mixed){if(fonts->findText("多种")<0)fonts->insertItem(0,"多种");fonts->setCurrentIndex(fonts->findText("多种"));}else if(!family.empty()&&!(editing&&textSession_->fontPreviewOriginal)){const QString wanted=QString::fromStdString(family);if(fonts->currentFont().family()!=wanted)fonts->setCurrentFont(QFont(wanted));}fonts->setEnabled(tool_==Tool::Text||editing);}
     else if(fonts)fonts->setEnabled(true);
     if(styles){const QSignalBlocker block(styles);
-        if(mixed){if(styles->findText("Multiple")<0){styles->clear();styles->addItem("Multiple");}styles->setCurrentIndex(styles->findText("Multiple"));}
+        if(mixed){if(styles->findText("多种")<0){styles->clear();styles->addItem("多种");}styles->setCurrentIndex(styles->findText("多种"));}
         else if(!(editing&&textSession_->fontPreviewOriginal)){
             QString listed=QString::fromStdString(family.empty()?style.fontFamily:family);
             if(listed.isEmpty()&&fonts)listed=fonts->currentFont().family();
             static QString cachedStyleFamily;static QStringList cachedStyleNames;
             if(listed!=cachedStyleFamily){cachedStyleNames=QFontDatabase::styles(listed);if(cachedStyleNames.isEmpty()&&fonts)cachedStyleNames=QFontDatabase::styles(fonts->currentFont().family());cachedStyleFamily=listed;}
             auto names=cachedStyleNames;
-            if(names.isEmpty())names=QStringList{"Regular","Bold","Italic","Bold Italic"};
+            if(names.isEmpty())names=QStringList{"常规","加粗","斜体","粗斜体"};
             if(styles->count()!=names.size()||(styles->count()&&styles->itemText(0)!=names.value(0))){styles->clear();for(const auto& name:names)styles->addItem(name);}
-            QString wanted=QString::fromStdString(variant.empty()?std::string("Regular"):variant);
+            QString wanted=QString::fromStdString(variant.empty()?std::string("常规"):variant);
             int found=styles->findText(wanted);if(found<0)found=styles->findText(wanted,Qt::MatchContains);if(found>=0)styles->setCurrentIndex(found);
         }
         styles->setEnabled(tool_==Tool::Text||editing);}
@@ -564,24 +564,24 @@ bool MainWindow::finishText(){
     try{
         if(session.layerId.empty()){
             if(blank){clear();if(project==current())refresh(false,false);return true;}
-            if(!text::textRunsValid(session.style))throw std::runtime_error("Invalid text");
+            if(!text::textRunsValid(session.style))throw std::runtime_error("无效文本");
             auto drawn=text::rasterize(session.style);
-            commit("New Text Layer",[&](Document& document){Layer layer;layer.id=newId();layer.name=layerNameFor(session.style.value);layer.text=session.style;layer.raster=drawn.raster;layer.transform={session.originX,session.originY,double(drawn.width),double(drawn.height)};document.layers.push_back(std::move(layer));project->active=document.layers.back().id;project->selected={project->active};project->maskSelected=false;});
+            commit("新建文本图层",[&](Document& document){Layer layer;layer.id=newId();layer.name=layerNameFor(session.style.value);layer.text=session.style;layer.raster=drawn.raster;layer.transform={session.originX,session.originY,double(drawn.width),double(drawn.height)};document.layers.push_back(std::move(layer));project->active=document.layers.back().id;project->selected={project->active};project->maskSelected=false;});
         }else{
             auto found=std::find_if(project->document->layers.begin(),project->document->layers.end(),[&](const Layer& layer){return layer.id==session.layerId;});
             if(found==project->document->layers.end()){clear();if(project==current())refresh(false,false);return true;}
-            if(blank){const auto id=session.layerId;commit("Edit Text",[&](Document& document){auto layer=std::find_if(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.id==id;});if(layer!=document.layers.end())document.layers.erase(layer);if(project->active==id){project->active=document.layers.empty()?"":document.layers.back().id;project->selected={project->active};}});}
+            if(blank){const auto id=session.layerId;commit("编辑文本",[&](Document& document){auto layer=std::find_if(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.id==id;});if(layer!=document.layers.end())document.layers.erase(layer);if(project->active==id){project->active=document.layers.empty()?"":document.layers.back().id;project->selected={project->active};}});}
             else{
                 const bool sameText=found->text&&*found->text==session.style;
                 const bool sameOrigin=std::abs(session.homeOriginX-session.originX)<1e-4&&std::abs(session.homeOriginY-session.originY)<1e-4;
                 if(sameText&&sameOrigin){clear();if(project==current())refresh(false,false);return true;}
-                if(!text::textRunsValid(session.style))throw std::runtime_error("Invalid text");
+                if(!text::textRunsValid(session.style))throw std::runtime_error("无效文本");
                 auto drawn=text::rasterize(session.style);
                 const double scaleX=found->raster&&found->raster->width?found->transform.width/found->raster->width:1;
                 const double scaleY=found->raster&&found->raster->height?found->transform.height/found->raster->height:1;
                 const auto id=session.layerId;
                 const double width=std::max(1.,drawn.width*scaleX),height=std::max(1.,drawn.height*scaleY);
-                commit("Edit Text",[&](Document& document){auto layer=std::find_if(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.id==id;});if(layer==document.layers.end())return;layer->text=session.style;layer->raster=drawn.raster;layer->transform.x=session.originX;layer->transform.y=session.originY;layer->transform.width=width;layer->transform.height=height;});
+                commit("编辑文本",[&](Document& document){auto layer=std::find_if(document.layers.begin(),document.layers.end(),[&](const Layer& item){return item.id==id;});if(layer==document.layers.end())return;layer->text=session.style;layer->raster=drawn.raster;layer->transform.x=session.originX;layer->transform.y=session.originY;layer->transform.width=width;layer->transform.height=height;});
             }
         }
         textDefaults_.fontFamily=session.style.fontFamily;textDefaults_.fontSize=session.style.fontSize;
@@ -607,7 +607,7 @@ bool MainWindow::undoTextTyping(bool redo){
 std::string selectedStyleName(MainWindow* window,const TextContent& style,int index){
     if(auto* styles=window->findChild<QComboBox*>("textStyle");styles&&styles->currentIndex()>=0){const auto name=styles->currentText().toStdString();if(!name.empty())return name;}
     const auto current=text::styleAt(style,std::max(0,index));
-    return current.empty()?"Regular":current;
+    return current.empty()?"常规":current;
 }
 void MainWindow::previewTextFont(const std::string& family){
     if(!textSession_||family.empty())return;
@@ -638,7 +638,7 @@ void MainWindow::endTextFontPreview(){
     textSession_->style=*textSession_->fontPreviewOriginal;textSession_->fontPreviewOriginal.reset();publishTextEdit();
 }
 void MainWindow::applyTextFont(const std::string& family){
-    if(family.empty()||family=="Multiple")return;
+    if(family.empty()||family=="多种")return;
     if(!textSession_){textDefaults_.fontFamily=family;return;}
     if(textSession_->fontPreviewOriginal)return;
     auto next=textSession_->style;
@@ -650,7 +650,7 @@ void MainWindow::applyTextFont(const std::string& family){
     textSession_->style=std::move(next);publishTextEdit();
 }
 void MainWindow::applyTextStyle(const std::string& style){
-    if(!textSession_||style.empty()||style=="Multiple"||textSession_->fontPreviewOriginal)return;
+    if(!textSession_||style.empty()||style=="多种"||textSession_->fontPreviewOriginal)return;
     auto next=textSession_->style;
     const int start=std::min(textSession_->caret,textSession_->anchor),length=std::abs(textSession_->caret-textSession_->anchor);
     const auto family=length>0&&!text::uniformFont(next,start,length).empty()?text::uniformFont(next,start,length):text::fontAt(next,length?start:std::max(0,start-1));

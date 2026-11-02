@@ -13,14 +13,14 @@ namespace compositor::editing {
 namespace {
 constexpr uint64_t pixelLimit=100000000;
 uint8_t byte(double v){return uint8_t(std::clamp(std::lround(v),0L,255L));}
-void dimensions(int w,int h){if(w<1||h<1||w>30000||h>30000)throw std::runtime_error("Invalid gradient source dimensions");}
-void budget(Rect r,uint64_t remaining){if(r.empty()||r.width>30000||r.height>30000||r.width*r.height>double(remaining))throw std::runtime_error("Gradient exceeds allocated pixel budget");}
-void grayCheck(const GrayRaster& g){dimensions(g.width,g.height);if(uint64_t(g.width)*g.height>pixelLimit||g.pixels.size()!=size_t(g.width)*g.height)throw std::runtime_error("Invalid gradient gray input");}
+void dimensions(int w,int h){if(w<1||h<1||w>30000||h>30000)throw std::runtime_error("无效的渐变源尺寸");}
+void budget(Rect r,uint64_t remaining){if(r.empty()||r.width>30000||r.height>30000||r.width*r.height>double(remaining))throw std::runtime_error("渐变超出分配的像素预算");}
+void grayCheck(const GrayRaster& g){dimensions(g.width,g.height);if(uint64_t(g.width)*g.height>pixelLimit||g.pixels.size()!=size_t(g.width)*g.height)throw std::runtime_error("无效的渐变灰度输入");}
 Rect unite(Rect a,Rect b){if(a.empty())return b;if(b.empty())return a;double x=std::min(a.x,b.x),y=std::min(a.y,b.y);return {x,y,std::max(a.x+a.width,b.x+b.width)-x,std::max(a.y+a.height,b.y+b.height)-y};}
 Rect intersect(Rect a,Rect b){double x=std::max(a.x,b.x),y=std::max(a.y,b.y);return {x,y,std::max(0.,std::min(a.x+a.width,b.x+b.width)-x),std::max(0.,std::min(a.y+a.height,b.y+b.height)-y)};}
 Rect integral(Rect a){double x=std::floor(a.x),y=std::floor(a.y);return {x,y,std::ceil(a.x+a.width)-x,std::ceil(a.y+a.height)-y};}
 Rect inverse(Rect a,const Transform& t,int w,int h){auto p=t.toUnit({a.x,a.y}),q=t.toUnit({a.x+a.width,a.y}),r=t.toUnit({a.x,a.y+a.height}),s=t.toUnit({a.x+a.width,a.y+a.height});double x=std::min({p.x,q.x,r.x,s.x})*w,y=std::min({p.y,q.y,r.y,s.y})*h;return {x,y,std::max({p.x,q.x,r.x,s.x})*w-x,std::max({p.y,q.y,r.y,s.y})*h-y};}
-uint64_t remainingBudget(const Document& d,const Layer& target,bool mask){uint64_t image=0,gray=0;for(const auto& l:d.layers)if(l.id!=target.id){if(l.raster)image+=uint64_t(l.raster->width)*l.raster->height;if(l.mask&&l.mask->raster)gray+=uint64_t(l.mask->raster->width)*l.mask->raster->height;}if(image>pixelLimit||gray>pixelLimit)throw std::runtime_error("Invalid existing document pixel budget");return mask?pixelLimit-gray:target.mask?std::min(pixelLimit-image,pixelLimit-gray):pixelLimit-image;}
+uint64_t remainingBudget(const Document& d,const Layer& target,bool mask){uint64_t image=0,gray=0;for(const auto& l:d.layers)if(l.id!=target.id){if(l.raster)image+=uint64_t(l.raster->width)*l.raster->height;if(l.mask&&l.mask->raster)gray+=uint64_t(l.mask->raster->width)*l.mask->raster->height;}if(image>pixelLimit||gray>pixelLimit)throw std::runtime_error("无效的现有文档像素预算");return mask?pixelLimit-gray:target.mask?std::min(pixelLimit-image,pixelLimit-gray):pixelLimit-image;}
 }
 struct GradientPreview::Impl {
     Layer original;
@@ -35,21 +35,21 @@ struct GradientPreview::Impl {
     Impl(Layer layer,const Document& d,Point a,Point b,GradientSettings s,Pixel fg,Pixel bg,bool targetMask)
         :original(std::move(layer)),base(targetMask&&original.mask?original.mask->placement.value_or(original.transform):original.transform),start(a),end(b),settings(s),foreground(fg),background(bg),canvasWidth(d.width),canvasHeight(d.height),mask(targetMask){
         dimensions(d.width,d.height);
-        if(!base.valid()||!std::isfinite(s.opacity)||int(s.shape)<0||int(s.shape)>1||int(s.style)<0||int(s.style)>1)throw std::runtime_error("Invalid gradient settings");
-        for(double v:{a.x,a.y,b.x,b.y})if(!std::isfinite(v)||std::abs(v)>1e7)throw std::runtime_error("Invalid gradient endpoint");
-        if(mask&&(!original.mask||!original.mask->raster))throw std::runtime_error("Gradient requires an owned mask");
-        if(!mask&&(original.group||!original.adjustmentJson.empty()))throw std::runtime_error("Gradient requires editable image pixels");
-        if(original.raster){const auto& r=*original.raster;dimensions(r.width,r.height);if(uint64_t(r.width)*r.height>pixelLimit||r.tiles.size()!=size_t((r.width+255)/256)*((r.height+255)/256)||std::any_of(r.tiles.begin(),r.tiles.end(),[](const auto& t){return !t;}))throw std::runtime_error("Invalid gradient image input");}
+        if(!base.valid()||!std::isfinite(s.opacity)||int(s.shape)<0||int(s.shape)>1||int(s.style)<0||int(s.style)>1)throw std::runtime_error("无效的渐变设置");
+        for(double v:{a.x,a.y,b.x,b.y})if(!std::isfinite(v)||std::abs(v)>1e7)throw std::runtime_error("无效的渐变端点");
+        if(mask&&(!original.mask||!original.mask->raster))throw std::runtime_error("渐变需要自有蒙版");
+        if(!mask&&(original.group||!original.adjustmentJson.empty()))throw std::runtime_error("渐变需要可编辑的图像像素");
+        if(original.raster){const auto& r=*original.raster;dimensions(r.width,r.height);if(uint64_t(r.width)*r.height>pixelLimit||r.tiles.size()!=size_t((r.width+255)/256)*((r.height+255)/256)||std::any_of(r.tiles.begin(),r.tiles.end(),[](const auto& t){return !t;}))throw std::runtime_error("无效的渐变图像输入");}
         if(original.mask&&original.mask->raster)grayCheck(*original.mask->raster);
         baseWidth=mask&&original.mask->placement?original.mask->raster->width:original.raster?original.raster->width:int(std::round(base.width));
         baseHeight=mask&&original.mask->placement?original.mask->raster->height:original.raster?original.raster->height:int(std::round(base.height));dimensions(baseWidth,baseHeight);
         origin=base.fromUnit({0,0});auto right=base.fromUnit({1,0}),bottom=base.fromUnit({0,1});stepX={(right.x-origin.x)/baseWidth,(right.y-origin.y)/baseWidth};stepY={(bottom.x-origin.x)/baseHeight,(bottom.y-origin.y)/baseHeight};
         Rect originalBounds{0,0,double(baseWidth),double(baseHeight)},canvas{0,0,double(d.width),double(d.height)},area=canvas;
         grid=originalBounds;
-        if(d.selection){selection=d.selection->coverage;if(!selection)throw std::runtime_error("Present gradient selection has no coverage");if(!selection->validStorage())throw std::runtime_error("Invalid gradient selection");if(selection->width!=d.width||selection->height!=d.height)throw std::runtime_error("Gradient selection must match canvas");auto bounds=coverageBounds(*selection);if(bounds.empty())return;if(d.selection->outline)bounds=d.selection->outline->bounds();area=intersect(canvas,{bounds.x-1,bounds.y-1,bounds.width+2,bounds.height+2});}
+        if(d.selection){selection=d.selection->coverage;if(!selection)throw std::runtime_error("当前渐变选区无覆盖区域");if(!selection->validStorage())throw std::runtime_error("无效的渐变选区");if(selection->width!=d.width||selection->height!=d.height)throw std::runtime_error("渐变选区必须与画布匹配");auto bounds=coverageBounds(*selection);if(bounds.empty())return;if(d.selection->outline)bounds=d.selection->outline->bounds();area=intersect(canvas,{bounds.x-1,bounds.y-1,bounds.width+2,bounds.height+2});}
         if(std::hypot(b.x-a.x,b.y-a.y)<.5||s.opacity<=0||area.empty())return;
         auto extent=mask?originalBounds:unite(originalBounds,integral(inverse(canvas,base,baseWidth,baseHeight)));
-        if(extent.width>1e9||extent.height>1e9)throw std::runtime_error("Gradient virtual extent exceeds source limit");
+        if(extent.width>1e9||extent.height>1e9)throw std::runtime_error("渐变虚拟范围超出源限制");
         auto affected=intersect(integral(inverse(area,base,baseWidth,baseHeight)),extent);if(affected.empty())return;
         const double left=std::floor((affected.x-extent.x)/256)*256+extent.x,top=std::floor((affected.y-extent.y)/256)*256+extent.y;
         const double rightEdge=std::min(extent.x+extent.width,std::ceil((affected.x+affected.width-extent.x)/256)*256+extent.x),bottomEdge=std::min(extent.y+extent.height,std::ceil((affected.y+affected.height-extent.y)/256)*256+extent.y);
@@ -57,7 +57,7 @@ struct GradientPreview::Impl {
         budget(grid,remainingBudget(d,original,mask));active=true;
     }
     Point documentPoint(int x,int y)const{return {origin.x+(x+.5)*stepX.x+(y+.5)*stepY.x,origin.y+(x+.5)*stepX.y+(y+.5)*stepY.y};}
-    Transform placement(Rect r)const{auto t=base;t.width=base.width*r.width/baseWidth;t.height=base.height*r.height/baseHeight;auto c=base.fromUnit({(r.x+r.width/2)/baseWidth,(r.y+r.height/2)/baseHeight});t.x=c.x-t.width/2;t.y=c.y-t.height/2;if(!t.valid())throw std::runtime_error("Gradient result transform exceeds limits");return t;}
+    Transform placement(Rect r)const{auto t=base;t.width=base.width*r.width/baseWidth;t.height=base.height*r.height/baseHeight;auto c=base.fromUnit({(r.x+r.width/2)/baseWidth,(r.y+r.height/2)/baseHeight});t.x=c.x-t.width/2;t.y=c.y-t.height/2;if(!t.valid())throw std::runtime_error("渐变结果变换超出限制");return t;}
     double coverage(Point p)const{
         if(p.x<0||p.y<0||p.x>=canvasWidth||p.y>=canvasHeight)return 0;
         if(!selection)return 1;
@@ -121,7 +121,7 @@ Layer GradientPreview::materializeLayer()const{
     const auto& s=*impl_;if(!s.active)return s.original;auto result=s.original;int w=int(s.grid.width),h=int(s.grid.height),ox=int(s.grid.x),oy=int(s.grid.y);
     if(s.mask){auto gray=std::make_shared<GrayRaster>();gray->width=w;gray->height=h;gray->pixels.resize(size_t(w)*h);for(int y=0;y<h;++y)for(int x=0;x<w;++x)gray->pixels[size_t(y)*w+x]=s.pixel(ox+x,oy+y).r;result.mask->raster=gray;result.mask->previewExterior.reset();return result;}
     const bool hdr=s.original.deep&&s.original.deep->isHdr();
-    if(hdr&&uint64_t(w)*h*24>1200000000)throw std::runtime_error("HDR gradient exceeds working memory budget");
+    if(hdr&&uint64_t(w)*h*24>1200000000)throw std::runtime_error("HDR 渐变超出工作内存预算");
     auto image=std::make_shared<Raster>(*Raster::filled(w,h));const int columns=(w+255)/256;int left=w,top=h,right=0,bottom=0;
     for(size_t key=0;key<image->tiles.size();++key){auto tile=std::make_shared<Raster::Tile>();int tx=int(key%columns)*256,ty=int(key/columns)*256;for(int y=0;y<std::min(256,h-ty);++y)for(int x=0;x<std::min(256,w-tx);++x){auto value=s.pixel(ox+tx+x,oy+ty+y);tile->pixels[size_t(y)*256+x]=value;if(hdr?s.pixelHdr(ox+tx+x,oy+ty+y)[3]>0:value.a!=0){left=std::min(left,tx+x);top=std::min(top,ty+y);right=std::max(right,tx+x+1);bottom=std::max(bottom,ty+y+1);}}image->tiles[key]=std::move(tile);}
     if(right<=left){left=top=0;right=w;bottom=h;}Rect crop{double(ox+left),double(oy+top),double(right-left),double(bottom-top)};

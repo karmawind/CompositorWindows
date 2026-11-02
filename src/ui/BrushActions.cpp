@@ -22,26 +22,26 @@
 
 namespace compositor {
 void MainWindow::setupBrushControls(){
-    auto*bar=addToolBar("Brush Options");bar->setObjectName("brushOptions");
+    auto*bar=addToolBar("画笔选项");bar->setObjectName("brushOptions");
     auto* options=new ui::WrappingToolOptions;options->setObjectName("brushOptionsContents");bar->addWidget(options);
-    target_=new QComboBox;target_->addItems({"Image","Mask"});target_->setAccessibleName("Editing target");options->addControl(target_);connect(target_,&QComboBox::currentIndexChanged,this,[this](int i){
+    target_=new QComboBox;target_->addItems({"图像","蒙版"});target_->setAccessibleName("编辑目标");options->addControl(target_);connect(target_,&QComboBox::currentIndexChanged,this,[this](int i){
         if(refreshing_)return;
         if(auto* project=current();project&&project->document&&active())selectLayerTarget(project->active,i==1);
         // Rejected busy/stroke or stale callbacks must show the actual target.
         if(target_){QSignalBlocker block(target_);target_->setCurrentIndex(current()&&current()->maskSelected?1:0);}
         refreshBrushControls();
     });
-    auto*maskWhite=new QCheckBox("Paint mask white");maskWhite->setObjectName("paintMaskWhite");maskWhite->setChecked(maskPaintWhite_);options->addControl(maskWhite);connect(maskWhite,&QCheckBox::toggled,this,[this](bool v){maskPaintWhite_=v;refreshPaletteControls();});
+    auto*maskWhite=new QCheckBox("用白色绘制蒙版");maskWhite->setObjectName("paintMaskWhite");maskWhite->setChecked(maskPaintWhite_);options->addControl(maskWhite);connect(maskWhite,&QCheckBox::toggled,this,[this](bool v){maskPaintWhite_=v;refreshPaletteControls();});
     auto* modes=new QButtonGroup(this);modes->setExclusive(true);
     std::array<QToolButton*,2> modeButtons{};
-    for(bool erase:{false,true}){auto* button=new QToolButton;modeButtons[size_t(erase)]=button;button->setText(erase?"Erase":"Paint");button->setAccessibleName(erase?"Erase":"Paint");button->setObjectName(erase?"brushModeErase":"brushModePaint");button->setCheckable(true);modes->addButton(button);connect(button,&QToolButton::clicked,this,[this,erase]{selectTool(erase?Tool::Eraser:Tool::Brush);refreshBrushControls();});}
+    for(bool erase:{false,true}){auto* button=new QToolButton;modeButtons[size_t(erase)]=button;button->setText(erase?"擦除":"绘制");button->setAccessibleName(erase?"擦除":"绘制");button->setObjectName(erase?"brushModeErase":"brushModePaint");button->setCheckable(true);modes->addButton(button);connect(button,&QToolButton::clicked,this,[this,erase]{selectTool(erase?Tool::Eraser:Tool::Brush);refreshBrushControls();});}
     options->addGroup({modeButtons[0],modeButtons[1]});
-    auto slider=[&](int index){auto* value=new ui::TrackSlider(Qt::Horizontal);value->setObjectName(index?"brushOpacitySlider":"brushHardnessSlider");value->setAccessibleName(index?"Brush opacity slider":"Brush hardness slider");value->setRange(index?100:0,10000);value->setDefaultValue(10000);value->setFixedWidth(100);brushSliders_[size_t(index)]=value;return value;};
-    auto*size=new ui::PropertyNumber;size->setDecimals(0);size->setRange(1,2000);size->setValue(40);size->setAccessibleName("Brush diameter");options->addGroup({new QLabel("Size"),size});
-    auto*hardness=new ui::PropertyNumber;hardness->setDecimals(0);hardness->setRange(0,100);hardness->setValue(100);hardness->setSuffix("%");options->addGroup({new QLabel("Hardness"),slider(0),hardness});
-    auto*opacity=new ui::PropertyNumber;opacity->setDecimals(0);opacity->setRange(1,100);opacity->setValue(100);opacity->setSuffix("%");options->addGroup({new QLabel("Opacity"),slider(1),opacity});
+    auto slider=[&](int index){auto* value=new ui::TrackSlider(Qt::Horizontal);value->setObjectName(index?"brushOpacitySlider":"brushHardnessSlider");value->setAccessibleName(index?"画笔不透明度滑块":"画笔硬度滑块");value->setRange(index?100:0,10000);value->setDefaultValue(10000);value->setFixedWidth(100);brushSliders_[size_t(index)]=value;return value;};
+    auto*size=new ui::PropertyNumber;size->setDecimals(0);size->setRange(1,2000);size->setValue(40);size->setAccessibleName("画笔直径");options->addGroup({new QLabel("大小"),size});
+    auto*hardness=new ui::PropertyNumber;hardness->setDecimals(0);hardness->setRange(0,100);hardness->setValue(100);hardness->setSuffix("%");options->addGroup({new QLabel("硬度"),slider(0),hardness});
+    auto*opacity=new ui::PropertyNumber;opacity->setDecimals(0);opacity->setRange(1,100);opacity->setValue(100);opacity->setSuffix("%");options->addGroup({new QLabel("不透明度"),slider(1),opacity});
     for(auto* number:{size,hardness,opacity})number->releaseFocus=[this]{if(canvas())canvas()->setFocus();};
-    hardness->setAccessibleName("Brush hardness");opacity->setAccessibleName("Brush opacity");
+    hardness->setAccessibleName("画笔硬度");opacity->setAccessibleName("画笔不透明度");
     brushTip_={size,hardness,opacity};
     connect(size,&QDoubleSpinBox::valueChanged,this,[this](double v){if(!refreshing_&&!stroke_){brushSettings_.radius=v/2;refreshBrushControls();}});
     connect(hardness,&QDoubleSpinBox::valueChanged,this,[this](double v){if(!refreshing_&&!stroke_){brushSettings_.hardness=v/100;refreshBrushControls();}});
@@ -65,9 +65,9 @@ bool MainWindow::beginBrush(Point point,Qt::KeyboardModifiers modifiers){
     strokeMask_=p->maskSelected;if(strokeMask_&&(!l->mask||!l->mask->enabled))return true;if(!strokeMask_&&(l->group||!l->adjustmentJson.empty()))return true;
     auto visible=layers::entries(*p->document);if(std::none_of(visible.begin(),visible.end(),[&](const auto&item){return item.id==l->id&&item.visible;}))return true;
     if(p->document->selection&&(!p->document->selection->coverage||!p->document->selection->coverage->hasCoverage()))return true;
-    p->history.begin(tool_==Tool::Eraser?"Erase":"Brush",p->document,p->active);
+    p->history.begin(tool_==Tool::Eraser?"擦除":"Brush",p->document,p->active);
     try{
-        if(!brushGpu_){auto shader=QDir(QApplication::applicationDirPath()).filePath("shaders/BrushCoverage.hlsl");if(!QFileInfo::exists(shader))shader=QStringLiteral(COMPOSITOR_SOURCE_ROOT)+"/shaders/BrushCoverage.hlsl";try{brushGpu_=std::make_shared<graphics::D3D11BrushCoverage>(std::filesystem::path(shader.toStdWString()),warp_);}catch(const std::exception&e){statusBar()->showMessage(QString("Using software brush: ")+e.what());}}
+        if(!brushGpu_){auto shader=QDir(QApplication::applicationDirPath()).filePath("shaders/BrushCoverage.hlsl");if(!QFileInfo::exists(shader))shader=QStringLiteral(COMPOSITOR_SOURCE_ROOT)+"/shaders/BrushCoverage.hlsl";try{brushGpu_=std::make_shared<graphics::D3D11BrushCoverage>(std::filesystem::path(shader.toStdWString()),warp_);}catch(const std::exception&e){statusBar()->showMessage(QString("正在使用软件画笔： ")+e.what());}}
         auto settings=brushSettings_;settings.color={uint8_t(foreground_.red()),uint8_t(foreground_.green()),uint8_t(foreground_.blue())};settings.opacity*=foreground_.alphaF();settings.erase=tool_==Tool::Eraser&&!strokeMask_;if(strokeMask_){auto v=uint8_t(maskPaintWhite_?255:0);settings.color={v,v,v};settings.opacity=brushSettings_.opacity;}
         uint64_t remaining=100000000;
         for(const auto&layer:p->document->layers)if(layer.id!=l->id){
@@ -126,10 +126,10 @@ void MainWindow::keyPressEvent(QKeyEvent*e){
     }
     if(e->modifiers()==Qt::NoModifier&&e->key()>=Qt::Key_0&&e->key()<=Qt::Key_9&&!stroke_&&!retouch_&&(brushTool||tool_==Tool::Gradient||(tool_==Tool::Move&&canEditLayers()))){
         const int digit=e->key()-Qt::Key_0;QElapsedTimer clock;clock.start();const auto now=clock.msecsSinceReference();int percent=digit?digit*10:100;if(opacityDigit_&&now-opacityDigit_->second<600){percent=std::max(1,opacityDigit_->first*10+digit);opacityDigit_.reset();}else opacityDigit_=std::pair{digit,now};double value=percent/100.;
-        if(tool_==Tool::CloneStamp)cloneSettings_.opacity=value;else if(tool_==Tool::Blur)blurSettings_.opacity=value;else if(brushTool)brushSettings_.opacity=value;else if(tool_==Tool::Gradient){gradientSettings_.opacity=value;refreshGradient();}else{auto selected=layerSelection().ids;finishOpacityEdit();edit("Layer Opacity",[&](Document&d){for(auto&layer:d.layers)if(!layer.group&&std::find(selected.begin(),selected.end(),layer.id)!=selected.end())layer.opacity=value;});}refresh(false,false);return;
+        if(tool_==Tool::CloneStamp)cloneSettings_.opacity=value;else if(tool_==Tool::Blur)blurSettings_.opacity=value;else if(brushTool)brushSettings_.opacity=value;else if(tool_==Tool::Gradient){gradientSettings_.opacity=value;refreshGradient();}else{auto selected=layerSelection().ids;finishOpacityEdit();edit("图层不透明度",[&](Document&d){for(auto&layer:d.layers)if(!layer.group&&std::find(selected.begin(),selected.end(),layer.id)!=selected.end())layer.opacity=value;});}refresh(false,false);return;
     }
     if(e->modifiers()==Qt::NoModifier){switch(e->key()){
-        case Qt::Key_Tab:if(tool_==Tool::Wand){wandObjectMode_=!wandObjectMode_;statusBar()->showMessage(wandObjectMode_?"Object selection":"Magic wand");return;}break;
+        case Qt::Key_Tab:if(tool_==Tool::Wand){wandObjectMode_=!wandObjectMode_;statusBar()->showMessage(wandObjectMode_?"对象选择":"魔棒");return;}break;
         case Qt::Key_Return:case Qt::Key_Enter:if(drawingOriginal_)applyGradient();else if(transformSession_)applyTransformSession();else if(tool_==Tool::Crop)applyCrop();else finishPolygon();return;
         case Qt::Key_Escape:pointerCancel();return;default:break;
     }}

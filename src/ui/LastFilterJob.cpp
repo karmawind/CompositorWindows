@@ -15,16 +15,16 @@ struct LastFilterJob::Impl {
     std::shared_ptr<std::atomic_bool> cancelled=std::make_shared<std::atomic_bool>(false);
     QFutureWatcher<Result> watcher;
     QProgressDialog progress;
-    explicit Impl(QWidget* parent):progress("Applying last filter…","Cancel",0,0,parent){
-        progress.setObjectName("lastFilterProgress");progress.setWindowTitle("Last Filter");
+    explicit Impl(QWidget* parent):progress("正在应用上次滤镜…","取消",0,0,parent){
+        progress.setObjectName("lastFilterProgress");progress.setWindowTitle("上次滤镜");
         progress.setWindowModality(Qt::NonModal);progress.setMinimumDuration(0);
         progress.setAutoClose(false);progress.setAutoReset(false);
     }
 };
 LastFilterJob::LastFilterJob(std::function<Layer(std::function<bool()>)> work,Host host,QWidget* parent,EditorProject* owner,const QString& progressText)
     :QObject(parent),impl_(std::make_unique<Impl>(parent)){
-    if(!work||!host.commit||!host.settled||!host.error||!owner)throw std::invalid_argument("Incomplete last-filter job");
-    if(!progressText.isEmpty()){impl_->progress.setProperty("studioChrome",true);impl_->progress.setLabelText(progressText);impl_->progress.setWindowTitle("Convert HDR to 16-Bit");}
+    if(!work||!host.commit||!host.settled||!host.error||!owner)throw std::invalid_argument("上次滤镜作业不完整");
+    if(!progressText.isEmpty()){impl_->progress.setProperty("studioChrome",true);impl_->progress.setLabelText(progressText);impl_->progress.setWindowTitle("将 HDR 转换为 16 位");}
     setObjectName("lastFilterJob");impl_->host=std::move(host);impl_->owner=owner;
     connect(&impl_->progress,&QProgressDialog::canceled,this,[this]{cancel();});
     connect(&impl_->watcher,&QFutureWatcher<Impl::Result>::finished,this,[this]{
@@ -47,7 +47,7 @@ LastFilterJob::LastFilterJob(std::function<Layer(std::function<bool()>)> work,Ho
             Impl::Result result;
             try{
                 auto cancelled=[token]{return token->load();};
-                if(cancelled())throw std::runtime_error("Filter cancelled");
+                if(cancelled())throw std::runtime_error("滤镜已取消");
                 result.value=work(std::move(cancelled));
             }catch(const std::exception& error){result.error=QString::fromUtf8(error.what());}
             return result;

@@ -69,7 +69,7 @@ std::vector<float> subjectInputTensor(const RgbaImage& image, const ImportOption
     if (image.stride<std::size_t(image.width)*4 ||
         image.stride>std::numeric_limits<std::size_t>::max()/image.height ||
         image.pixels.size()<image.stride*image.height)
-        throw std::runtime_error("Invalid RGBA buffer stride or storage");
+        throw std::runtime_error("无效的 RGBA 缓冲区跨距或存储");
     const int xKernel = kernelSize(image.width), yKernel = kernelSize(image.height);
     stats.sourceBytes = image.stride*image.height;
     stats.outputBytes = std::uint64_t(size)*size*3*sizeof(float);
@@ -82,14 +82,14 @@ std::vector<float> subjectInputTensor(const RgbaImage& image, const ImportOption
         maximumKernel*sizeof(double) + rowBytes;
     const auto newBytes = stats.outputBytes+stats.temporaryBytes;
     if (newBytes>options.maxWorkingBytes || stats.sourceBytes>options.maxWorkingBytes-newBytes)
-        throw std::runtime_error("Foreground preprocessing exceeds working buffer budget");
+        throw std::runtime_error("前景预处理超出工作缓冲区预算");
     for (std::uint32_t y=0; y<image.height; ++y) {
         poll(options, stats);
         for (std::uint32_t x=0; x<image.width; ++x) {
             if ((x&4095U)==0) poll(options, stats);
             const auto* p = image.pixels.data()+std::size_t(y)*image.stride+std::size_t(x)*4;
             if (p[0]>p[3] || p[1]>p[3] || p[2]>p[3])
-                throw std::runtime_error("RGBA buffer is not premultiplied");
+                throw std::runtime_error("RGBA 缓冲区未预乘");
             ++stats.validatedPixels;
         }
     }

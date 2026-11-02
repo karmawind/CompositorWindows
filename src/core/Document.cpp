@@ -18,7 +18,7 @@ static std::atomic<uint64_t> materializations{0};
 uint64_t Raster::materializationCount(){return materializations.load();}
 void Raster::resetMaterializationCount(){materializations.store(0);}
 namespace {
-void sizeCheck(int w,int h){if(w<1||h<1||w>30000||h>30000||uint64_t(w)*uint64_t(h)>100000000)throw std::runtime_error("Raster dimensions exceed supported budget");}
+void sizeCheck(int w,int h){if(w<1||h<1||w>30000||h>30000||uint64_t(w)*uint64_t(h)>100000000)throw std::runtime_error("栅格尺寸超出支持的预算");}
 uint8_t byte(double n){return uint8_t(std::clamp(std::lround(n),0L,255L));}
 using Color=std::array<double,3>;
 double lum(Color c){return .3*c[0]+.59*c[1]+.11*c[2];}
@@ -128,7 +128,7 @@ void validateDocument(const Document& d) {
             imagePixels += uint64_t(layer.raster->width) * layer.raster->height;
         }
         if (layer.deep && (!layer.raster || !layer.deep->valid() || layer.deep->width != layer.raster->width || layer.deep->height != layer.raster->height))
-            throw std::runtime_error("Invalid 16-bit layer pixels");
+            throw std::runtime_error("无效的 16 位图层像素");
         if (layer.mask) {
             if (!layer.mask->raster) throw std::runtime_error("Missing mask coverage");
             const auto& mask = *layer.mask->raster;
@@ -136,7 +136,7 @@ void validateDocument(const Document& d) {
             maskPixels += uint64_t(mask.width) * mask.height;
             if (mask.source || mask.pixels.size() != size_t(mask.width) * mask.height ||
                 (layer.mask->placement && !layer.mask->placement->valid()))
-                throw std::runtime_error("Invalid mask");
+                throw std::runtime_error("无效的蒙版");
         }
     }
     if (imagePixels > 100000000 || maskPixels > 100000000)
@@ -144,7 +144,7 @@ void validateDocument(const Document& d) {
     if(d.selection && d.selection->coverage) {
         const auto& coverage=*d.selection->coverage;
         if(coverage.width!=d.width || coverage.height!=d.height || !coverage.validStorage())
-            throw std::runtime_error("Invalid selection coverage");
+            throw std::runtime_error("无效的选区覆盖范围");
     }
     for (const auto& layer : d.layers) {
         std::unordered_set<std::string> seen{layer.id};
@@ -153,7 +153,7 @@ void validateDocument(const Document& d) {
             auto parent = layers.find(node->parentId);
             if (parent == layers.end() || !parent->second->group || seen.size() > 64 ||
                 !seen.insert(node->parentId).second)
-                throw std::runtime_error("Invalid folder hierarchy");
+                throw std::runtime_error("无效的文件夹层级");
             node = parent->second;
         }
         if (layer.group && seen.size() > 64) throw std::runtime_error("Folder nesting too deep");
@@ -169,11 +169,11 @@ void validateDocument(const Document& d) {
             node = source->second;
         }
     }
-    if (d.guides.size() > 1000) throw std::runtime_error("Guide count exceeds limit");
+    if (d.guides.size() > 1000) throw std::runtime_error("参考线数量超出限制");
     std::unordered_set<std::string> guideIds;
     for (const auto& guide : d.guides)
         if (guide.id.empty() || !guideIds.insert(guide.id).second || !std::isfinite(guide.position) || std::abs(guide.position) > 1000000)
-            throw std::runtime_error("Invalid guide");
+            throw std::runtime_error("无效的参考线");
 }
 Pixel blendPixel(Pixel dst,Pixel src,Blend mode){double da=dst.a/255.,sa=src.a/255.;if(sa==0)return dst;if(da==0)return src;Color b{dst.r/(255.*da),dst.g/(255.*da),dst.b/(255.*da)},s{src.r/(255.*sa),src.g/(255.*sa),src.b/(255.*sa)},v{};switch(mode){case Blend::Hue:v=setLum(setSat(s,sat(b)),lum(b));break;case Blend::Saturation:v=setLum(setSat(b,sat(s)),lum(b));break;case Blend::Color:v=setLum(s,lum(b));break;case Blend::Luminosity:v=setLum(b,lum(s));break;default:for(int i=0;i<3;++i)v[i]=separable(b[i],s[i],mode);}Pixel out;out.a=byte((sa+da-sa*da)*255);out.r=std::min(out.a,byte(255*(sa*(1-da)*s[0]+da*(1-sa)*b[0]+sa*da*v[0])));out.g=std::min(out.a,byte(255*(sa*(1-da)*s[1]+da*(1-sa)*b[1]+sa*da*v[1])));out.b=std::min(out.a,byte(255*(sa*(1-da)*s[2]+da*(1-sa)*b[2]+sa*da*v[2])));return out;}
 

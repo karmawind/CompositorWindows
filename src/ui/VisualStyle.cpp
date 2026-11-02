@@ -114,7 +114,7 @@ class WindowDot final : public QAbstractButton {
 public:
     WindowDot(QWidget* owner,int kind):QAbstractButton(owner),kind_(kind) {
         setFixedSize(22,28);setCursor(Qt::ArrowCursor);
-        setAccessibleName(kind==0?"Close window":kind==1?"Minimize window":"Maximize or restore window");setToolTip(accessibleName());
+        setAccessibleName(kind==0?"关闭窗口":kind==1?"最小化窗口":"最大化或还原窗口");setToolTip(accessibleName());
         connect(this,&QAbstractButton::clicked,owner,[owner,kind]{auto* window=owner->window();if(kind==0)window->close();else if(kind==1)window->showMinimized();else if(window->isMaximized())window->showNormal();else window->showMaximized();});
     }
 protected:
@@ -222,7 +222,7 @@ void installVisualStyle() {
     const auto fontId=QFontDatabase::addApplicationFont(":/assets/fonts/InterVariable.ttf");
     const auto family=QFontDatabase::applicationFontFamilies(fontId).value(0,"Inter");
     qApp->setStyle(new StudioStyle);
-    QFont font(family);font.setPixelSize(13);qApp->setFont(font);qApp->setProperty("studioFontFamily",family);
+    QFont font(family);font.setPixelSize(13);font.setFamilies(QStringList{family,"Microsoft YaHei UI","Microsoft YaHei","SimHei"});qApp->setFont(font);qApp->setProperty("studioFontFamily",family);
     QPalette palette;
     palette.setColor(QPalette::Window,QColor(surface));palette.setColor(QPalette::WindowText,QColor(ink));
     palette.setColor(QPalette::Base,QColor("#1c1d20"));palette.setColor(QPalette::AlternateBase,QColor("#242529"));
@@ -232,7 +232,7 @@ void installVisualStyle() {
     palette.setColor(QPalette::ToolTipBase,QColor("#34363b"));palette.setColor(QPalette::ToolTipText,QColor(ink));
     for(auto role:{QPalette::Text,QPalette::ButtonText,QPalette::WindowText})palette.setColor(QPalette::Disabled,role,QColor("#656870"));
     qApp->setPalette(palette);
-    qApp->setStyleSheet(QString("QWidget { font-family: \"%1\"; font-size: 13px; }\n").arg(family)+R"(
+    qApp->setStyleSheet(QString("QWidget { font-family: \"%1\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", sans-serif; font-size: 13px; }\n").arg(family)+R"(
         QWidget { color: #e4e5e7; selection-background-color: #376dac; selection-color: white; }
         QMainWindow, QDialog { background: #222326; border: 1px solid #37393f; }
         QMenuBar { background: #222326; padding: 3px 8px; spacing: 3px; border-bottom: 1px solid #303237; }
@@ -324,14 +324,14 @@ void styleWorkspace(QMainWindow* window) {
         if(dock->widget()&&dock->widget()->layout())dock->widget()->layout()->setContentsMargins(12,10,12,12);
     }
     auto menus=menu->actions();auto findMenu=[&](const QString& label)->QMenu*{for(auto* action:menus)if(action->text().remove('&')==label)return action->menu();return nullptr;};
-    if(auto* view=findMenu("View")){
-        view->addSeparator();auto* appearance=view->addMenu("Appearance");
-        auto* mac=appearance->addAction("Mac-style title bar");mac->setObjectName("macTitleBarAction");mac->setCheckable(true);mac->setChecked(macTitleBarEnabled());if(const auto* spec=ui::commandSpec("Appearance","Mac-style title bar"))mac->setProperty("commandId",spec->id);
-        mac->setToolTip("Use colored window controls on the left. Turn off for the native Windows title bar.");
+    if(auto* view=findMenu("查看")){
+        view->addSeparator();auto* appearance=view->addMenu("外观");
+        auto* mac=appearance->addAction("Mac 风格标题栏");mac->setObjectName("macTitleBarAction");mac->setCheckable(true);mac->setChecked(macTitleBarEnabled());if(const auto* spec=ui::commandSpec("外观","Mac 风格标题栏"))mac->setProperty("commandId",spec->id);
+        mac->setToolTip("在左侧显示彩色窗口控制按钮。关闭后将使用原生 Windows 标题栏。");
         QObject::connect(mac,&QAction::toggled,window,[](bool enabled){setMacTitleBarEnabled(enabled);});
     }
-    for(const auto& pair:{std::pair{"Clipboard","Edit"},std::pair{"Adjustments","Image"},std::pair{"Canvas","Image"},std::pair{"Transform","Layer"}})
+    for(const auto& pair:{std::pair{"剪贴板","编辑"},std::pair{"调整","图像"},std::pair{"画布","图像"},std::pair{"变换","图层"}})
         if(auto* child=findMenu(pair.first))if(auto* parent=findMenu(pair.second)){menu->removeAction(child->menuAction());parent->addSeparator();parent->addMenu(child);}
-    for(const auto* title:{"File","Edit","View","Select","Image","Filters","Layer","Help"})if(auto* item=findMenu(title)){menu->removeAction(item->menuAction());menu->addMenu(item);}
+    for(const auto* title:{"文件","编辑","查看","选择","图像","滤镜","图层","帮助"})if(auto* item=findMenu(title)){menu->removeAction(item->menuAction());menu->addMenu(item);}
 }
 }

@@ -27,7 +27,7 @@ imaging::DecodedImage decodeImportImage(const std::filesystem::path& path,const 
     if(extension==".svg")return imaging::rasterizeSvg(path,options);
     if(imaging::isRawFileExtension(path))return imaging::decodeRaw(path,options);
     QFile file(QString::fromStdWString(path.wstring()));
-    if(!file.open(QIODevice::ReadOnly))throw std::runtime_error("Cannot open image");
+    if(!file.open(QIODevice::ReadOnly))throw std::runtime_error("无法打开图像");
     const auto signature=file.read(16);file.close();
     return signature.size()>=12&&signature.mid(4,4)=="ftyp"
         ?imaging::HeifCodec::decode(path,options):imaging::WicCodec::decode(path,options);
@@ -35,18 +35,18 @@ imaging::DecodedImage decodeImportImage(const std::filesystem::path& path,const 
 bool prepareHdrImports(QWidget* parent,const std::vector<std::filesystem::path>& files,PreparedImages& prepared){
     std::vector<std::filesystem::path> hdr;for(const auto& path:files){auto ext=QString::fromStdWString(path.extension().wstring()).toLower();if(ext==".exr"||ext==".hdr")hdr.push_back(path);}if(hdr.empty())return true;
     struct Result {PreparedImages images;QString error;};
-    QProgressDialog progress("Reading HDR images…","Cancel",0,0,parent);progress.setProperty("studioChrome",true);progress.setObjectName("hdrImportPreflight");progress.setWindowModality(Qt::ApplicationModal);progress.setMinimumDuration(0);progress.setAutoClose(false);progress.setAutoReset(false);
+    QProgressDialog progress("正在读取 HDR 图像…","取消",0,0,parent);progress.setProperty("studioChrome",true);progress.setObjectName("hdrImportPreflight");progress.setWindowModality(Qt::ApplicationModal);progress.setMinimumDuration(0);progress.setAutoClose(false);progress.setAutoReset(false);
     auto cancelled=std::make_shared<std::atomic_bool>(false);QFutureWatcher<Result> watcher;
     QObject::connect(&progress,&QProgressDialog::canceled,&progress,[cancelled]{cancelled->store(true);});
     QObject::connect(&watcher,&QFutureWatcher<Result>::finished,&progress,&QDialog::accept);
     watcher.setFuture(QtConcurrent::run([hdr,cancelled]{Result result;uint64_t pixels=0,bytes=0;try{for(const auto& path:hdr){imaging::ImportOptions options;options.remainingPixels=100000000-pixels;options.maxWorkingBytes=1200000000-bytes;options.cancelled=[cancelled]{return cancelled->load();};auto image=std::make_shared<const imaging::DecodedImage>(decodeImportImage(path,options));pixels+=uint64_t(image->image.width)*image->image.height;bytes+=image->deep->samples.size()*2+image->image.pixels.size();result.images.emplace(path,std::move(image));}}catch(const std::exception& e){result.error=QString::fromUtf8(e.what());}return result;}));
     progress.exec();cancelled->store(cancelled->load()||watcher.isRunning());watcher.waitForFinished();
-    if(cancelled->load())return false;auto result=watcher.result();if(!result.error.isEmpty()){QMessageBox message(QMessageBox::Critical,"Import HDR Image",result.error,QMessageBox::Ok,parent);message.setProperty("studioChrome",true);message.exec();return false;}prepared=std::move(result.images);return true;
+    if(cancelled->load())return false;auto result=watcher.result();if(!result.error.isEmpty()){QMessageBox message(QMessageBox::Critical,"导入 HDR 图像",result.error,QMessageBox::Ok,parent);message.setProperty("studioChrome",true);message.exec();return false;}prepared=std::move(result.images);return true;
 }
 ImportResult prepareImportBatch(ImportState state,const ImportBatch& batch,const ImportDecoder& decode,imaging::ImportOptions options){
-    if(!decode)throw std::invalid_argument("Image decoder is required");
+    if(!decode)throw std::invalid_argument("需要图像解码器");
     if(state.document)validateDocument(*state.document);
-    if(batch.point&&(!std::isfinite(batch.point->x)||!std::isfinite(batch.point->y)))throw std::invalid_argument("Invalid image drop point");
+    if(batch.point&&(!std::isfinite(batch.point->x)||!std::isfinite(batch.point->y)))throw std::invalid_argument("无效的图像放置点");
     ImportResult result;result.before=state;result.after=std::move(state);
     const auto point=result.before.document?batch.point:std::nullopt;
     const auto budget=std::min<uint64_t>(options.remainingPixels,100000000);
@@ -57,7 +57,7 @@ ImportResult prepareImportBatch(ImportState state,const ImportBatch& batch,const
             uint64_t used=0;
             if(result.after.document)for(const auto& layer:result.after.document->layers)if(layer.raster){
                 const auto pixels=uint64_t(layer.raster->width)*layer.raster->height;
-                if(pixels>budget||used>budget-pixels)throw std::runtime_error("This project exceeds the 100-megapixel import budget");
+                if(pixels>budget||used>budget-pixels)throw std::runtime_error("此项目超过 1 亿像素的导入预算");
                 used+=pixels;
             }
             options.remainingPixels=budget-used;
@@ -66,7 +66,7 @@ ImportResult prepareImportBatch(ImportState state,const ImportBatch& batch,const
             const auto prepared=batch.prepared.find(path);
             // A shared immutable preflight result avoids decoding the HDR file twice.
             auto owned=prepared==batch.prepared.end()?std::make_shared<const imaging::DecodedImage>(decode(path,options)):prepared->second;
-            if(!owned)throw std::runtime_error("Prepared image is missing");
+            if(!owned)throw std::runtime_error("缺少已准备的图像");
             const auto& decoded=*owned;imaging::checkCancelled(options);
             imaging::checkedBytes(decoded.image.width,decoded.image.height,4,options);imaging::validate(decoded.image);
             auto raster=Raster::fromRgba(int(decoded.image.width),int(decoded.image.height),decoded.image.pixels.data(),decoded.image.stride);
@@ -97,7 +97,7 @@ struct ImportQueue::Impl {
     QFutureWatcher<ImportResult> watcher;QTimer retry;uint64_t next{1};bool finishing{};
 };
 ImportQueue::ImportQueue(Host host,QObject* parent,ImportDecoder decoder):QObject(parent),impl_(std::make_unique<Impl>()){
-    if(!host.snapshot||!host.blocked||!host.busy||!host.commit||!host.completed||!decoder)throw std::invalid_argument("Incomplete import host");
+    if(!host.snapshot||!host.blocked||!host.busy||!host.commit||!host.completed||!decoder)throw std::invalid_argument("导入宿主不完整");
     setObjectName("imageImportQueue");impl_->host=std::move(host);impl_->decoder=std::move(decoder);impl_->retry.setInterval(30);impl_->retry.setSingleShot(true);
     connect(&impl_->retry,&QTimer::timeout,this,[this]{drain();});
     connect(&impl_->watcher,&QFutureWatcher<ImportResult>::finished,this,[this]{

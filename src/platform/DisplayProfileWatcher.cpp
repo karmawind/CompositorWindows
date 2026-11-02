@@ -60,7 +60,7 @@ struct DisplayProfileWatcher::Impl {
     Impl(DisplayProfileWatcher* object,std::vector<DisplayProfileWatchTarget> targets,
          std::function<void()> callback):owner(object),onChange(std::move(callback)) {
         requireThread();
-        if(targets.empty() || targets.size()>8) throw std::invalid_argument("Display profile watcher requires 1 to 8 targets");
+        if(targets.empty() || targets.size()>8) throw std::invalid_argument("显示配置文件监视器需要 1 到 8 个目标");
         timer.setSingleShot(true);
         timer.setTimerType(Qt::PreciseTimer);
         timer.setInterval(DisplayProfileWatcher::coalesceMilliseconds);
@@ -76,7 +76,7 @@ struct DisplayProfileWatcher::Impl {
     ~Impl() { timer.stop(); entries.clear(); }
     void requireThread() const {
         if(QThread::currentThread()!=owner->thread())
-            throw std::logic_error("Display profile watcher must be used on its owning thread");
+            throw std::logic_error("显示配置文件监视器必须在其所属线程上使用");
     }
     void unavailable(Entry& entry,LSTATUS error,const char* operation) {
         entry.registration.reset();
@@ -89,7 +89,7 @@ struct DisplayProfileWatcher::Impl {
         auto& status=entry.status;
         const auto root=hiveHandle(status.target.hive);
         if(!root || !validSubkey(status.target.subkey)) {
-            unavailable(entry,ERROR_INVALID_PARAMETER,"Display profile registry target validation");
+            unavailable(entry,ERROR_INVALID_PARAMETER,"显示配置文件注册表目标验证");
             return;
         }
         // Arm the new handle before releasing the old completed registration.
@@ -107,18 +107,18 @@ struct DisplayProfileWatcher::Impl {
                 candidate=split==std::wstring::npos?std::wstring{}:candidate.substr(0,split);
             }
             if(error!=ERROR_SUCCESS) {
-                unavailable(entry,error,"Open display profile notification key");
+                unavailable(entry,error,"打开显示配置文件通知键");
                 return;
             }
             registration->event=CreateEventW(nullptr,TRUE,FALSE,nullptr);
             if(!registration->event) {
-                unavailable(entry,static_cast<LSTATUS>(GetLastError()),"Create display profile notification event");
+                unavailable(entry,static_cast<LSTATUS>(GetLastError()),"创建显示配置文件通知事件");
                 return;
             }
             error=RegNotifyChangeKeyValue(registration->key,TRUE,notifyFilter,registration->event,TRUE);
             if(error==ERROR_KEY_DELETED) continue;
             if(error!=ERROR_SUCCESS) {
-                unavailable(entry,error,"Register display profile notification");
+                unavailable(entry,error,"注册显示配置文件通知");
                 return;
             }
             registration->notifier=std::make_unique<QWinEventNotifier>(registration->event,owner);
@@ -134,11 +134,11 @@ struct DisplayProfileWatcher::Impl {
             status.available=true;
             status.ancestor=status.watchedSubkey!=status.target.subkey;
             status.error=ERROR_SUCCESS;
-            status.diagnostic=status.ancestor?"Watching the nearest existing ancestor until the profile key exists":"";
+            status.diagnostic=status.ancestor?"正在监视最近存在的上级键，直至该配置文件键出现":"";
             entry.registration=std::move(registration);
             return;
         }
-        unavailable(entry,ERROR_KEY_DELETED,"Register display profile notification after repeated deletion");
+        unavailable(entry,ERROR_KEY_DELETED,"在键被重复删除后重新注册显示配置文件通知");
     }
     void flush() {
         bool changed=false;

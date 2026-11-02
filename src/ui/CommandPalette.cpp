@@ -43,7 +43,7 @@ CommandPalette::CommandPalette(QWidget* host,CommandRegistry& registry,QWidget* 
     layout->setSpacing(8);
     search_=new QLineEdit(this);
     search_->setObjectName("commandPaletteSearch");
-    search_->setPlaceholderText("Search commands and tools");
+    search_->setPlaceholderText("搜索命令和工具");
     search_->setClearButtonEnabled(true);
     results_=new QListWidget(this);
     results_->setObjectName("commandPaletteList");

@@ -41,7 +41,7 @@ struct ProjectToolState {
     editing::GradientSettings gradientSettings;
     editing::ShapeStyle shapeStyle;
     editing::SelectionMode selectionMode{editing::SelectionMode::Replace};
-    QString cropRatioChoice{"Free"};
+    QString cropRatioChoice{"自由"};
     editing::LassoKind lassoKind{editing::LassoKind::Freehand};
     int selectionExpandAmount{1},selectionContractAmount{1};
     ProjectFilterSettings filterSettings;

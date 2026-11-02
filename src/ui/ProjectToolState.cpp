@@ -9,17 +9,17 @@
 namespace compositor {
 ProjectFilterSettings::ProjectFilterSettings() {
     auto defaults=[](const char* kind,const char* field){return QJsonDocument::fromJson(QByteArray::fromStdString(effects::defaultAdjustmentJson(kind))).object()[field].toObject();};
-    curves=defaults("Curves","curves");
+    curves=defaults("曲线","curves");
     exposure=QJsonObject{{"exposure",0},{"offset",0},{"gamma",1}};
     gradientMap=QJsonObject{{"shadows",QJsonObject{{"red",0},{"green",0},{"blue",0}}},{"highlights",QJsonObject{{"red",1},{"green",1},{"blue",1}}},{"reversed",false}};
     grain=QJsonObject{{"amount",25},{"size",1.5},{"roughness",50},{"seed",0}};
 }
 std::string ProjectFilterSettings::beginAdjustment(const QString& kind,QColor foreground,QColor backgroundColor) const {
     auto json=QJsonDocument::fromJson(QByteArray::fromStdString(effects::defaultAdjustmentJson(kind.toStdString()))).object();
-    if(kind=="Curves")json["curves"]=curves;
-    else if(kind=="Exposure")json["exposureSettings"]=exposure;
-    else if(kind=="Grain")json["grainSettings"]=grain;
-    else if(kind=="Gradient Map"){
+    if(kind=="曲线")json["curves"]=curves;
+    else if(kind=="曝光")json["exposureSettings"]=exposure;
+    else if(kind=="颗粒")json["grainSettings"]=grain;
+    else if(kind=="渐变映射"){
         auto color=[](QColor value){return QJsonObject{{"red",value.redF()},{"green",value.greenF()},{"blue",value.blueF()}};};
         // Filters.swift313-315 always starts a new map from today's palette.
         json["gradientMapSettings"]=QJsonObject{{"shadows",color(foreground)},{"highlights",color(backgroundColor)},{"reversed",false}};
@@ -28,10 +28,10 @@ std::string ProjectFilterSettings::beginAdjustment(const QString& kind,QColor fo
 }
 void ProjectFilterSettings::rememberAdjustment(const std::string& json) {
     const auto value=QJsonDocument::fromJson(QByteArray::fromStdString(json)).object();const auto kind=value["kind"].toString();
-    if(kind=="Curves")curves=value["curves"].toObject();
-    else if(kind=="Exposure")exposure=value["exposureSettings"].toObject();
-    else if(kind=="Gradient Map")gradientMap=value["gradientMapSettings"].toObject();
-    else if(kind=="Grain")grain=value["grainSettings"].toObject();
+    if(kind=="曲线")curves=value["curves"].toObject();
+    else if(kind=="曝光")exposure=value["exposureSettings"].toObject();
+    else if(kind=="渐变映射")gradientMap=value["gradientMapSettings"].toObject();
+    else if(kind=="颗粒")grain=value["grainSettings"].toObject();
 }
 namespace {
 template<class T> T* control(QObject* root,const char* objectName,const char* accessibleName="") {
@@ -83,25 +83,25 @@ void MainWindow::restoreToolState(const EditorProject& project) {
 
     combo(this,"gradientShape","",int(gradientSettings_.shape));
     combo(this,"gradientStyle","",int(gradientSettings_.style));
-    check(this,"gradientReverse","drawingOptions","Reverse",gradientSettings_.reversed);
-    number(this,"","Gradient opacity",gradientSettings_.opacity*100);
-    combo(this,"shapeKind","",int(shapeStyle_.kind));number(this,"","Corner radius",shapeStyle_.cornerRadius);
-    combo(this,"marqueeShape","Marquee shape",ellipse_?1:0);
+    check(this,"gradientReverse","drawingOptions","反向",gradientSettings_.reversed);
+    number(this,"","渐变不透明度",gradientSettings_.opacity*100);
+    combo(this,"shapeKind","",int(shapeStyle_.kind));number(this,"","圆角半径",shapeStyle_.cornerRadius);
+    combo(this,"marqueeShape","选框形状",ellipse_?1:0);
     combo(this,"lassoKind","",lassoKind_==editing::LassoKind::Polygonal?1:0);
     if(auto* item=control<QComboBox>(this,"cropRatioChoice")){const QSignalBlocker blocker(item);item->setCurrentText(cropRatioChoice_);}
     for(const auto entry:{std::pair{"selectionExpandAmount",selectionExpandAmount_},std::pair{"selectionContractAmount",selectionContractAmount_}})if(auto* item=control<QSpinBox>(this,entry.first)){const QSignalBlocker blocker(item);item->setValue(entry.second);}
-    combo(this,"selectionMode","Selection mode",int(selectionMode_));
-    check(this,"selectionAntialias","selectionOptions","Antialias",selectionAntialias_);
-    if(auto* item=control<QSpinBox>(this,"wandTolerance","Wand tolerance")){const QSignalBlocker blocker(item);item->setValue(wandTolerance_);}
-    combo(this,"wandSampleSize","Wand sample size",wandSampleRadius_);
-    check(this,"wandContiguous","wandOptions","Contiguous",wandContiguous_);
-    check(this,"wandAllLayers","wandOptions","Sample All Layers",wandAllLayers_);
-    check(this,"paintMaskWhite","brushOptions","Paint mask white",maskPaintWhite_);
-    check(this,"transformLockRatio","transformOptions","Lock aspect ratio",lockRatio_);
-    check(this,"transformAutoSelect","transformOptions","Auto-select layer",autoSelectLayers_);
-    check(this,"transformShowControls","transformOptions","Show controls",transformControls_);
-    check(this,"transformSnapping","transformOptions","Snap to edges and centers",snapPolicy_.enabled);
-    for(auto* item:findChildren<QAction*>())if(item->objectName()=="pixelGrid"||item->text()=="Pixel Grid"){const QSignalBlocker blocker(item);item->setChecked(state.showPixelGrid);}
+    combo(this,"selectionMode","选区模式",int(selectionMode_));
+    check(this,"selectionAntialias","selectionOptions","消除锯齿",selectionAntialias_);
+    if(auto* item=control<QSpinBox>(this,"wandTolerance","魔棒容差")){const QSignalBlocker blocker(item);item->setValue(wandTolerance_);}
+    combo(this,"wandSampleSize","魔棒取样大小",wandSampleRadius_);
+    check(this,"wandContiguous","wandOptions","连续",wandContiguous_);
+    check(this,"wandAllLayers","wandOptions","对所有图层取样",wandAllLayers_);
+    check(this,"paintMaskWhite","brushOptions","用白色绘制蒙版",maskPaintWhite_);
+    check(this,"transformLockRatio","transformOptions","锁定长宽比",lockRatio_);
+    check(this,"transformAutoSelect","transformOptions","自动选择图层",autoSelectLayers_);
+    check(this,"transformShowControls","transformOptions","显示控件",transformControls_);
+    check(this,"transformSnapping","transformOptions","对齐到边缘和中心",snapPolicy_.enabled);
+    for(auto* item:findChildren<QAction*>())if(item->objectName()=="pixelGrid"||item->text()=="像素网格"){const QSignalBlocker blocker(item);item->setChecked(state.showPixelGrid);}
     // These existing refreshers block signals and read the newly selected project
     // for clone source/alignment and layer eligibility.
     refreshBrushControls();refreshRetouchControls();refreshSnapControls();

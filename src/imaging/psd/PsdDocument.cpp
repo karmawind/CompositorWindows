@@ -20,7 +20,7 @@ namespace {
 struct Reader {
     const uint8_t* data; size_t size, at{};
     bool psb{};
-    void need(size_t n) const { if (at > size || n > size - at) throw std::runtime_error("PSD ended early"); }
+    void need(size_t n) const { if (at > size || n > size - at) throw std::runtime_error("PSD 数据提前结束"); }
     uint8_t u8() { need(1); return data[at++]; }
     uint16_t u16() { need(2); uint16_t v = uint16_t(data[at] << 8 | data[at + 1]); at += 2; return v; }
     int16_t i16() { return int16_t(u16()); }
@@ -28,7 +28,7 @@ struct Reader {
     int32_t i32() { return int32_t(u32()); }
     uint64_t u64() { need(8); uint64_t v = 0; for (int i = 0; i < 8; ++i) v = (v << 8) | data[at++]; return v; }
     uint64_t wide() { return psb ? u64() : u32(); }
-    void skip(uint64_t n) { if (n > size - at) throw std::runtime_error("PSD ended early"); at += size_t(n); }
+    void skip(uint64_t n) { if (n > size - at) throw std::runtime_error("PSD 数据提前结束"); at += size_t(n); }
     std::string ascii(size_t n) { need(n); std::string out(reinterpret_cast<const char*>(data + at), n); at += n; return out; }
 };
 Blend blendOf(const std::string& key, std::string& report) {
@@ -40,7 +40,7 @@ Blend blendOf(const std::string& key, std::string& report) {
     if (key == "sLit") return Blend::SoftLight; if (key == "hLit") return Blend::HardLight; if (key == "vLit") return Blend::VividLight;
     if (key == "lLit") return Blend::LinearLight; if (key == "pLit") return Blend::PinLight; if (key == "hMix") return Blend::HardMix;
     if (key == "smud") return Blend::Exclusion; if (key == "fsub") return Blend::Subtract; if (key == "fdiv") return Blend::Divide;
-    report += "Blend " + key + " became Normal.\n"; return Blend::Normal;
+    report += "混合 " + key + " became Normal.\n"; return Blend::Normal;
 }
 bool wideExtra(bool psb, const std::string& signature, const std::string& key) {
     if (signature == "8B64") return true;
@@ -82,7 +82,7 @@ std::string macRomanToUtf8(const std::string& raw) {
 struct BitReader {
     const uint8_t* data; size_t size, at{}; uint32_t bits{}; int count{};
     uint32_t pull(int width) {
-        while (count < width) { if (at >= size) throw std::runtime_error("Unsupported PSD compression"); bits |= uint32_t(data[at++]) << count; count += 8; }
+        while (count < width) { if (at >= size) throw std::runtime_error("不支持的 PSD 压缩"); bits |= uint32_t(data[at++]) << count; count += 8; }
         uint32_t value = bits & ((1u << width) - 1u); bits >>= width; count -= width; return value;
     }
 };
@@ -90,10 +90,10 @@ struct Huffman {
     int count[16]{}, symbol[320]{}, max{};
     static Huffman build(const int* lengths, int symbols) {
         Huffman tree;
-        for (int symbol = 0; symbol < symbols; ++symbol) if (lengths[symbol] > 15) throw std::runtime_error("Unsupported PSD compression"); else if (lengths[symbol]) { tree.count[lengths[symbol]]++; tree.max = std::max(tree.max, lengths[symbol]); }
+        for (int symbol = 0; symbol < symbols; ++symbol) if (lengths[symbol] > 15) throw std::runtime_error("不支持的 PSD 压缩"); else if (lengths[symbol]) { tree.count[lengths[symbol]]++; tree.max = std::max(tree.max, lengths[symbol]); }
         int offsets[16]{};
         for (int length = 1; length < 15; ++length) offsets[length + 1] = offsets[length] + tree.count[length];
-        for (int symbol = 0; symbol < symbols; ++symbol) if (lengths[symbol]) { int slot = offsets[lengths[symbol]]++; if (slot < 0 || slot >= 320) throw std::runtime_error("Unsupported PSD compression"); tree.symbol[slot] = symbol; }
+        for (int symbol = 0; symbol < symbols; ++symbol) if (lengths[symbol]) { int slot = offsets[lengths[symbol]]++; if (slot < 0 || slot >= 320) throw std::runtime_error("不支持的 PSD 压缩"); tree.symbol[slot] = symbol; }
         return tree;
     }
     int decode(BitReader& reader) const {
@@ -103,17 +103,17 @@ struct Huffman {
             if (code - countAt < first) return symbol[index + (code - first)];
             index += countAt; first = (first + countAt) << 1; code <<= 1;
         }
-        throw std::runtime_error("Unsupported PSD compression");
+        throw std::runtime_error("不支持的 PSD 压缩");
     }
 };
 template<typename Sink>
 void inflateZlib(const uint8_t* data, size_t size, uint64_t expected, Sink&& emit) {
-    if (size < 8 || (data[0] & 0x0F) != 8) throw std::runtime_error("Unsupported PSD compression");
+    if (size < 8 || (data[0] & 0x0F) != 8) throw std::runtime_error("不支持的 PSD 压缩");
     BitReader reader{data + 2, size - 6};
     std::array<uint8_t, 32768> history{};
     uint64_t produced = 0;
     auto append = [&](uint8_t value) {
-        if (produced >= expected) throw std::runtime_error("Unsupported PSD compression");
+        if (produced >= expected) throw std::runtime_error("不支持的 PSD 压缩");
         history[size_t(produced & 32767)] = value;
         emit(value);
         ++produced;
@@ -128,10 +128,10 @@ void inflateZlib(const uint8_t* data, size_t size, uint64_t expected, Sink&& emi
         last = reader.pull(1) != 0; auto type = reader.pull(2);
         if (type == 0) {
             reader.bits = 0; reader.count = 0;
-            if (reader.at + 4 > reader.size) throw std::runtime_error("Unsupported PSD compression");
+            if (reader.at + 4 > reader.size) throw std::runtime_error("不支持的 PSD 压缩");
             uint16_t length = uint16_t(reader.data[reader.at] | reader.data[reader.at + 1] << 8); reader.at += 4;
-            if (uint64_t(length) > expected - produced) throw std::runtime_error("Unsupported PSD compression");
-            if (reader.at + length > reader.size) throw std::runtime_error("Unsupported PSD compression");
+            if (uint64_t(length) > expected - produced) throw std::runtime_error("不支持的 PSD 压缩");
+            if (reader.at + length > reader.size) throw std::runtime_error("不支持的 PSD 压缩");
             for (size_t i = 0; i < length; ++i) append(reader.data[reader.at++]);
         } else if (type == 1 || type == 2) {
             int literalLengths[288]{}, distanceLengths[32]{};
@@ -143,7 +143,7 @@ void inflateZlib(const uint8_t* data, size_t size, uint64_t expected, Sink&& emi
                 for (int i = 0; i < 32; ++i) distanceLengths[i] = 5;
             } else {
                 int literals = int(reader.pull(5)) + 257, distances = int(reader.pull(5)) + 1, codes = int(reader.pull(4)) + 4;
-                if (literals > 286 || distances > 32) throw std::runtime_error("Unsupported PSD compression");
+                if (literals > 286 || distances > 32) throw std::runtime_error("不支持的 PSD 压缩");
                 int codeLengths[19]{};
                 for (int i = 0; i < codes; ++i) codeLengths[order[i]] = int(reader.pull(3));
                 Huffman codeTree = Huffman::build(codeLengths, 19);
@@ -151,8 +151,8 @@ void inflateZlib(const uint8_t* data, size_t size, uint64_t expected, Sink&& emi
                 for (int i = 0; i < literals + distances;) {
                     int symbol = codeTree.decode(reader);
                     if (symbol < 16) lengths[i++] = previous = symbol;
-                    else if (symbol == 16) { int repeat = int(reader.pull(2)) + 3; if (i + repeat > literals + distances) throw std::runtime_error("Unsupported PSD compression"); for (int n = 0; n < repeat; ++n) lengths[i++] = previous; }
-                    else { int repeat = symbol == 17 ? int(reader.pull(3)) + 3 : int(reader.pull(7)) + 11; if (i + repeat > literals + distances) throw std::runtime_error("Unsupported PSD compression"); for (int n = 0; n < repeat; ++n) lengths[i++] = 0; previous = 0; }
+                    else if (symbol == 16) { int repeat = int(reader.pull(2)) + 3; if (i + repeat > literals + distances) throw std::runtime_error("不支持的 PSD 压缩"); for (int n = 0; n < repeat; ++n) lengths[i++] = previous; }
+                    else { int repeat = symbol == 17 ? int(reader.pull(3)) + 3 : int(reader.pull(7)) + 11; if (i + repeat > literals + distances) throw std::runtime_error("不支持的 PSD 压缩"); for (int n = 0; n < repeat; ++n) lengths[i++] = 0; previous = 0; }
                 }
                 std::memcpy(literalLengths, lengths, size_t(literals) * sizeof(int));
                 std::memcpy(distanceLengths, lengths + literals, size_t(distances) * sizeof(int));
@@ -164,34 +164,34 @@ void inflateZlib(const uint8_t* data, size_t size, uint64_t expected, Sink&& emi
                 if (symbol < 256) append(uint8_t(symbol));
                 else if (symbol == 256) break;
                 else {
-                    int lengthIndex = symbol - 257; if (lengthIndex < 0 || lengthIndex > 28) throw std::runtime_error("Unsupported PSD compression");
+                    int lengthIndex = symbol - 257; if (lengthIndex < 0 || lengthIndex > 28) throw std::runtime_error("不支持的 PSD 压缩");
                     int length = lengthBase[lengthIndex] + int(lengthExtra[lengthIndex] ? reader.pull(lengthExtra[lengthIndex]) : 0);
-                    int distanceIndex = distances.decode(reader); if (distanceIndex < 0 || distanceIndex > 29) throw std::runtime_error("Unsupported PSD compression");
+                    int distanceIndex = distances.decode(reader); if (distanceIndex < 0 || distanceIndex > 29) throw std::runtime_error("不支持的 PSD 压缩");
                     int distance = distanceBase[distanceIndex] + int(distanceExtra[distanceIndex] ? reader.pull(distanceExtra[distanceIndex]) : 0);
-                    if (distance < 1 || uint64_t(distance) > produced || uint64_t(length) > expected - produced) throw std::runtime_error("Unsupported PSD compression");
+                    if (distance < 1 || uint64_t(distance) > produced || uint64_t(length) > expected - produced) throw std::runtime_error("不支持的 PSD 压缩");
                     for (int n = 0; n < length; ++n) append(history[size_t((produced - size_t(distance)) & 32767)]);
                 }
             }
-        } else throw std::runtime_error("Unsupported PSD compression");
+        } else throw std::runtime_error("不支持的 PSD 压缩");
     }
-    if (produced != expected) throw std::runtime_error("Unsupported PSD compression");
+    if (produced != expected) throw std::runtime_error("不支持的 PSD 压缩");
 }
 std::vector<uint8_t> decodeChannel(Reader& in, uint64_t width, uint64_t height, uint64_t cropLeft, uint64_t cropTop, int cropWidth, int cropHeight, uint16_t compression, int depth, size_t packedBytes = 0, const std::vector<uint32_t>* rowTable = nullptr, int rowIndex = 0, std::vector<uint16_t>* deep = nullptr) {
     const int sample = depth == 16 ? 2 : 1;
     if (!width || !height || cropWidth < 1 || cropHeight < 1 || cropWidth > 30000 || cropHeight > 30000 || cropLeft > width || cropTop > height || uint64_t(cropWidth) > width - cropLeft || uint64_t(cropHeight) > height - cropTop)
-        throw std::runtime_error("Raster dimensions exceed supported budget");
+        throw std::runtime_error("栅格尺寸超出支持的预算");
     const uint64_t pixels = uint64_t(cropWidth) * uint64_t(cropHeight);
-    if (pixels > 100000000) throw std::runtime_error("Raster dimensions exceed supported budget");
-    if (in.at > in.size || packedBytes > in.size - in.at) throw std::runtime_error("PSD ended early");
-    if (width > std::numeric_limits<uint64_t>::max() / uint64_t(sample) / height) throw std::runtime_error("PSD channel dimensions overflow");
+    if (pixels > 100000000) throw std::runtime_error("栅格尺寸超出支持的预算");
+    if (in.at > in.size || packedBytes > in.size - in.at) throw std::runtime_error("PSD 数据提前结束");
+    if (width > std::numeric_limits<uint64_t>::max() / uint64_t(sample) / height) throw std::runtime_error("PSD 通道尺寸溢出");
     const uint64_t rowBytes = width * uint64_t(sample);
     const uint64_t expectedBytes = rowBytes * height;
-    if (pixels > std::numeric_limits<size_t>::max() / size_t(sample)) throw std::runtime_error("Raster dimensions exceed supported budget");
+    if (pixels > std::numeric_limits<size_t>::max() / size_t(sample)) throw std::runtime_error("栅格尺寸超出支持的预算");
     std::vector<uint8_t> raw(size_t(pixels) * size_t(sample));
     const uint64_t cropByteLeft = cropLeft * uint64_t(sample);
     const uint64_t cropByteCount = uint64_t(cropWidth) * uint64_t(sample);
     if (compression == 0) {
-        if (expectedBytes > packedBytes) throw std::runtime_error("PSD channel is shorter than its dimensions");
+        if (expectedBytes > packedBytes) throw std::runtime_error("PSD 通道数据短于其尺寸");
         for (int y = 0; y < cropHeight; ++y) {
             const uint64_t sourceOffset = (cropTop + uint64_t(y)) * rowBytes + cropByteLeft;
             std::memcpy(raw.data() + size_t(y) * size_t(cropByteCount), in.data + in.at + size_t(sourceOffset), size_t(cropByteCount));
@@ -224,7 +224,7 @@ std::vector<uint8_t> decodeChannel(Reader& in, uint64_t width, uint64_t height, 
             if (byteX + 1 == rowBytes) { previousByte = 0; previousSample = 0; }
             ++rawAt;
         });
-        if (rawAt != expectedBytes) throw std::runtime_error("PSD channel is shorter than its dimensions");
+        if (rawAt != expectedBytes) throw std::runtime_error("PSD 通道数据短于其尺寸");
     }
     else if (compression == 1) {
         const std::vector<uint32_t>* rows = rowTable;
@@ -233,17 +233,17 @@ std::vector<uint8_t> decodeChannel(Reader& in, uint64_t width, uint64_t height, 
         uint64_t tableAt = 0;
         const uint64_t entryBytes = in.psb ? 4u : 2u;
         if (!rows) {
-            if (height > packedBytes / entryBytes) throw std::runtime_error("PSD channel row table is truncated");
+            if (height > packedBytes / entryBytes) throw std::runtime_error("PSD 通道行表被截断");
             tableAt = in.at;
             dataAt += height * entryBytes;
-        } else if (rowIndex < 0 || uint64_t(rowIndex) + height > rows->size()) throw std::runtime_error("PSD channel overrun");
+        } else if (rowIndex < 0 || uint64_t(rowIndex) + height > rows->size()) throw std::runtime_error("PSD 通道数据越界");
         in.at = size_t(dataAt);
-        if (in.at > channelEnd) throw std::runtime_error("PSD channel row table is truncated");
+        if (in.at > channelEnd) throw std::runtime_error("PSD 通道行表被截断");
         for (uint64_t y = 0; y < height; ++y) {
             uint64_t count = 0;
             if (rows) count = (*rows)[size_t(rowIndex) + size_t(y)];
             else { Reader table = in; table.at = size_t(tableAt + y * entryBytes); count = in.psb ? table.u32() : table.u16(); }
-            if (count > channelEnd - in.at) throw std::runtime_error("PSD channel row exceeds channel data");
+            if (count > channelEnd - in.at) throw std::runtime_error("PSD 通道行超出通道数据范围");
             size_t written = 0; const size_t end = in.at + size_t(count);
             const bool keepRow = y >= cropTop && y < cropTop + uint64_t(cropHeight);
             if (!keepRow) { in.at = end; continue; }
@@ -251,7 +251,7 @@ std::vector<uint8_t> decodeChannel(Reader& in, uint64_t width, uint64_t height, 
                 int control = int8_t(in.u8());
                 if (control >= 0) {
                     const size_t n = size_t(control + 1);
-                    if (n > rowBytes - written || n > end - in.at) throw std::runtime_error("Invalid PSD PackBits row");
+                    if (n > rowBytes - written || n > end - in.at) throw std::runtime_error("无效的 PSD PackBits 行");
                     const uint64_t runBegin = written, runEnd = runBegin + n;
                     const uint64_t keepBegin = std::max(runBegin, cropByteLeft);
                     const uint64_t keepEnd = std::min(runEnd, cropByteLeft + cropByteCount);
@@ -260,9 +260,9 @@ std::vector<uint8_t> decodeChannel(Reader& in, uint64_t width, uint64_t height, 
                     written += n;
                 }
                 else if (control > -128) {
-                    if (in.at >= end) throw std::runtime_error("Invalid PSD PackBits row");
+                    if (in.at >= end) throw std::runtime_error("无效的 PSD PackBits 行");
                     const auto value = in.u8(); const size_t n = size_t(1 - control);
-                    if (n > rowBytes - written) throw std::runtime_error("Invalid PSD PackBits row");
+                    if (n > rowBytes - written) throw std::runtime_error("无效的 PSD PackBits 行");
                     const uint64_t runBegin = written, runEnd = runBegin + n;
                     const uint64_t keepBegin = std::max(runBegin, cropByteLeft);
                     const uint64_t keepEnd = std::min(runEnd, cropByteLeft + cropByteCount);
@@ -270,10 +270,10 @@ std::vector<uint8_t> decodeChannel(Reader& in, uint64_t width, uint64_t height, 
                     written += n;
                 }
             }
-            if (written != rowBytes) throw std::runtime_error("Invalid PSD PackBits row");
+            if (written != rowBytes) throw std::runtime_error("无效的 PSD PackBits 行");
             in.at = end;
         }
-    } else throw std::runtime_error("Unsupported PSD compression");
+    } else throw std::runtime_error("不支持的 PSD 压缩");
     if (depth == 8) return raw;
     std::vector<uint8_t> out(static_cast<size_t>(pixels));
     if (deep) deep->assign(size_t(pixels), 0);
@@ -345,7 +345,7 @@ bool inIntRange(double value) {
 struct ShapePaint { std::shared_ptr<const Raster> raster; Transform transform; };
 std::optional<ShapePaint> rasterizeRoundedRect(const std::vector<uint8_t>& fill, const std::vector<uint8_t>& geometry, const std::vector<uint8_t>& stroke) {
     if (fill.size() < 4 || geometry.empty()) return {};
-    auto top = descriptorNumber(geometry, "Top "); auto left = descriptorNumber(geometry, "Left");
+    auto top = descriptorNumber(geometry, "Top "); auto left = descriptorNumber(geometry, "左");
     auto bottom = descriptorNumber(geometry, "Btom"); auto right = descriptorNumber(geometry, "Rght");
     auto radiusValue = descriptorNumber(geometry, "topLeft");
     auto red = descriptorNumber(fill, "Rd  "); auto green = descriptorNumber(fill, "Grn "); auto blue = descriptorNumber(fill, "Bl  ");
@@ -534,7 +534,7 @@ std::optional<VectorShape> vectorShape(const std::vector<uint8_t>& fill, const s
         const auto type = descriptorLong(origination, "keyOriginType");
         if (!type || (*type != 1 && *type != 2 && *type != 5)) { reason = "only rectangle and ellipse shapes become editable"; return {}; }
         const auto box = tailFrom(origination, "keyOriginShapeBBox");
-        const auto top = descriptorNumber(box, "Top "), left = descriptorNumber(box, "Left"), bottom = descriptorNumber(box, "Btom"), right = descriptorNumber(box, "Rght");
+        const auto top = descriptorNumber(box, "Top "), left = descriptorNumber(box, "左"), bottom = descriptorNumber(box, "Btom"), right = descriptorNumber(box, "Rght");
         if (!top || !left || !bottom || !right || !std::isfinite(*top) || !std::isfinite(*left) || !std::isfinite(*bottom) || !std::isfinite(*right) || *right <= *left || *bottom <= *top) {
             reason = "the shape bounds could not be read";
             return {};
@@ -605,12 +605,12 @@ std::string convertVectorShape(Layer& layer, const std::vector<uint8_t>& fill, c
 bool readMerged(Reader& in, int width, int height, int depth, int channels, Layer& layer, std::string& report) {
     if (in.at + 2 > in.size) return false;
     auto compression = in.u16();
-    if (compression > 1) throw std::runtime_error("Unsupported PSD compression");
+    if (compression > 1) throw std::runtime_error("不支持的 PSD 压缩");
     const int planes = std::max(int(channels), 3);
     std::vector<uint32_t> rows;
     if (compression == 1) {
         const uint64_t tableBytes = uint64_t(height) * uint64_t(planes) * (in.psb ? 4u : 2u);
-        if (in.at > in.size || tableBytes > in.size - in.at) throw std::runtime_error("PSD ended early");
+        if (in.at > in.size || tableBytes > in.size - in.at) throw std::runtime_error("PSD 数据提前结束");
         rows.resize(size_t(height) * size_t(planes));
         for (auto& row : rows) row = in.psb ? in.u32() : in.u16();
     }
@@ -621,30 +621,30 @@ bool readMerged(Reader& in, int width, int height, int depth, int channels, Laye
     if (channels >= 4) {
         try { alpha = plane(3, depth == 16 ? &alpha16 : nullptr); }
         catch (const std::exception&) {
-            report += "Merged image transparency could not be read.\n";
+            report += "无法读取合并图像的透明度。\n";
             return false;
         }
     }
-    layer.id = newId(); layer.name = "Background"; layer.transform = {0, 0, double(width), double(height)};
+    layer.id = newId(); layer.name = "背景"; layer.transform = {0, 0, double(width), double(height)};
     installImage(layer, width, height, red, green, blue, alpha, red16, green16, blue16, alpha16);
     return true;
 }
 }
 PsdImport readPsd(const std::filesystem::path& path) {
-    std::ifstream file(path, std::ios::binary); if (!file) throw std::runtime_error("Cannot open PSD");
+    std::ifstream file(path, std::ios::binary); if (!file) throw std::runtime_error("无法打开 PSD");
     std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(file)), {}); return readPsd(bytes.data(), bytes.size());
 }
 PsdImport readPsd(const uint8_t* bytes, size_t size) {
     Reader in{bytes, size}; if (in.ascii(4) != "8BPS") throw std::runtime_error("Not a PSD");
-    auto version = in.u16(); if (version != 1 && version != 2) throw std::runtime_error("Unsupported PSD version"); in.psb = version == 2; in.skip(6);
+    auto version = in.u16(); if (version != 1 && version != 2) throw std::runtime_error("不支持的 PSD 版本"); in.psb = version == 2; in.skip(6);
     auto channels = in.u16(); auto height = in.u32(); auto width = in.u32(); auto depth = in.u16(); auto mode = in.u16();
-    if (mode == 4) throw std::runtime_error("CMYK PSD files are not supported");
-    if (channels > 56) throw std::runtime_error("PSD channel count exceeds 56");
-    if (channels < 3 || (depth != 8 && depth != 16) || mode != 3) throw std::runtime_error("Only 8-bit or 16-bit RGB PSD files are supported");
-    if (!width || !height || width > 30000 || height > 30000 || uint64_t(width) * height > 100000000) throw std::runtime_error("PSD exceeds the canvas limit");
+    if (mode == 4) throw std::runtime_error("不支持 CMYK PSD 文件");
+    if (channels > 56) throw std::runtime_error("PSD 通道数超过 56");
+    if (channels < 3 || (depth != 8 && depth != 16) || mode != 3) throw std::runtime_error("仅支持 8 位或 16 位 RGB PSD 文件");
+    if (!width || !height || width > 30000 || height > 30000 || uint64_t(width) * height > 100000000) throw std::runtime_error("PSD 超出画布限制");
     in.skip(in.u32()); in.skip(in.u32());
     PsdImport result; result.document.id = newId(); result.document.width = int(width); result.document.height = int(height); result.document.resolution = 72; std::string report; std::vector<std::string> warnings;
-    if (depth == 16) report += "16-bit channels were preserved.\n";
+    if (depth == 16) report += "已保留 16 位通道。\n";
     auto section = in.wide(); auto sectionEnd = in.at + size_t(std::min<uint64_t>(section, in.size > in.at ? in.size - in.at : 0));
     if (section) {
         try {
@@ -673,14 +673,14 @@ PsdImport readPsd(const uint8_t* bytes, size_t size) {
             }
             if (!depthLayers && info) in.at = infoAt;
             if (depthLayers || info) {
-            auto count = std::abs(in.i16()); if (count > 256) throw std::runtime_error("Too many PSD layers");
+            auto count = std::abs(in.i16()); if (count > 256) throw std::runtime_error("PSD 图层过多");
             struct Record { int top, left, bottom, right; Blend blend; uint8_t opacity; std::string name; bool group{}, closer{}, visible{true}, hasMask{}; int maskTop{}, maskLeft{}, maskBottom{}, maskRight{}; uint8_t maskFlags{}; std::vector<std::pair<int16_t, uint64_t>> channels; std::vector<uint8_t> typeTool, fill, solidFill, geometry, strokeData, vectorPath; };
             std::vector<Record> records;
             for (int i = 0; i < count; ++i) {
                 Record record; record.top = in.i32(); record.left = in.i32(); record.bottom = in.i32(); record.right = in.i32();
-                auto channelCount = in.u16(); if (channelCount > 16) throw std::runtime_error("Too many PSD channels");
+                auto channelCount = in.u16(); if (channelCount > 16) throw std::runtime_error("PSD 通道过多");
                 for (int c = 0; c < channelCount; ++c) { auto id = in.i16(); auto length = in.wide(); record.channels.push_back({id, length}); }
-                if (in.ascii(4) != "8BIM") throw std::runtime_error("Invalid PSD blend signature"); record.blend = blendOf(in.ascii(4), report);
+                if (in.ascii(4) != "8BIM") throw std::runtime_error("无效的 PSD 混合签名"); record.blend = blendOf(in.ascii(4), report);
                 record.opacity = in.u8(); in.u8(); record.visible = (in.u8() & 0x02) == 0; in.u8(); auto extra = in.u32(); auto extraEnd = in.at + extra;
                 if (extraEnd > in.size) extraEnd = in.size;
                 auto maskSize = in.u32(); auto maskAt = in.at;
@@ -763,9 +763,9 @@ PsdImport readPsd(const uint8_t* bytes, size_t size) {
                 const bool maskFits = hasVisibleLayer && (maskSourceFits || maskCropFits);
                 const bool hasVectorData = !record.fill.empty() || !record.geometry.empty() || !record.strokeData.empty();
                 if (!record.group && !record.closer && !hasVisibleLayer && !hasVectorData && record.typeTool.empty())
-                    report += (record.name.empty() ? "Layer" : record.name) + " is outside the document canvas and was skipped.\n";
+                    report += (record.name.empty() ? "图层" : record.name) + " is outside the document canvas and was skipped.\n";
                 else if (!record.group && !record.closer && !sourceFits && !cropFits && !hasVectorData && record.typeTool.empty())
-                    report += (record.name.empty() ? "Layer" : record.name) + " has no visible pixels within the supported limits and was skipped.\n";
+                    report += (record.name.empty() ? "图层" : record.name) + " has no visible pixels within the supported limits and was skipped.\n";
                 std::vector<uint8_t> red, green, blue, alpha, maskPlane;
                 std::vector<uint16_t> red16, green16, blue16, alpha16;
                 for (auto [id, length] : record.channels) {
@@ -783,7 +783,7 @@ PsdImport readPsd(const uint8_t* bytes, size_t size) {
                             else if (id == 2) { blue = std::move(plane); blue16 = std::move(samples); }
                             else { alpha = std::move(plane); alpha16 = std::move(samples); }
                         }
-                    } catch (const std::exception& error) { report += (record.name.empty() ? "Layer" : record.name) + ": a channel could not be decoded (" + error.what() + ").\n"; }
+                    } catch (const std::exception& error) { report += (record.name.empty() ? "图层" : record.name) + ": a channel could not be decoded (" + error.what() + ").\n"; }
                     const size_t end = start > in.size || length > in.size - start ? in.size : start + size_t(length);
                     in.at = end;
                 }
@@ -791,7 +791,7 @@ PsdImport readPsd(const uint8_t* bytes, size_t size) {
                 if (record.closer) { if (!folders.empty()) folders.pop_back(); continue; }
                 if (!record.group && !hasVisibleLayer && !hasVectorData && record.typeTool.empty()) continue;
                 if (!record.group && !sourceFits && !cropFits && !hasVectorData && record.typeTool.empty()) continue;
-                Layer layer; layer.id = newId(); layer.name = record.name.empty() ? "Layer" : record.name; layer.opacity = record.opacity / 255.; layer.blend = record.group ? Blend::Normal : record.blend; layer.group = record.group; layer.visible = record.visible;
+                Layer layer; layer.id = newId(); layer.name = record.name.empty() ? "图层" : record.name; layer.opacity = record.opacity / 255.; layer.blend = record.group ? Blend::Normal : record.blend; layer.group = record.group; layer.visible = record.visible;
                 layer.transform = record.group
                     ? Transform{double(record.left), double(record.top), double(std::max<int64_t>(sourceWidth, 1)), double(std::max<int64_t>(sourceHeight, 1))}
                     : cropOversizedSource && cropFits
@@ -803,7 +803,7 @@ PsdImport readPsd(const uint8_t* bytes, size_t size) {
                 std::string shapeReason;
                 if (!record.group && !record.closer && !record.fill.empty()) shapeReason = convertVectorShape(layer, record.fill, record.geometry, record.vectorPath, record.strokeData, result.document.width, result.document.height);
                 if (!layer.raster && !record.group) { if (auto painted = rasterizeRoundedRect(record.fill, record.geometry, record.strokeData)) { layer.raster = std::move(painted->raster); layer.transform = painted->transform; } }
-                if (!shapeReason.empty()) warnings.push_back(layer.name + (layer.raster ? " stays as pixels: " : " could not be imported: ") + shapeReason + ".");
+                if (!shapeReason.empty()) warnings.push_back(layer.name + (layer.raster ? " 将保持为像素：" : " 无法导入：") + shapeReason + "。");
                 const size_t decodedMaskPixels = size_t(decodeMaskWidth) * size_t(decodeMaskHeight);
                 if (maskFits && maskPlane.size() == decodedMaskPixels) {
                     if (record.maskFlags & 0x04) for (auto& value : maskPlane) value = uint8_t(255 - value);
@@ -817,12 +817,12 @@ PsdImport readPsd(const uint8_t* bytes, size_t size) {
                 }
                 if (!record.group && !record.typeTool.empty()) { auto imported = readPhotoshopText(record.typeTool.data(), record.typeTool.size()); if (!imported.note.empty()) { report += layer.name + ": " + imported.note; if (imported.note.back() != '\n') report.push_back('\n'); } if (imported.editable) { if (layer.raster) layer.text = imported.text; else { try { auto drawn = text::rasterize(imported.text); layer.text = imported.text; layer.raster = drawn.raster; layer.transform.x = imported.x; layer.transform.y = imported.y; layer.transform.width = drawn.width; layer.transform.height = drawn.height; } catch (const std::exception&) { layer.text.reset(); report += layer.name + ": Editable Photoshop text becomes pixels and can't be retyped.\n"; } } } }
                 if (layer.group || layer.raster || layer.text || layer.mask) result.document.layers.push_back(std::move(layer));
-                } catch (const std::exception& error) { report += (record.name.empty() ? "Layer" : record.name) + " (" + std::to_string(sourceWidth) + "x" + std::to_string(sourceHeight) + "): " + error.what() + "\n"; }
+                } catch (const std::exception& error) { report += (record.name.empty() ? "图层" : record.name) + " (" + std::to_string(sourceWidth) + "x" + std::to_string(sourceHeight) + "): " + error.what() + "\n"; }
             }
             in.at = std::max(in.at, infoEnd);
             }
         } catch (const std::exception& error) {
-            report += std::string("Layer records were skipped: ") + error.what() + "\n";
+            report += std::string("已跳过图层记录：") + error.what() + "\n";
             result.document.layers.clear();
             warnings.clear();
         }
@@ -832,10 +832,10 @@ PsdImport readPsd(const uint8_t* bytes, size_t size) {
     if (!hasImage) {
         result.document.layers.clear();
         Layer merged;
-        try { if (readMerged(in, int(width), int(height), int(depth), int(channels), merged, report) && merged.raster) { result.document.layers = {std::move(merged)}; report += "Imported the merged image.\n"; } }
-        catch (const std::exception& error) { report += std::string("Merged image was skipped: ") + error.what() + "\n"; }
+        try { if (readMerged(in, int(width), int(height), int(depth), int(channels), merged, report) && merged.raster) { result.document.layers = {std::move(merged)}; report += "已导入合并后的图像。\n"; } }
+        catch (const std::exception& error) { report += std::string("已跳过合并图像： ") + error.what() + "\n"; }
     }
-    if (result.document.layers.empty()) throw std::runtime_error(report.empty() ? "PSD contains no supported image" : report);
-    report += "Imported " + std::to_string(result.document.layers.size()) + " layer(s).\n"; result.report = report; result.warnings = std::move(warnings); validateDocument(result.document); return result;
+    if (result.document.layers.empty()) throw std::runtime_error(report.empty() ? "PSD 不包含受支持的图像" : report);
+    report += "已导入 " + std::to_string(result.document.layers.size()) + " 个图层。\n"; result.report = report; result.warnings = std::move(warnings); validateDocument(result.document); return result;
 }
 }

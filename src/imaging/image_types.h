@@ -37,27 +37,27 @@ struct ImportOptions {
     // Must be thread-safe and non-throwing; native inference polls on a worker thread.
     std::function<bool()> cancelled;
 };
-inline void checkCancelled(const ImportOptions& o) { if(o.cancelled && o.cancelled()) throw std::runtime_error("Image operation cancelled"); }
+inline void checkCancelled(const ImportOptions& o) { if(o.cancelled && o.cancelled()) throw std::runtime_error("图像操作已取消"); }
 inline std::size_t checkedBytes(std::uint32_t w,std::uint32_t h,std::uint32_t channels,const ImportOptions& o={},std::uint32_t bytesPerSample=1) {
     const auto n=std::uint64_t(w)*h;
     const auto sampleBytes=std::uint64_t(channels)*bytesPerSample;
     if(!bytesPerSample || bytesPerSample>2 || !channels || channels>4 || !w || !h || w>std::min(o.maxSide,30000U) || h>std::min(o.maxSide,30000U) || n>std::min<std::uint64_t>(o.remainingPixels,100000000) || !sampleBytes || n>std::numeric_limits<std::size_t>::max()/sampleBytes || n*sampleBytes>o.maxWorkingBytes)
-        throw std::runtime_error("Image exceeds dimensions, pixel, or allocation budget");
+        throw std::runtime_error("图像超出尺寸、像素或分配预算");
     return static_cast<std::size_t>(n*sampleBytes);
 }
 inline void validate(const RgbaImage& image) {
     checkedBytes(image.width,image.height,4);
     if(image.stride<std::size_t(image.width)*4 || image.stride>std::numeric_limits<std::size_t>::max()/image.height || image.pixels.size()<image.stride*image.height)
-        throw std::runtime_error("Invalid RGBA buffer stride or storage");
+        throw std::runtime_error("无效的 RGBA 缓冲区跨距或存储");
     for(std::uint32_t y=0;y<image.height;++y) for(std::uint32_t x=0;x<image.width;++x) {
         const auto* p=&image.pixels[y*image.stride+x*4];
-        if(p[0]>p[3] || p[1]>p[3] || p[2]>p[3]) throw std::runtime_error("RGBA buffer is not premultiplied");
+        if(p[0]>p[3] || p[1]>p[3] || p[2]>p[3]) throw std::runtime_error("RGBA 缓冲区未预乘");
     }
 }
 inline void validate(const GrayMask& mask) {
     checkedBytes(mask.width,mask.height,1);
     if(mask.stride<mask.width || mask.stride>std::numeric_limits<std::size_t>::max()/mask.height || mask.pixels.size()<mask.stride*mask.height)
-        throw std::runtime_error("Invalid mask stride or storage");
+        throw std::runtime_error("无效的蒙版步长或存储");
 }
 enum class ProfileStatus { AssumedSrgbNoProfile, ConvertedEmbeddedProfile, DeclaredSrgb };
 struct ImageMetadata {

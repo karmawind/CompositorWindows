@@ -57,9 +57,9 @@ void MainWindow::applyGradient(){
     try{
         auto next=*owner->document;auto target=std::find_if(next.layers.begin(),next.layers.end(),[&](const Layer& layer){return layer.id==drawingOriginal_->id;});
         if(target==next.layers.end()){cancelGradient();return;}
-        if(*target!=*drawingOriginal_)throw std::runtime_error("The gradient target changed during preview");
+        if(*target!=*drawingOriginal_)throw std::runtime_error("预览期间渐变目标已更改");
         *target=owner->gradientPreview->materializeLayer();validateDocument(next);
-        owner->history.begin(gradientMask_?"Gradient Mask":"Gradient",owner->document,owner->active);began=true;
+        owner->history.begin(gradientMask_?"渐变蒙版":"Gradient",owner->document,owner->active);began=true;
         owner->document=std::move(next);owner->history.end(owner->document,owner->active);owner->gradientPreview.reset();
         drawingOriginal_.reset();gradientOwner_=nullptr;gradientHandle_=-1;refresh(false);
     }catch(const std::exception& e){

@@ -17,6 +17,6 @@ void MainWindow::setLayerBlendMode(Blend mode) {
     previewBlendMode({});
     if (!canEditAppearance()) return;
     finishOpacityEdit();
-    edit("Layer Blend Mode",[&](Document&){active()->blend=mode;});
+    edit("图层混合模式",[&](Document&){active()->blend=mode;});
 }
 }

@@ -11,7 +11,7 @@ namespace compositor {
 QImage fittedDocumentPreview(const Document& document,QSize maximum){
     validateDocument(document);
     if(maximum.width()<1||maximum.height()<1||maximum.width()>4096||maximum.height()>4096)
-        throw std::invalid_argument("Invalid document thumbnail dimensions");
+        throw std::invalid_argument("无效的文档缩略图尺寸");
     const QSize full(document.width,document.height),fitted=full.scaled(maximum,Qt::KeepAspectRatio);
     const double units=std::max({1.,double(document.width)/std::max(1,fitted.width()),double(document.height)/std::max(1,fitted.height())});
     const int width=std::max(1,std::min(document.width,fitted.width())),height=std::max(1,std::min(document.height,fitted.height()));
@@ -22,7 +22,7 @@ QImage fittedDocumentPreview(const Document& document,QSize maximum){
 }
 effects_tools::LevelsHistogram documentLevelsHistogram(const Document& document,const std::function<bool()>& cancelled,DocumentHistogramStats* stats){
     if(stats)*stats={};
-    auto check=[&]{if(cancelled&&cancelled())throw std::runtime_error("Histogram cancelled");};check();validateDocument(document);
+    auto check=[&]{if(cancelled&&cancelled())throw std::runtime_error("直方图已取消");};check();validateDocument(document);
     const int columns=(document.width+255)/256,rows=(document.height+255)/256;
     SoftwareRenderer renderer;
     // Validate effects through their ordinary visibility/clip routing, including
@@ -61,7 +61,7 @@ effects_tools::LevelsHistogram documentLevelsHistogram(const Document& document,
 }
 effects_tools::LevelsHistogram documentLevelsPreviewHistogram(const Document& document,const std::function<bool()>& cancelled,DocumentPreviewHistogramStats* stats){
     if(stats)*stats={};
-    const auto check=[&]{if(cancelled&&cancelled())throw std::runtime_error("Histogram cancelled");};check();validateDocument(document);
+    const auto check=[&]{if(cancelled&&cancelled())throw std::runtime_error("直方图已取消");};check();validateDocument(document);
     const double factor=std::min(1.,8000./std::max(document.width,document.height));
     const int width=std::max(1,int(document.width*factor)),height=std::max(1,int(document.height*factor));
     if(stats){stats->width=width;stats->height=height;stats->logicalPreviewPixels=uint64_t(width)*height;}

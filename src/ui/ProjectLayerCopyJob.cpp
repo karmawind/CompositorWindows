@@ -14,7 +14,7 @@ struct ProjectLayerCopyJob::Impl {
     QFutureWatcher<Result> watcher;
 };
 ProjectLayerCopyJob::ProjectLayerCopyJob(std::vector<std::string> ids,Host host,QObject* parent):QObject(parent),impl_(std::make_unique<Impl>()){
-    if(!host.prepare||!host.commit||!host.settled||!host.error||!host.finished)throw std::invalid_argument("Incomplete layer-copy host");
+    if(!host.prepare||!host.commit||!host.settled||!host.error||!host.finished)throw std::invalid_argument("图层复制宿主不完整");
     setObjectName("projectLayerCopyJob");impl_->ids=std::move(ids);impl_->host=std::move(host);
     connect(&impl_->watcher,&QFutureWatcher<Impl::Result>::finished,this,[this]{
         auto& state=*impl_;QString error;

@@ -7,8 +7,8 @@ namespace compositor::text {
 namespace {
 QString unitsOf(std::string_view utf8){return QString::fromUtf8(utf8.data(),int(utf8.size()));}
 struct Color { double red,green,blue; bool operator==(const Color&) const = default; };
-struct Face { std::string family,style{"Regular"}; double size; bool operator==(const Face&) const = default; };
-std::string styleName(const std::string& style){return style.empty()?std::string("Regular"):style;}
+struct Face { std::string family,style{"常规"}; double size; bool operator==(const Face&) const = default; };
+std::string styleName(const std::string& style){return style.empty()?std::string("常规"):style;}
 std::pair<int,int> rangeOf(int location,int length,int count){
     if(count<0)count=0;
     if(location<0)location=0;
@@ -102,7 +102,7 @@ void setTextColor(TextContent& text,double red,double green,double blue,int loca
     for(int index=start;index<end;++index)colors[size_t(index)]={red,green,blue};
     writeColors(text,colors);
 }
-void setTextFont(TextContent& text,std::string family,int location,int length){setTextFont(text,std::move(family),"Regular",location,length);}
+void setTextFont(TextContent& text,std::string family,int location,int length){setTextFont(text,std::move(family),"常规",location,length);}
 void setTextFont(TextContent& text,std::string family,std::string style,int location,int length){
     if(!faceAllowed(family)||!styleAllowed(style))return;
     style=styleName(style);

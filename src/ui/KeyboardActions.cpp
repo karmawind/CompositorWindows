@@ -29,7 +29,7 @@ bool MainWindow::handleEditingKey(QKeyEvent* event){
         if(remove&&(modifiers==Qt::AltModifier||modifiers==Qt::ControlModifier)){
             if(canPaint){const bool background=control;const auto color=background?background_:foreground_;const uint8_t gray=(background?!maskPaintWhite_:maskPaintWhite_)?255:0;
                 const Pixel value=project->maskSelected?Pixel{gray,gray,gray,255}:Pixel{uint8_t(color.red()),uint8_t(color.green()),uint8_t(color.blue()),255};
-                finishOpacityEdit();edit(project->maskSelected?"Fill Mask":"Fill",[&](Document& document){*active()=editing::editLayer(*active(),document,editing::PixelEdit::Fill,value,project->maskSelected);});
+                finishOpacityEdit();edit(project->maskSelected?"填充蒙版":"Fill",[&](Document& document){*active()=editing::editLayer(*active(),document,editing::PixelEdit::Fill,value,project->maskSelected);});
             }return true;
         }
         if(remove&&modifiers==Qt::ShiftModifier){
@@ -42,12 +42,12 @@ bool MainWindow::handleEditingKey(QKeyEvent* event){
                 if(canPaint&&!project->maskSelected&&layer->raster){
                     editing_transform::PixelTransformSession session(*layer,project->document->selection->coverage);
                     if(session.begin()){session.move(delta);auto result=session.apply();const auto selection=editing::moveSelectionCoverage(project->document->selection,delta);finishOpacityEdit();
-                        edit("Move Pixels",[&](Document& document){auto& target=*active();const auto source=target.raster;target=std::move(result.layer);if(target.raster!=source)target.shapeJson.clear();document.selection=selection;});}
+                        edit("移动像素",[&](Document& document){auto& target=*active();const auto source=target.raster;target=std::move(result.layer);if(target.raster!=source)target.shapeJson.clear();document.selection=selection;});}
                 }return true;
             }
             const bool selectionTool=tool_==Tool::Marquee||tool_==Tool::Lasso||tool_==Tool::Polygon||tool_==Tool::Wand;
             if(plain&&selectionTool&&!selectionGesture_.active()&&hasSelection(*project->document)){
-                if(canEditLayers()){finishOpacityEdit();edit("Move Selection",[&](Document& document){document.selection=editing::moveSelectionCoverage(document.selection,delta);});}return true;
+                if(canEditLayers()){finishOpacityEdit();edit("移动选区",[&](Document& document){document.selection=editing::moveSelectionCoverage(document.selection,delta);});}return true;
             }
             if(plain&&tool_==Tool::Move){
                 const bool alreadyEditing=bool(transformSession_);
@@ -66,7 +66,7 @@ bool MainWindow::handleEditingKey(QKeyEvent* event){
             if(project->document->selection){
                 if(canPaint&&(project->maskSelected||layer->raster)){
                     const uint8_t maskBackground=maskPaintWhite_?0:255;finishOpacityEdit();
-                    edit(project->maskSelected?"Fill Mask":"Clear",[&](Document& document){*active()=editing::editLayer(*active(),document,editing::PixelEdit::Clear,{},project->maskSelected,maskBackground);});
+                    edit(project->maskSelected?"填充蒙版":"清除",[&](Document& document){*active()=editing::editLayer(*active(),document,editing::PixelEdit::Clear,{},project->maskSelected,maskBackground);});
                 }
             }else if(canEditLayers()){
                 if(project->maskSelected&&layer&&layer->mask&&layerSelection().ids.size()<=1)maskCommand(int(ui::MaskCommand::Delete));else layerCommand(6);

@@ -15,10 +15,10 @@ Pixel bytes(QColor c){return {uint8_t(c.red()),uint8_t(c.green()),uint8_t(c.blue
 }
 void MainWindow::setupPaletteControls(QToolBar* tools){
     std::array<QAction*,4> actions{};
-    const std::array<const char*,4> labels{"Foreground","Background","Swap (X)","Default (D)"};
+    const std::array<const char*,4> labels{"Foreground","背景","切换颜色 (X)","默认 (D)"};
     for(size_t index=0;index<actions.size();++index){
         auto* item=new QAction(labels[index],this);actions[index]=item;
-        bindCommand(item,"Tools",labels[index],[this,index]{if(index<2)openPalette(index==1);else if(index==2)swapPalette();else resetPalette();});addAction(item);
+        bindCommand(item,"工具",labels[index],[this,index]{if(index<2)openPalette(index==1);else if(index==2)swapPalette();else resetPalette();});addAction(item);
     }
     paletteSwatches_=new ui::PaletteSwatches(actions,tools);tools->addWidget(paletteSwatches_);
 }
@@ -39,10 +39,10 @@ void MainWindow::openPalette(bool background){
     if(auto* owner=current();owner&&owner->maskSelected){
         auto* popup=new QWidget(this,Qt::Popup);popup->setObjectName("maskPalettePopover");popup->setAttribute(Qt::WA_DeleteOnClose);maskPalettePopup_=popup;
         auto* layout=new QVBoxLayout(popup);layout->setContentsMargins(16,16,16,16);layout->setSpacing(12);
-        auto* heading=new QLabel(background?"Mask background":"Mask foreground",popup);auto font=heading->font();font.setBold(true);heading->setFont(font);layout->addWidget(heading);
+        auto* heading=new QLabel(background?"蒙版背景":"蒙版前景",popup);auto font=heading->font();font.setBold(true);heading->setFont(font);layout->addWidget(heading);
         auto* choices=new QHBoxLayout;layout->addLayout(choices);
         for(bool white:{false,true}){
-            auto* choice=new QPushButton(white?"White · Reveal":"Black · Hide",popup);choices->addWidget(choice);
+            auto* choice=new QPushButton(white?"白色 · 显示":"黑色 · 隐藏",popup);choices->addWidget(choice);
             connect(choice,&QPushButton::clicked,this,[this,owner,popup,background,white]{
                 if(current()==owner&&owner->maskSelected&&ui::commandEnabled(ui::CommandGate::Palette,commandState())&&!stroke_&&!retouch_){maskPaintWhite_=background?!white:white;refreshGradient();refresh(false,false);}
                 popup->close();
@@ -57,7 +57,7 @@ void MainWindow::openPalette(bool background){
         popup->move(position);popup->show();return;
     }
     if(colorPicker_){if(colorPicker_->property("editPanelColor").toBool())colorPicker_->accept();else colorPicker_->reject();}
-    auto*dialog=new PaletteDialog(asPalette(background?background_:foreground_),background?"Color Picker (Background Color)":"Color Picker (Foreground Color)",this);colorPicker_=dialog;connect(dialog,&QDialog::finished,this,[this,dialog,background](int result){if(result==QDialog::Accepted&&(!current()||!current()->maskSelected)){if(background)background_=color(dialog->color());else foreground_=color(dialog->color());}palettePosition_=dialog->pos();colorPicker_=nullptr;samplingPalette_=false;if(canvas())canvas()->setSampleRing({});dialog->deleteLater();refreshGradient();refresh(false,false);});if(palettePosition_)dialog->move(*palettePosition_);dialog->show();
+    auto*dialog=new PaletteDialog(asPalette(background?background_:foreground_),background?"拾色器（背景色）":"拾色器（前景色）",this);colorPicker_=dialog;connect(dialog,&QDialog::finished,this,[this,dialog,background](int result){if(result==QDialog::Accepted&&(!current()||!current()->maskSelected)){if(background)background_=color(dialog->color());else foreground_=color(dialog->color());}palettePosition_=dialog->pos();colorPicker_=nullptr;samplingPalette_=false;if(canvas())canvas()->setSampleRing({});dialog->deleteLater();refreshGradient();refresh(false,false);});if(palettePosition_)dialog->move(*palettePosition_);dialog->show();
 }
 void MainWindow::openEditPanelColor(effects_tools::PaletteColor original,const QString& title,std::function<void(effects_tools::PaletteColor)> changed){
     if(colorPicker_||stroke_||retouch_||!editPanel_||editPanel_->committing())return;

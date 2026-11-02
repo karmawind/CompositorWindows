@@ -188,7 +188,7 @@ void warpGeometry(std::vector<std::uint8_t>& pixels, int w, int h, const CameraR
     if (!inverse) return;
     const auto source = pixels;
     for (int y = 0; y < h; ++y) {
-        if ((y & 31) == 0 && cancelled && cancelled()) throw std::runtime_error("Filter cancelled");
+        if ((y & 31) == 0 && cancelled && cancelled()) throw std::runtime_error("滤镜已取消");
         for (int x = 0; x < w; ++x) {
             const auto unit = inverse->map({x + .5, y + .5});
             const double sx = unit.x * width - .5, sy = unit.y * height - .5;
@@ -256,7 +256,7 @@ bool viewPaints(const CameraRawView& view) {
     return view.clipping || view.visualizePointColor >= 0 || view.sharpenMask || view.shadowOverlay || view.highlightOverlay;
 }
 std::vector<std::uint8_t> paint(std::vector<std::uint8_t> pixels, int w, int h, const CameraRawSettings& settings, const CameraRawView& view, const std::function<bool()>& cancelled) {
-    auto stop = [&] { if (cancelled && cancelled()) throw std::runtime_error("Filter cancelled"); };
+    auto stop = [&] { if (cancelled && cancelled()) throw std::runtime_error("滤镜已取消"); };
     const bool clip = view.clipping != 0;
     const bool mask = view.sharpenMask;
     const double scale = view.scale > 0 ? view.scale : 1;
@@ -322,13 +322,13 @@ std::vector<std::uint8_t> paint(std::vector<std::uint8_t> pixels, int w, int h, 
     return pixels;
 }
 CameraRawScope scopeFrom(const std::uint8_t* rgba, int width, int height, int limit, const std::function<bool()>& cancelled) {
-    if (cancelled && cancelled()) throw std::runtime_error("Filter cancelled");
+    if (cancelled && cancelled()) throw std::runtime_error("滤镜已取消");
     if (limit < 1 || (width <= limit && height <= limit)) return CameraRawScope::make(rgba, width, height);
     const double factor = double(limit) / std::max(width, height);
     const int sw = std::max(1, int(std::lround(width * factor))), sh = std::max(1, int(std::lround(height * factor)));
     std::vector<std::uint8_t> small(std::size_t(sw) * sh * 4);
     for (int y = 0; y < sh; ++y) {
-        if ((y & 31) == 0 && cancelled && cancelled()) throw std::runtime_error("Filter cancelled");
+        if ((y & 31) == 0 && cancelled && cancelled()) throw std::runtime_error("滤镜已取消");
         const int sy = std::min(height - 1, int((std::int64_t(y) * height) / sh));
         for (int x = 0; x < sw; ++x) {
             const int sx = std::min(width - 1, int((std::int64_t(x) * width) / sw));
@@ -706,7 +706,7 @@ CameraRawRender renderCameraRaw(const Raster& source, const CameraRawSettings& i
     const int w = source.width, h = source.height;
     const auto settings = incoming.normalized();
     auto original = source.rgba();
-    if (cancelled && cancelled()) throw std::runtime_error("Filter cancelled");
+    if (cancelled && cancelled()) throw std::runtime_error("滤镜已取消");
     CameraRawView clean = view;
     clean.clipping = 0;
     clean.visualizePointColor = -1;

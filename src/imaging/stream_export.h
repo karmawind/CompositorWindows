@@ -5,7 +5,7 @@
 
 namespace compositor::imaging {
 class ExportCancelled final : public std::runtime_error {
-public: ExportCancelled() : std::runtime_error("Image export cancelled") {}
+public: ExportCancelled() : std::runtime_error("图像导出已取消") {}
 };
 struct StreamExportLimits {
     // Owned pixel buffers only; existing document storage and WIC internals are separate.

@@ -7,7 +7,7 @@
 namespace compositor::editing {
 namespace {
 struct Gray { int width{},height{}; std::vector<float> values; float at(int x,int y)const{return values[size_t(y)*width+x];} };
-void cancelCheck(const FocusStackLimits& limits){if(limits.cancelled&&limits.cancelled())throw std::runtime_error("Focus stack cancelled");}
+void cancelCheck(const FocusStackLimits& limits){if(limits.cancelled&&limits.cancelled())throw std::runtime_error("焦点堆栈已取消");}
 // When the second-best sharpness reaches this fraction of the best, the choice is noise-driven: the pixel is
 // averaged over every covering frame instead, which avoids a patchwork of frame tints in low-texture areas.
 constexpr float kContestedRatio=0.6f;
@@ -87,12 +87,12 @@ int maxShiftFor(std::uint32_t width,std::uint32_t height){return std::max(1,int(
 }
 FocusShift estimateFocusShift(const imaging::RgbaImage& reference,const imaging::RgbaImage& moving,int maxShift){
     imaging::validate(reference);imaging::validate(moving);
-    if(reference.width!=moving.width||reference.height!=moving.height)throw std::invalid_argument("Focus stack frames must have identical dimensions");
-    if(maxShift<0)throw std::invalid_argument("Invalid focus stack shift range");
+    if(reference.width!=moving.width||reference.height!=moving.height)throw std::invalid_argument("焦点堆栈的各帧必须具有相同尺寸");
+    if(maxShift<0)throw std::invalid_argument("无效的焦点堆栈位移范围");
     return estimate(luma(reference),luma(moving),maxShift);
 }
 std::vector<float> focusSharpness(const imaging::RgbaImage& image,FocusShift shift,int radius){
-    imaging::validate(image);if(radius<0)throw std::invalid_argument("Invalid sharpness radius");
+    imaging::validate(image);if(radius<0)throw std::invalid_argument("无效的锐化半径");
     return sharpness(luma(image),shift,radius,{});
 }
 std::uint64_t focusStackWorkingBytes(std::uint32_t width,std::uint32_t height,std::size_t count){
@@ -102,12 +102,12 @@ std::uint64_t focusStackWorkingBytes(std::uint32_t width,std::uint32_t height,st
     return pixels*(4*std::uint64_t(count)+4+4*5+3+1);
 }
 FocusStackResult focusStack(const std::vector<imaging::RgbaImage>& frames,const FocusStackLimits& limits){
-    if(frames.size()<2)throw std::invalid_argument("Focus stacking needs at least two images");
-    if(frames.size()>maxFocusStackFrames)throw std::invalid_argument("Focus stacking accepts at most 16 images");
+    if(frames.size()<2)throw std::invalid_argument("焦点堆栈至少需要两张图像");
+    if(frames.size()>maxFocusStackFrames)throw std::invalid_argument("焦点堆栈最多支持 16 张图像");
     for(const auto& frame:frames){imaging::validate(frame);
-        if(frame.width!=frames.front().width||frame.height!=frames.front().height)throw std::invalid_argument("Focus stack images must all have the same dimensions");}
+        if(frame.width!=frames.front().width||frame.height!=frames.front().height)throw std::invalid_argument("焦点堆栈图像必须全部具有相同尺寸");}
     const auto width=frames.front().width,height=frames.front().height;
-    if(focusStackWorkingBytes(width,height,frames.size())>limits.maxWorkingBytes)throw std::runtime_error("Focus stack exceeds the working memory budget");
+    if(focusStackWorkingBytes(width,height,frames.size())>limits.maxWorkingBytes)throw std::runtime_error("焦点堆栈超出工作内存预算");
     const int w=int(width),h=int(height),radius=radiusFor(width,height),maxShift=maxShiftFor(width,height);
     FocusStackResult result;result.shifts.resize(frames.size());
     result.source.assign(size_t(w)*h,0);

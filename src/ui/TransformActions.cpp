@@ -56,7 +56,7 @@ bool MainWindow::beginTransform(Point point,Qt::KeyboardModifiers modifiers){
             state->pixels=std::make_unique<editing_transform::PixelTransformSession>(*l,selection->coverage,editing_transform::PixelTransformKind::Move,modifiers.testFlag(Qt::AltModifier));
             if(!state->pixels->begin())return true;
             state->draft=state->originalBox=state->pixels->originalFloatingTransform();
-            finishOpacityEdit();p->history.begin(modifiers.testFlag(Qt::AltModifier)?"Duplicate Pixels":"Move Pixels",p->document,p->active);
+            finishOpacityEdit();p->history.begin(modifiers.testFlag(Qt::AltModifier)?"复制像素":"移动像素",p->document,p->active);
             transformOwner_=p;transformSession_=std::move(state);beginPreviewGesture(p->canvas);transformDrag_=editing_transform::Drag{transformSession_->draft,point,{}};
         }catch(const std::exception& error){cancelTransformSession();statusBar()->showMessage(error.what());}
         return true;
@@ -77,7 +77,7 @@ bool MainWindow::beginTransform(Point point,Qt::KeyboardModifiers modifiers){
         auto& state=*transformSession_;
         if(intent->mode.kind==editing_transform::ModeKind::Distort&&!state.corners)state.corners=editing_transform::corners(state.draft);
         state.duplicateOnDrag=intent->duplicateOnFirstDrag&&!state.persistent&&!state.pixels&&!state.maskOnly&&state.ids.size()==1&&!active()->group;
-        if(state.duplicateOnDrag){p->history.cancel();p->history.begin("Duplicate Layer",state.original,state.originalActive);}
+        if(state.duplicateOnDrag){p->history.cancel();p->history.begin("复制图层",state.original,state.originalActive);}
         transformDrag_=editing_transform::Drag{state.draft,point,intent->mode,state.corners};
         beginPreviewGesture(p->canvas);if(canvas())canvas()->setCompositeHeld(true);refresh(false,false);
     }catch(const std::exception& error){cancelTransformSession();statusBar()->showMessage(error.what());}
@@ -95,8 +95,8 @@ void MainWindow::updateTransform(Point point,Qt::KeyboardModifiers modifiers,boo
         } else {
             if(state.duplicateOnDrag&&!state.duplicated&&point!=transformDrag_->start) {
                 auto source=std::find_if(state.original.layers.begin(),state.original.layers.end(),[&](const Layer& layer){return layer.id==state.target;});
-                if(source==state.original.layers.end())throw std::runtime_error("The duplicate target was removed");
-                Layer copy=*source;copy.id=newId();copy.name+=" Copy";state.target=copy.id;state.ids={copy.id};state.original.layers.insert(source+1,std::move(copy));state.duplicated=true;
+                if(source==state.original.layers.end())throw std::runtime_error("复制目标已被移除");
+                Layer copy=*source;copy.id=newId();copy.name+=" 副本";state.target=copy.id;state.ids={copy.id};state.original.layers.insert(source+1,std::move(copy));state.duplicated=true;
             }
             const auto targets=snapLines(state.original,state.ids).value_or(editing_transform::SnapTargets{});
             // Windows Ctrl retains handle distortion and temporarily suppresses
@@ -123,7 +123,7 @@ void MainWindow::updateTransform(Point point,Qt::KeyboardModifiers modifiers,boo
                     std::unordered_set<std::string> above;for(const auto* layer:preview.above)above.insert(layer->id);
                     auto backIds=above;backIds.insert(moving->id);request.back=hideLayers(state.original,backIds);
                     if(!above.empty()){request.wantFront=true;std::unordered_set<std::string> hidden;for(const auto& layer:state.original.layers)if(!above.contains(layer.id))hidden.insert(layer.id);request.front=hideLayers(state.original,hidden);}
-                    if(preview.masked){const auto plate=ui::movingLayerPlateBounds(*moving,bounds.units);if(!plate.valid)throw std::runtime_error("The moving layer does not fit a preview plate");
+                    if(preview.masked){const auto plate=ui::movingLayerPlateBounds(*moving,bounds.units);if(!plate.valid)throw std::runtime_error("移动中的图层无法放入预览板");
                         request.wantPlate=true;request.plateX=plate.x;request.plateY=plate.y;request.plateWidth=plate.width;request.plateHeight=plate.height;request.platePixelsWide=plate.pixelsWide;request.platePixelsHigh=plate.pixelsHigh;
                         std::unordered_set<std::string> hidden;for(const auto& layer:state.original.layers)if(layer.id!=moving->id)hidden.insert(layer.id);request.plate=hideLayers(state.original,hidden);}
                     movePreviewJob_->submit(std::move(request));
@@ -149,22 +149,22 @@ void MainWindow::updateTransform(Point point,Qt::KeyboardModifiers modifiers,boo
     }catch(const std::exception& error){cancelTransformSession();statusBar()->showMessage(error.what());}
 }
 void MainWindow::setupTransformActions(){
-    auto*bar=addToolBar("Transform Options");bar->setObjectName("transformOptions");
-    auto*autoSelect=new QCheckBox("Auto-select layer");autoSelect->setObjectName("transformAutoSelect");autoSelect->setChecked(true);bar->addWidget(autoSelect);connect(autoSelect,&QCheckBox::toggled,this,[this](bool value){autoSelectLayers_=value;});
-    auto*controls=new QCheckBox("Show controls");controls->setObjectName("transformShowControls");controls->setChecked(true);bar->addWidget(controls);connect(controls,&QCheckBox::toggled,this,[this](bool value){transformControls_=value;refresh(false,false);});
-    auto*ratio=new QCheckBox("Lock aspect ratio");ratio->setObjectName("transformLockRatio");bar->addWidget(ratio);connect(ratio,&QCheckBox::toggled,this,[this](bool v){lockRatio_=v;});
-    auto*snap=new QCheckBox("Snap to edges and centers");snap->setObjectName("transformSnapping");snap->setChecked(true);bar->addWidget(snap);connect(snap,&QCheckBox::toggled,this,[this](bool v){auto policy=snapPolicy_;policy.enabled=v;setSnapPolicy(policy);});
-    auto*scale=new ui::PropertyNumber;scale->releaseFocus=[this]{if(canvas())canvas()->setFocus();};scale->setObjectName("transformScale");scale->setAccessibleName("Transform scale percent");scale->setRange(.01,100000);scale->setDecimals(2);scale->setSuffix(" %");scale->setValue(100);bar->addWidget(scale);connect(scale,&QDoubleSpinBox::valueChanged,this,[this](double value){changeTransformDraft([&](Transform& draft){draft=editing_transform::scaledPercent(draft,value,transformScalePixelSize());});});
-    auto*sampling=new QComboBox;sampling->setObjectName("transformSampling");sampling->addItems({"Nearest","Smooth","High quality"});sampling->setCurrentIndex(2);sampling->setAccessibleName("Transform sampling");bar->addWidget(sampling);connect(sampling,&QComboBox::currentIndexChanged,this,[this](int i){if(i>=0&&i<=2)changeTransformDraft([&](Transform& draft){draft.sampling=Transform::Sampling(i);});});
-    for(bool horizontal:{true,false}){auto*flip=bar->addAction(horizontal?"Flip H":"Flip V");flip->setObjectName(horizontal?"transformFlipH":"transformFlipV");bindCommand(flip,"Transform Options",horizontal?"Flip H":"Flip V",[this,horizontal]{changeTransformDraft([&](Transform& draft){draft=editing_transform::flippedLocal(draft,horizontal);});});}
-    auto*menu=menuBar()->addMenu("&Transform");
-    auto*free=menu->addAction("Free Transform");free->setObjectName("freeTransform");free->setShortcut(QKeySequence("Ctrl+T"));bindCommand(free,"Transform","Free Transform",[this]{startTransformSession(true);});
-    auto*distort=menu->addAction("Distort");distort->setObjectName("distortTransform");bindCommand(distort,"Transform","Distort",[this]{startTransformSession(true,true);});
-    auto*apply=menu->addAction("Apply Transform");apply->setObjectName("applyTransform");bar->addAction(apply);bindCommand(apply,"Transform","Apply Transform",[this]{applyTransformSession();});
-    auto*cancel=menu->addAction("Cancel Transform");cancel->setObjectName("cancelTransform");bar->addAction(cancel);bindCommand(cancel,"Transform","Cancel Transform",[this]{cancelTransformSession();});
+    auto*bar=addToolBar("变换选项");bar->setObjectName("transformOptions");
+    auto*autoSelect=new QCheckBox("自动选择图层");autoSelect->setObjectName("transformAutoSelect");autoSelect->setChecked(true);bar->addWidget(autoSelect);connect(autoSelect,&QCheckBox::toggled,this,[this](bool value){autoSelectLayers_=value;});
+    auto*controls=new QCheckBox("显示控件");controls->setObjectName("transformShowControls");controls->setChecked(true);bar->addWidget(controls);connect(controls,&QCheckBox::toggled,this,[this](bool value){transformControls_=value;refresh(false,false);});
+    auto*ratio=new QCheckBox("锁定长宽比");ratio->setObjectName("transformLockRatio");bar->addWidget(ratio);connect(ratio,&QCheckBox::toggled,this,[this](bool v){lockRatio_=v;});
+    auto*snap=new QCheckBox("对齐到边缘和中心");snap->setObjectName("transformSnapping");snap->setChecked(true);bar->addWidget(snap);connect(snap,&QCheckBox::toggled,this,[this](bool v){auto policy=snapPolicy_;policy.enabled=v;setSnapPolicy(policy);});
+    auto*scale=new ui::PropertyNumber;scale->releaseFocus=[this]{if(canvas())canvas()->setFocus();};scale->setObjectName("transformScale");scale->setAccessibleName("变换缩放百分比");scale->setRange(.01,100000);scale->setDecimals(2);scale->setSuffix(" %");scale->setValue(100);bar->addWidget(scale);connect(scale,&QDoubleSpinBox::valueChanged,this,[this](double value){changeTransformDraft([&](Transform& draft){draft=editing_transform::scaledPercent(draft,value,transformScalePixelSize());});});
+    auto*sampling=new QComboBox;sampling->setObjectName("transformSampling");sampling->addItems({"邻近","平滑","高质量"});sampling->setCurrentIndex(2);sampling->setAccessibleName("变换采样");bar->addWidget(sampling);connect(sampling,&QComboBox::currentIndexChanged,this,[this](int i){if(i>=0&&i<=2)changeTransformDraft([&](Transform& draft){draft.sampling=Transform::Sampling(i);});});
+    for(bool horizontal:{true,false}){auto*flip=bar->addAction(horizontal?"水平翻转":"垂直翻转");flip->setObjectName(horizontal?"transformFlipH":"transformFlipV");bindCommand(flip,"变换选项",horizontal?"水平翻转":"垂直翻转",[this,horizontal]{changeTransformDraft([&](Transform& draft){draft=editing_transform::flippedLocal(draft,horizontal);});});}
+    auto*menu=menuBar()->addMenu("变换(&T)");
+    auto*free=menu->addAction("自由变换");free->setObjectName("freeTransform");free->setShortcut(QKeySequence("Ctrl+T"));bindCommand(free,"变换","自由变换",[this]{startTransformSession(true);});
+    auto*distort=menu->addAction("扭曲");distort->setObjectName("distortTransform");bindCommand(distort,"变换","扭曲",[this]{startTransformSession(true,true);});
+    auto*apply=menu->addAction("应用变换");apply->setObjectName("applyTransform");bar->addAction(apply);bindCommand(apply,"变换","应用变换",[this]{applyTransformSession();});
+    auto*cancel=menu->addAction("取消变换");cancel->setObjectName("cancelTransform");bar->addAction(cancel);bindCommand(cancel,"变换","取消变换",[this]{cancelTransformSession();});
     updateTransformActions();
-    action(menu,"Flip Layer Horizontally",{},[this]{if(current()&&current()->document)edit("Flip Horizontal",[&](Document&d){d=editing::flipLayers(d,layerSelection().ids,true);});});
-    action(menu,"Flip Layer Vertically",{},[this]{if(current()&&current()->document)edit("Flip Vertical",[&](Document&d){d=editing::flipLayers(d,layerSelection().ids,false);});});
-    action(menu,"Scale…",{},[this]{auto transform=selectedTransform();if(!transform||(transformSession_&&transformSession_->corners))return;bool ok;const double value=QInputDialog::getDouble(this,"Scale","Scale (%)",editing_transform::scalePercent(*transform,transformScalePixelSize()),.01,100000,2,&ok);if(ok)changeTransformDraft([&](Transform& draft){draft=editing_transform::scaledPercent(draft,value,transformScalePixelSize());});});
+    action(menu,"水平翻转图层",{},[this]{if(current()&&current()->document)edit("水平翻转",[&](Document&d){d=editing::flipLayers(d,layerSelection().ids,true);});});
+    action(menu,"垂直翻转图层",{},[this]{if(current()&&current()->document)edit("垂直翻转",[&](Document&d){d=editing::flipLayers(d,layerSelection().ids,false);});});
+    action(menu,"缩放…",{},[this]{auto transform=selectedTransform();if(!transform||(transformSession_&&transformSession_->corners))return;bool ok;const double value=QInputDialog::getDouble(this,"缩放","缩放 (%)",editing_transform::scalePercent(*transform,transformScalePixelSize()),.01,100000,2,&ok);if(ok)changeTransformDraft([&](Transform& draft){draft=editing_transform::scaledPercent(draft,value,transformScalePixelSize());});});
 }
 }

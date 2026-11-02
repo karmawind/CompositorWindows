@@ -75,8 +75,8 @@ public:
         else QAccessibleWidget::doAction(action);
     }
     QStringList keyBindingsForAction(const QString& action) const override {
-        if(action==increaseAction())return {QStringLiteral("Up"),QStringLiteral("Right")};
-        if(action==decreaseAction())return {QStringLiteral("Down"),QStringLiteral("Left")};
+        if(action==increaseAction())return {QStringLiteral("Up"),QStringLiteral("右")};
+        if(action==decreaseAction())return {QStringLiteral("Down"),QStringLiteral("左")};
         return QAccessibleWidget::keyBindingsForAction(action);
     }
 };
@@ -95,10 +95,10 @@ public:
     std::function<void(LevelRange)> changed;
     explicit LevelsGraph(QWidget* parent):QWidget(parent){
         installLevelsHandleAccessibility();
-        setObjectName("levelsHistogramGraph");setAccessibleName("Original RGB histogram and Levels handles");setMinimumSize(240,210);setMouseTracking(true);
-        setToolTip("Linear histogram with automatic vertical scaling. Tall spikes may extend beyond the graph; all tones from 0 to 255 remain included.");
+        setObjectName("levelsHistogramGraph");setAccessibleName("原始 RGB 直方图和色阶控制柄");setMinimumSize(240,210);setMouseTracking(true);
+        setToolTip("自动纵向缩放的线性直方图。高尖峰可能超出图表范围；0 到 255 的所有色调仍包含在内。");
         setAccessibleDescription(toolTip());
-        const char* names[]{"Input black","Gamma","Input white","Output black","Output white"};
+        const char* names[]{"输入黑场","伽马","输入白场","输出黑场","输出白场"};
         for(size_t i=0;i<handles_.size();++i){
             auto* handle=handles_[i]=new LevelsHandle(this,names[i]);
             handle->read=[this,i]{const auto r=settings.ranges[size_t(settings.channel)].normalized();
@@ -126,7 +126,7 @@ private:
     void paintEvent(QPaintEvent*)override{
         QPainter painter(this);painter.setRenderHint(QPainter::Antialiasing);QRectF graph(10,5,width()-20,145);painter.fillRect(graph,palette().color(QPalette::Base));int channel=int(settings.channel);const QColor colors[]{QColor(150,150,150),QColor(235,88,88),QColor(93,198,110),QColor(83,141,237)};double peak=histogramDisplayScale(bins[size_t(channel)]);
         if(ready&&peak>0){painter.setPen(Qt::NoPen);painter.setBrush(colors[channel]);for(int i=0;i<256;++i){double h=graph.height()*std::clamp(bins[size_t(channel)][size_t(i)]/peak,0.,1.);painter.drawRect(QRectF(graph.left()+i*graph.width()/256,graph.bottom()-h,graph.width()/256+.1,h));}}
-        if(!ready){painter.setPen(palette().color(QPalette::Text));painter.drawText(graph.adjusted(8,8,-8,-8),Qt::AlignTop|Qt::AlignLeft,"Loading histogram...");}
+        if(!ready){painter.setPen(palette().color(QPalette::Text));painter.drawText(graph.adjusted(8,8,-8,-8),Qt::AlignTop|Qt::AlignLeft,"正在加载直方图...");}
         QLinearGradient ramp(10,0,width()-10,0);ramp.setColorAt(0,Qt::black);ramp.setColorAt(1,Qt::white);painter.fillRect(QRectF(10,174,width()-20,14),ramp);
         auto range=settings.ranges[size_t(channel)].normalized();auto input=levelsInputHandles(range);std::array<double,2> output{range.outputBlack,range.outputWhite};
         auto draw=[&](double position,int y,int i,int count){QPainterPath triangle;triangle.moveTo(px(position),y);triangle.lineTo(px(position)-6,y+10);triangle.lineTo(px(position)+6,y+10);triangle.closeSubpath();painter.setPen(QPen(QColor(128,128,128),1));painter.setBrush(i==0?Qt::black:i==count-1?Qt::white:Qt::gray);painter.drawPath(triangle);};for(int i=0;i<3;++i)draw(input[size_t(i)],153,i,3);for(int i=0;i<2;++i)draw(output[size_t(i)],191,i,2);
@@ -149,18 +149,18 @@ struct LevelsAdvancedControls::Impl {
     QLabel* caption{};
     explicit Impl(LevelsAdvancedControls* parent):owner(parent){
         auto* layout=new QVBoxLayout(parent);layout->setContentsMargins(0,0,0,0);graph=new LevelsGraph(parent);layout->addWidget(graph);graph->changed=[this](LevelRange range){auto changed=settings;changed.ranges[size_t(changed.channel)]=range;publish(changed);};
-        auto* sampling=new QHBoxLayout;sampling->addWidget(new QLabel("Sample original",parent));const char* names[]{"Black","Gray","White"};for(int i=0;i<3;++i){samples[size_t(i)]=new QPushButton(names[i],parent);auto* button=samples[size_t(i)];button->setObjectName(QString("levelsSample%1").arg(names[i]));button->setCheckable(true);sampling->addWidget(button);QObject::connect(button,&QPushButton::clicked,parent,[this,i]{arm(armed==LevelsSample(i)?std::nullopt:std::optional(LevelsSample(i)));});}layout->addLayout(sampling);
-        auto* automatic=new QHBoxLayout;const char* labels[]{"Contrast","Color","Color + neutral midtones"};const char* ids[]{"Contrast","Color","Neutral"};for(int i=0;i<3;++i){autos[size_t(i)]=new QPushButton(labels[i],parent);auto* button=autos[size_t(i)];button->setObjectName(QString("levelsAuto%1").arg(ids[i]));button->setEnabled(false);automatic->addWidget(button);QObject::connect(button,&QPushButton::clicked,parent,[this,i]{arm({});publish(autoLevels(graph->bins,LevelsAuto(i)));});}layout->addLayout(automatic);
-        caption=new QLabel("Original image",parent);caption->setToolTip("Histogram weighted by opacity and selection");caption->setStyleSheet("color: #989ba3; font-size: 11px;");caption->setWordWrap(true);layout->addWidget(caption);
+        auto* sampling=new QHBoxLayout;sampling->addWidget(new QLabel("采样原图",parent));const char* names[]{"黑色","灰色","白色"};for(int i=0;i<3;++i){samples[size_t(i)]=new QPushButton(names[i],parent);auto* button=samples[size_t(i)];button->setObjectName(QString("levelsSample%1").arg(names[i]));button->setCheckable(true);sampling->addWidget(button);QObject::connect(button,&QPushButton::clicked,parent,[this,i]{arm(armed==LevelsSample(i)?std::nullopt:std::optional(LevelsSample(i)));});}layout->addLayout(sampling);
+        auto* automatic=new QHBoxLayout;const char* labels[]{"Contrast","颜色","颜色 + 中性中间调"};const char* ids[]{"Contrast","颜色","Neutral"};for(int i=0;i<3;++i){autos[size_t(i)]=new QPushButton(labels[i],parent);auto* button=autos[size_t(i)];button->setObjectName(QString("levelsAuto%1").arg(ids[i]));button->setEnabled(false);automatic->addWidget(button);QObject::connect(button,&QPushButton::clicked,parent,[this,i]{arm({});publish(autoLevels(graph->bins,LevelsAuto(i)));});}layout->addLayout(automatic);
+        caption=new QLabel("原始图像",parent);caption->setToolTip("按不透明度和选区加权的直方图");caption->setStyleSheet("color: #989ba3; font-size: 11px;");caption->setWordWrap(true);layout->addWidget(caption);
     }
     void arm(std::optional<LevelsSample> mode){armed=mode;for(int i=0;i<3;++i)samples[size_t(i)]->setChecked(mode==LevelsSample(i));if(owner->onSampleModeChanged)owner->onSampleModeChanged(mode);}
     void publish(const LevelsSettings& next){if(json.empty()||next==settings)return;settings=next;json=withLevelsSettings(json,settings);graph->settings=settings;graph->syncHandles();graph->update();if(owner->onChanged)owner->onChanged(json);}
 };
 LevelsAdvancedControls::LevelsAdvancedControls(QWidget* parent):QWidget(parent),impl_(std::make_unique<Impl>(this)){setObjectName("levelsAdvancedControls");}
 LevelsAdvancedControls::~LevelsAdvancedControls()=default;
-void LevelsAdvancedControls::setAdjustmentJson(std::string json){auto settings=levelsFromAdjustmentJson(json);impl_->json=std::move(json);impl_->settings=settings;impl_->graph->settings=settings;const char* names[]{"RGB","Red","Green","Blue"};impl_->graph->setAccessibleName(QString("Original %1 histogram and Levels handles").arg(names[int(settings.channel)]));impl_->graph->syncHandles();impl_->graph->update();}
+void LevelsAdvancedControls::setAdjustmentJson(std::string json){auto settings=levelsFromAdjustmentJson(json);impl_->json=std::move(json);impl_->settings=settings;impl_->graph->settings=settings;const char* names[]{"RGB","红色","绿色","蓝色"};impl_->graph->setAccessibleName(QString("原始 %1 直方图和色阶控制柄").arg(names[int(settings.channel)]));impl_->graph->syncHandles();impl_->graph->update();}
 std::string LevelsAdvancedControls::adjustmentJson()const{return impl_->json;}
-void LevelsAdvancedControls::setHistogram(LevelsHistogram histogram){for(const auto& channel:histogram)for(double value:channel)if(!std::isfinite(value)||value<0)throw std::invalid_argument("Invalid Levels histogram");impl_->graph->bins=std::move(histogram);impl_->graph->ready=true;for(auto* button:impl_->autos)button->setEnabled(true);impl_->graph->update();}
+void LevelsAdvancedControls::setHistogram(LevelsHistogram histogram){for(const auto& channel:histogram)for(double value:channel)if(!std::isfinite(value)||value<0)throw std::invalid_argument("无效的色阶直方图");impl_->graph->bins=std::move(histogram);impl_->graph->ready=true;for(auto* button:impl_->autos)button->setEnabled(true);impl_->graph->update();}
 const LevelsHistogram& LevelsAdvancedControls::histogram()const{return impl_->graph->bins;}
 bool LevelsAdvancedControls::histogramReady()const{return impl_->graph->ready;}
 std::optional<LevelsSample> LevelsAdvancedControls::sampleMode()const{return impl_->armed;}
@@ -170,7 +170,7 @@ class HueSpectrum final:public QWidget {
 public:
     HueSettings settings;
     std::function<void(HueBand)> changed;
-    explicit HueSpectrum(QWidget* parent):QWidget(parent){setObjectName("hueSpectrumGraph");setAccessibleName("Hue range before and after spectrum with four band handles");setMinimumSize(240,70);}
+    explicit HueSpectrum(QWidget* parent):QWidget(parent){setObjectName("hueSpectrumGraph");setAccessibleName("色相范围调整前后的色谱，含四个色带控制柄");setMinimumSize(240,70);}
 private:
     std::optional<int> dragging_;
     void paintEvent(QPaintEvent*)override{
@@ -188,7 +188,7 @@ public:
     std::optional<size_t> selected,dragging;
     std::function<void(const CurvesSettings&)> changed;
     std::function<void()> selectionChanged;
-    explicit CurveGraph(QWidget* parent):QWidget(parent){setObjectName("curvesGraph");setAccessibleName("Curves input and output graph");setMinimumSize(240,260);}
+    explicit CurveGraph(QWidget* parent):QWidget(parent){setObjectName("curvesGraph");setAccessibleName("曲线输入输出图");setMinimumSize(240,260);}
 private:
     QRectF graphRect()const{return QRectF(8,8,width()-16,height()-16);}
     QPointF position(Point point)const{auto box=graphRect();return {box.x()+point.x/255*box.width(),box.y()+(1-point.y/255)*box.height()};}
@@ -213,7 +213,7 @@ struct HueAdvancedControls::Impl {
     std::optional<HueSample> armed;
     std::optional<HueTargetDrag> drag;
     bool targeting{};
-    explicit Impl(HueAdvancedControls* parent):owner(parent){auto* layout=new QVBoxLayout(parent);layout->setContentsMargins(0,0,0,0);spectrum=new HueSpectrum(parent);layout->addWidget(spectrum);angles=new QLabel(parent);angles->setAccessibleName("Hue band handle angles");layout->addWidget(angles);spectrum->changed=[this](HueBand band){auto next=settings;next.bands[size_t(next.range)]=band;publish(next);};auto* buttons=new QHBoxLayout;const char* labels[]{"Sample color","Add color","Remove color"};const char* ids[]{"Sample","Add","Remove"};for(int i=0;i<3;++i){auto* button=new QPushButton(labels[i],parent);samples[size_t(i)]=button;button->setObjectName(QString("hue%1Color").arg(ids[i]));button->setCheckable(true);buttons->addWidget(button);QObject::connect(button,&QPushButton::clicked,parent,[this,i]{setTargeting(false);arm(armed==HueSample(i)?std::nullopt:std::optional(HueSample(i)));});}target=new QPushButton("Targeted adjustment",parent);target->setObjectName("hueTargetedAdjustment");target->setCheckable(true);buttons->addWidget(target);QObject::connect(target,&QPushButton::clicked,parent,[this]{arm({});setTargeting(!targeting);});layout->addLayout(buttons);sync();}
+    explicit Impl(HueAdvancedControls* parent):owner(parent){auto* layout=new QVBoxLayout(parent);layout->setContentsMargins(0,0,0,0);spectrum=new HueSpectrum(parent);layout->addWidget(spectrum);angles=new QLabel(parent);angles->setAccessibleName("色相带控制柄角度");layout->addWidget(angles);spectrum->changed=[this](HueBand band){auto next=settings;next.bands[size_t(next.range)]=band;publish(next);};auto* buttons=new QHBoxLayout;const char* labels[]{"采样颜色","添加颜色","移除颜色"};const char* ids[]{"取样","添加","移除"};for(int i=0;i<3;++i){auto* button=new QPushButton(labels[i],parent);samples[size_t(i)]=button;button->setObjectName(QString("hue%1Color").arg(ids[i]));button->setCheckable(true);buttons->addWidget(button);QObject::connect(button,&QPushButton::clicked,parent,[this,i]{setTargeting(false);arm(armed==HueSample(i)?std::nullopt:std::optional(HueSample(i)));});}target=new QPushButton("目标调整",parent);target->setObjectName("hueTargetedAdjustment");target->setCheckable(true);buttons->addWidget(target);QObject::connect(target,&QPushButton::clicked,parent,[this]{arm({});setTargeting(!targeting);});layout->addLayout(buttons);sync();}
     void arm(std::optional<HueSample> mode){armed=mode;for(int i=0;i<3;++i)samples[size_t(i)]->setChecked(armed==HueSample(i));if(owner->onSampleModeChanged)owner->onSampleModeChanged(mode);}
     void setTargeting(bool value){bool was=targeting;targeting=value;target->setChecked(value);if(!value)drag.reset();if(was!=value&&owner->onTargetingChanged)owner->onTargetingChanged(value);}
     void sync(){spectrum->settings=settings;spectrum->update();bool band=settings.range!=ColorRange::Master&&!settings.colorize;spectrum->setVisible(band);angles->setVisible(band);for(auto* button:samples)button->setVisible(band);target->setVisible(!settings.colorize);auto h=settings.bands[size_t(settings.range)].handles();angles->setText(QString("%1\u00b0    %2\u00b0    %3\u00b0    %4\u00b0").arg(std::round(h[0])).arg(std::round(h[1])).arg(std::round(h[2])).arg(std::round(h[3])));}
@@ -236,8 +236,8 @@ struct CurvesAdvancedControls::Impl {
     CurveGraph* graph{};
     QLabel* coordinates{};
     QPushButton* remove{};
-    explicit Impl(CurvesAdvancedControls* parent):owner(parent){auto* layout=new QVBoxLayout(parent);layout->setContentsMargins(0,0,0,0);graph=new CurveGraph(parent);layout->addWidget(graph);graph->changed=[this](const CurvesSettings& next){publish(next);};graph->selectionChanged=[this]{sync();};layout->addWidget(new QLabel("Click to add a point. Drag to adjust.",parent));auto* row=new QHBoxLayout;coordinates=new QLabel(parent);row->addWidget(coordinates);row->addStretch();remove=new QPushButton("Remove point",parent);remove->setObjectName("curvesRemovePoint");row->addWidget(remove);layout->addLayout(row);QObject::connect(remove,&QPushButton::clicked,parent,[this]{if(!graph->selected)return;auto next=settings;if(removeCurvePoint(next,*graph->selected)){graph->selected.reset();publish(next);}});auto* reset=new QPushButton("Reset curve",parent);reset->setObjectName("curvesResetCurve");layout->addWidget(reset);QObject::connect(reset,&QPushButton::clicked,parent,[this]{auto next=settings;resetCurve(next);graph->selected.reset();publish(next);sync();});sync();}
-    void sync(){graph->settings=settings;const auto& points=settings.channels[size_t(settings.channel)];if(graph->selected&&*graph->selected>=points.size())graph->selected.reset();if(graph->selected){auto point=points[*graph->selected];coordinates->setText(QString("Input %1  |  Output %2").arg(int(point.x)).arg(int(point.y)));}else coordinates->clear();remove->setEnabled(graph->selected&&*graph->selected>0&&*graph->selected+1<points.size());graph->update();}
+    explicit Impl(CurvesAdvancedControls* parent):owner(parent){auto* layout=new QVBoxLayout(parent);layout->setContentsMargins(0,0,0,0);graph=new CurveGraph(parent);layout->addWidget(graph);graph->changed=[this](const CurvesSettings& next){publish(next);};graph->selectionChanged=[this]{sync();};layout->addWidget(new QLabel("单击可添加点，拖动可调整。",parent));auto* row=new QHBoxLayout;coordinates=new QLabel(parent);row->addWidget(coordinates);row->addStretch();remove=new QPushButton("移除点",parent);remove->setObjectName("curvesRemovePoint");row->addWidget(remove);layout->addLayout(row);QObject::connect(remove,&QPushButton::clicked,parent,[this]{if(!graph->selected)return;auto next=settings;if(removeCurvePoint(next,*graph->selected)){graph->selected.reset();publish(next);}});auto* reset=new QPushButton("重置曲线",parent);reset->setObjectName("curvesResetCurve");layout->addWidget(reset);QObject::connect(reset,&QPushButton::clicked,parent,[this]{auto next=settings;resetCurve(next);graph->selected.reset();publish(next);sync();});sync();}
+    void sync(){graph->settings=settings;const auto& points=settings.channels[size_t(settings.channel)];if(graph->selected&&*graph->selected>=points.size())graph->selected.reset();if(graph->selected){auto point=points[*graph->selected];coordinates->setText(QString("输入 %1  |  输出 %2").arg(int(point.x)).arg(int(point.y)));}else coordinates->clear();remove->setEnabled(graph->selected&&*graph->selected>0&&*graph->selected+1<points.size());graph->update();}
     void publish(const CurvesSettings& next){if(json.empty()||next==settings)return;settings=next;json=withCurvesSettings(json,settings);sync();if(owner->onChanged)owner->onChanged(json);}
 };
 CurvesAdvancedControls::CurvesAdvancedControls(QWidget* parent):QWidget(parent),impl_(std::make_unique<Impl>(this)){setObjectName("curvesAdvancedControls");}

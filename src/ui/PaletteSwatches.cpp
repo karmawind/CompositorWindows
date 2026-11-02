@@ -47,7 +47,7 @@ protected:
 };
 }
 PaletteSwatches::PaletteSwatches(const std::array<QAction*,4>& actions,QWidget* parent):QWidget(parent){
-    setStyleSheet("QToolButton { padding: 0; border: 0; min-width: 0; min-height: 0; background: transparent; }");setObjectName("paletteSwatches");setAccessibleName("Foreground and background colors");
+    setStyleSheet("QToolButton { padding: 0; border: 0; min-width: 0; min-height: 0; background: transparent; }");setObjectName("paletteSwatches");setAccessibleName("前景色和背景色");
     // Nominal source frame36² has utility targets extending left1, right3,
     // top3 and bottom3. Reserve that overflow instead of clipping Qt children.
     setFixedSize(40,42);
@@ -55,8 +55,8 @@ PaletteSwatches::PaletteSwatches(const std::array<QAction*,4>& actions,QWidget* 
     buttons_[0]=new SwatchButton(this);buttons_[0]->move(1,3);
     buttons_[2]=new UtilityButton(false,this);buttons_[2]->move(28,0);
     buttons_[3]=new UtilityButton(true,this);buttons_[3]->move(0,30);
-    const std::array<const char*,4> names{"Foreground color","Background color","Swap colors","Default colors"};
-    const std::array<const char*,4> tips{"Foreground color","Background color","Swap foreground and background (X)","Default colors (D)"};
+    const std::array<const char*,4> names{"前景色","背景色","交换颜色","默认颜色"};
+    const std::array<const char*,4> tips{"前景色","背景色","交换前景色和背景色 (X)","默认颜色 (D)"};
     for(size_t index=0;index<buttons_.size();++index){actions[index]->setToolTip(tips[index]);buttons_[index]->setDefaultAction(actions[index]);buttons_[index]->setAccessibleName(names[index]);buttons_[index]->setToolTip(tips[index]);}
     setTabOrder(buttons_[0],buttons_[1]);setTabOrder(buttons_[1],buttons_[2]);setTabOrder(buttons_[2],buttons_[3]);
     setColors(Qt::black,Qt::white);

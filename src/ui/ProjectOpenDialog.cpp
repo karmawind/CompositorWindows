@@ -51,7 +51,7 @@ private:
         HWND dialogWindow=owner_;
         ComPtr<IOleWindow> oleWindow;
         if(SUCCEEDED(dialog->QueryInterface(IID_PPV_ARGS(&oleWindow))))oleWindow->GetWindow(&dialogWindow);
-        MessageBoxW(dialogWindow,L"Select one or more Compositor project folders ending in .comp.",L"Open Compositor Projects",MB_OK|MB_ICONINFORMATION);
+        MessageBoxW(dialogWindow,L"选择一个或多个以 .comp 结尾的 Compositor 项目文件夹。",L"打开 Compositor 项目",MB_OK|MB_ICONINFORMATION);
         return S_FALSE;
     }
     HWND owner_{};
@@ -61,12 +61,12 @@ private:
 QStringList selectedProjectDirectories(IFileOpenDialog* dialog){
     ComPtr<IShellItemArray> items;checked(dialog->GetResults(&items),"Read selected project folders");
     DWORD count{};checked(items->GetCount(&count),"Count selected project folders");
-    if(count==0)throw std::runtime_error("No project folders were selected");
+    if(count==0)throw std::runtime_error("未选择任何项目文件夹");
     QStringList paths;paths.reserve(qsizetype(count));
     for(DWORD index=0;index<count;++index){
         ComPtr<IShellItem> item;checked(items->GetItemAt(index,&item),"Read selected project folder");
         const auto path=fileSystemPath(item.Get());
-        if(!isProjectPackageDirectory(path))throw std::runtime_error("Selected folder is not a Compositor project");
+        if(!isProjectPackageDirectory(path))throw std::runtime_error("所选文件夹不是 Compositor 项目");
         paths.append(path);
     }
     return paths;
@@ -80,7 +80,7 @@ std::optional<QStringList> showProjectOpenDialog(HWND owner,const QString& initi
         if(SUCCEEDED(SHCreateItemFromParsingName(path.c_str(),nullptr,IID_PPV_ARGS(&folder))))dialog->SetFolder(folder.Get());
     }
     ComPtr<ProjectOpenDialogEvents> events;events.Attach(new ProjectOpenDialogEvents(owner));
-    DWORD cookie{};checked(dialog->Advise(events.Get(),&cookie),"Attach project picker validation");
+    DWORD cookie{};checked(dialog->Advise(events.Get(),&cookie),"附加项目选择器验证");
     const auto shown=dialog->Show(owner);dialog->Unadvise(cookie);
     if(shown==HRESULT_FROM_WIN32(ERROR_CANCELLED))return std::nullopt;
     checked(shown,"Show project picker");
@@ -107,11 +107,11 @@ bool canNavigateProjectItem(IShellItem* item){
 void configureProjectOpenDialog(IFileOpenDialog* dialog){
     FILEOPENDIALOGOPTIONS options{};checked(dialog->GetOptions(&options),"Read project picker options");
     checked(dialog->SetOptions(options|FOS_PICKFOLDERS|FOS_ALLOWMULTISELECT|FOS_FORCEFILESYSTEM),"Configure project picker");
-    checked(dialog->SetTitle(L"Open Compositor Projects"),"Set project picker title");checked(dialog->SetOkButtonLabel(L"Open"),"Set project picker action");
-    checked(dialog->SetFileNameLabel(L"Project folders"),"Set project picker field label");
+    checked(dialog->SetTitle(L"打开 Compositor 项目"),"Set project picker title");checked(dialog->SetOkButtonLabel(L"Open"),"Set project picker action");
+    checked(dialog->SetFileNameLabel(L"项目文件夹"),"Set project picker field label");
 }
 std::optional<QStringList> chooseProjectDirectories(QWidget* owner,const QString& initialDirectory){
-    if(!owner)throw std::invalid_argument("A project picker owner is required");
+    if(!owner)throw std::invalid_argument("需要项目选择器所有者");
     const auto nativeOwner=reinterpret_cast<HWND>(owner->winId());
     struct Result {std::optional<QStringList> paths;std::exception_ptr error;};
     auto result=std::make_shared<Result>();

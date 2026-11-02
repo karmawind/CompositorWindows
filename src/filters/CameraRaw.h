@@ -51,7 +51,7 @@ struct CameraRawCurveSettings {
 };
 
 struct CameraRawMixerSettings {
-    static constexpr std::array<const char*, 8> names{"Reds", "Oranges", "Yellows", "Greens", "Aquas", "Blues", "Purples", "Magentas"};
+    static constexpr std::array<const char*, 8> names{"红色", "Oranges", "黄色", "绿色", "Aquas", "蓝色", "Purples", "洋红"};
     static constexpr std::array<double, 8> centers{0, 30, 60, 120, 180, 240, 270, 300};
     std::array<double, 8> hue{}, saturation{}, luminance{};
     std::vector<CameraRawPointColor> points;

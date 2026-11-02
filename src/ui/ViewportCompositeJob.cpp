@@ -38,7 +38,7 @@ struct ViewportCompositeJob::Impl {
     QFutureWatcher<Result> watcher;
 };
 ViewportCompositeJob::ViewportCompositeJob(Receiver receiver,QObject* parent):QObject(parent),impl_(std::make_unique<Impl>()){
-    if(!receiver)throw std::invalid_argument("Viewport composite job requires a receiver");
+    if(!receiver)throw std::invalid_argument("视口合成作业需要接收器");
     setObjectName("viewportCompositeJob");impl_->receiver=std::move(receiver);
     connect(&impl_->watcher,&QFutureWatcher<Result>::finished,this,[this]{
         if(!impl_||impl_->stopped)return;
@@ -123,7 +123,7 @@ struct MovePreviewJob::Impl {
     QFutureWatcher<Result> watcher;
 };
 MovePreviewJob::MovePreviewJob(Receiver receiver,QObject* parent):QObject(parent),impl_(std::make_unique<Impl>()){
-    if(!receiver)throw std::invalid_argument("Move preview job requires a receiver");
+    if(!receiver)throw std::invalid_argument("移动预览作业需要接收器");
     setObjectName("movePreviewJob");impl_->receiver=std::move(receiver);
     connect(&impl_->watcher,&QFutureWatcher<Result>::finished,this,[this]{
         if(!impl_||impl_->stopped)return;

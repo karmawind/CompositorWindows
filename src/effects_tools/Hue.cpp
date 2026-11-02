@@ -10,7 +10,7 @@
 #include <stdexcept>
 namespace compositor::effects_tools {
 namespace {
-constexpr const char* names[]{"Master","Reds","Yellows","Greens","Cyans","Blues","Magentas"};
+constexpr const char* names[]{"主","红色","黄色","绿色","青色","蓝色","洋红"};
 int index(ColorRange range){int i=int(range);if(i<0||i>6)throw std::runtime_error("Invalid hue range");return i;}
 double finite(double value){if(!std::isfinite(value))throw std::runtime_error("Invalid hue coordinate");return value;}
 double wrap(double value){auto r=std::fmod(finite(value),360.);return r<0?r+360:r;}

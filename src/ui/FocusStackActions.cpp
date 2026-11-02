@@ -10,7 +10,7 @@ namespace compositor {
 namespace {
 enum class FocusStackOutput { Cancel, NewLayer, NewDocument };
 void showFocusStackError(QWidget* parent,const QString& text){
-    auto* message=new QMessageBox(QMessageBox::Warning,"Focus Stack",text,QMessageBox::Ok,parent);
+    auto* message=new QMessageBox(QMessageBox::Warning,"焦点堆栈",text,QMessageBox::Ok,parent);
     message->setObjectName("focusStackError");message->setAttribute(Qt::WA_DeleteOnClose);
     // Already styled, so the chrome handler keeps Qt's layout; otherwise the message is clipped (KNOWN-ISSUES: Dialog chrome).
     message->setProperty("studioChrome",true);
@@ -21,12 +21,12 @@ FocusStackOutput chooseFocusStackOutput(QWidget* parent){
     const auto injected=parent->property("testFocusStackOutput");
     if(injected.isValid()){const auto value=injected.toString();
         return value=="layer"?FocusStackOutput::NewLayer:value=="document"?FocusStackOutput::NewDocument:FocusStackOutput::Cancel;}
-    QMessageBox message(QMessageBox::Question,"Focus Stack","Add the focus-stacked result as a new layer in this document, or open it as a new document?",QMessageBox::NoButton,parent);
+    QMessageBox message(QMessageBox::Question,"焦点堆栈","将焦点堆栈结果作为新图层添加到此文档中，还是将其作为新文档打开？",QMessageBox::NoButton,parent);
     message.setObjectName("focusStackOutput");
     // Already styled, so the chrome handler keeps Qt's layout; otherwise the question is clipped (KNOWN-ISSUES: Dialog chrome).
     message.setProperty("studioChrome",true);
-    auto* layer=message.addButton("New Layer",QMessageBox::AcceptRole);layer->setObjectName("focusStackNewLayer");
-    auto* document=message.addButton("New Document",QMessageBox::AcceptRole);document->setObjectName("focusStackNewDocument");
+    auto* layer=message.addButton("新建图层",QMessageBox::AcceptRole);layer->setObjectName("focusStackNewLayer");
+    auto* document=message.addButton("新建文档",QMessageBox::AcceptRole);document->setObjectName("focusStackNewDocument");
     message.addButton(QMessageBox::Cancel);
     message.setDefaultButton(layer);message.exec();
     return message.clickedButton()==layer?FocusStackOutput::NewLayer:message.clickedButton()==document?FocusStackOutput::NewDocument:FocusStackOutput::Cancel;
@@ -34,8 +34,8 @@ FocusStackOutput chooseFocusStackOutput(QWidget* parent){
 }
 void MainWindow::focusStackSelectedImages(const QStringList& paths){
     if(paths.isEmpty())return;
-    if(ui::FocusStackJob::find(this)){statusBar()->showMessage("A focus stack is already running",5000);return;}
-    if(paths.size()<2){showFocusStackError(this,"Select at least two images to focus stack.");return;}
+    if(ui::FocusStackJob::find(this)){statusBar()->showMessage("已有焦点堆栈任务正在运行",5000);return;}
+    if(paths.size()<2){showFocusStackError(this,"请至少选择两张图像以进行焦点堆栈。");return;}
     std::vector<std::filesystem::path> files;for(const auto& path:paths)files.push_back(std::filesystem::path(path.toStdWString()));
     auto* owner=current();
     const bool hasDocument=owner&&owner->document;
@@ -48,32 +48,32 @@ void MainWindow::focusStackSelectedImages(const QStringList& paths){
         host.settled=[this]{refresh(false,false);};
         host.commit=[this](std::shared_ptr<const Raster> raster){
             Document document;document.id=newId();document.width=raster->width;document.height=raster->height;
-            Layer layer;layer.id=newId();layer.name="Focus Stack";layer.transform={0,0,double(raster->width),double(raster->height)};layer.raster=std::move(raster);
+            Layer layer;layer.id=newId();layer.name="焦点堆栈";layer.transform={0,0,double(raster->width),double(raster->height)};layer.raster=std::move(raster);
             document.layers.push_back(std::move(layer));
-            auto& project=addProject(std::move(document),"Focus Stack",false);
+            auto& project=addProject(std::move(document),"焦点堆栈",false);
             refresh();if(project.canvas)project.canvas->fit();
         };
         new ui::FocusStackJob(std::move(files),std::move(host),this);
         return;
     }
     // The project can become busy (save, import) while the picker or output dialog is open.
-    if(owner->projectBusy||owner->importing){statusBar()->showMessage("The project is busy; focus stack it again when the current operation finishes",5000);return;}
+    if(owner->projectBusy||owner->importing){statusBar()->showMessage("项目正忙；当前操作完成后请再次执行焦点堆栈",5000);return;}
     const auto before=owner->document;const auto beforeActive=owner->active;
     QPointer<NativeCanvas> token=owner->canvas;
     host.settled=[this,owner,token]{if(!token)return;owner->projectBusy=false;refresh(false,false);};
     host.commit=[this,owner,token,before,beforeActive](std::shared_ptr<const Raster> raster){
         if(!token)return;
         if(owner->document!=before||owner->active!=beforeActive)
-            throw std::runtime_error("The document changed while focus stacking; the result was not applied");
+            throw std::runtime_error("焦点堆栈期间文档已更改；结果未应用");
         auto document=*owner->document;
-        Layer layer;layer.id=newId();layer.name="Focus Stack";
+        Layer layer;layer.id=newId();layer.name="焦点堆栈";
         layer.transform={std::floor(document.width/2.-raster->width/2.),std::floor(document.height/2.-raster->height/2.),double(raster->width),double(raster->height)};
         layer.raster=std::move(raster);
         for(const auto& active:document.layers)if(active.id==owner->active){layer.parentId=active.group?active.id:active.parentId;break;}
         const auto id=layer.id,parent=layer.parentId;
         document.layers.push_back(std::move(layer));
         validateDocument(document);
-        owner->history.begin("Focus Stack",owner->document,owner->active);
+        owner->history.begin("焦点堆栈",owner->document,owner->active);
         try{
             owner->document=std::move(document);owner->active=id;
             owner->history.end(owner->document,owner->active);

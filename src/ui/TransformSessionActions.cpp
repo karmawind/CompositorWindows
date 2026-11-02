@@ -89,7 +89,7 @@ bool MainWindow::startTransformSession(bool persistent,bool distort) {
     if(distort)state->corners=editing_transform::corners(state->draft);
     // Do this before installing state: selectTool resolves any older gesture.
     selectTool(Tool::Move);
-    project->history.begin(state->pixels?"Transform Selection":state->maskOnly?(distort?"Distort Layer Mask":"Transform Layer Mask"):distort?(group?"Distort Layers":"Distort"):group?"Transform Layers":"Transform Layer",project->document,project->active);
+    project->history.begin(state->pixels?"变换选区":state->maskOnly?(distort?"扭曲图层蒙版":"变换图层蒙版"):distort?(group?"扭曲图层":"扭曲"):group?"变换多个图层":"变换图层",project->document,project->active);
     transformOwner_=project;transformSession_=std::move(state);
     try{publishTransformSession(false);refresh();}
     catch(...){cancelTransformSession();throw;}
@@ -103,7 +103,7 @@ void MainWindow::publishTransformSession(bool finish) {
         if(state.pixelMove)state.pixels->move(state.moveOffset);else state.pixels->update(state.draft,state.corners);
         if(state.pixelMove||finish) {
             const auto output=finish?state.pixels->apply():state.pixels->preview();
-            auto* layer=layerIn(result,state.target);if(!layer)throw std::runtime_error("The selected pixel target was removed");
+            auto* layer=layerIn(result,state.target);if(!layer)throw std::runtime_error("所选像素目标已被移除");
             *layer=output.layer;
             if(layer->raster!=layerIn(state.original,state.target)->raster)layer->shapeJson.clear();
             result.selection=Selection{output.selection};
@@ -116,7 +116,7 @@ void MainWindow::publishTransformSession(bool finish) {
         } else {
             const auto display=state.pixels->floatingPreview();
             auto where=std::find_if(result.layers.begin(),result.layers.end(),[&](const Layer& layer){return layer.id==state.target;});
-            if(where==result.layers.end())throw std::runtime_error("The selected pixel target was removed");
+            if(where==result.layers.end())throw std::runtime_error("所选像素目标已被移除");
             *where=display.clearedLayer;result.layers.insert(where+1,display.floatingLayer);
             project->active=display.floatingLayer.id;project->selected={project->active};
             const auto selection=state.pixels->selectionPreview({},true);
@@ -126,7 +126,7 @@ void MainWindow::publishTransformSession(bool finish) {
         for(const auto& id:state.ids) {
             auto* layer=layerIn(result,id);if(!layer)continue;const Layer original=*layer;
             if(state.maskOnly) {
-                if(!layer->mask)throw std::runtime_error("The transform mask was removed");
+                if(!layer->mask)throw std::runtime_error("变换蒙版已被移除");
                 if(state.corners) {
                     const auto warped=editing_transform::warpGray(original.mask->raster,state.draft,*state.corners,graphics::cachedMaskBackground(original.mask->raster),{finish?0:2048,false,{}});
                     layer->mask->raster=warped.raster;layer->mask->placement=editing_transform::samePlacement(warped.transform,original.transform)?std::nullopt:std::optional(warped.transform);
@@ -216,7 +216,7 @@ void MainWindow::applyTransformSession() {
     if(owner->canvas&&!retain)owner->canvas->clearMovePreview();
     try {
         if(transformSession_->corners&&!transformSession_->pixels) {
-            const auto* name=transformSession_->maskOnly?"Distort Layer Mask":transformSession_->group?"Distort Layers":"Distort";
+            const auto* name=transformSession_->maskOnly?"扭曲图层蒙版":transformSession_->group?"扭曲图层":"扭曲";
             if(auto before=owner->history.cancel())owner->history.begin(name,before->document,before->activeLayer);
         }
         publishTransformSession(true);

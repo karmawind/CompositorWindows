@@ -17,7 +17,7 @@ inline CompositeViewport renderCropViewport(const Document& document,editing::Re
        !std::isfinite(width)||!std::isfinite(height)||width<0||height<0||
        !std::isfinite(x+width)||!std::isfinite(y+height)||
        !std::isfinite(requestedUnits)||requestedUnits<1./32||requestedUnits>30000||!editing::validCrop(crop))
-        throw std::invalid_argument("Invalid crop viewport");
+        throw std::invalid_argument("无效的裁剪视口");
     CompositeViewport result;result.documentWidth=document.width;result.documentHeight=document.height;
     const double left=std::max(x,std::min(0.,crop.x)),top=std::max(y,std::min(0.,crop.y));
     const double right=std::min(x+width,std::max(double(document.width),crop.x+crop.width));

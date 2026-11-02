@@ -12,8 +12,8 @@
 
 namespace compositor::editing {
 namespace {
-void sizeCheck(int w,int h){if(w<1||h<1||w>30000||h>30000||uint64_t(w)*h>100000000)throw std::runtime_error("Pixel edit exceeds raster budget");}
-void grayCheck(const GrayRaster& g){sizeCheck(g.width,g.height);if(g.pixels.size()!=size_t(g.width)*g.height)throw std::runtime_error("Invalid mask storage");}
+void sizeCheck(int w,int h){if(w<1||h<1||w>30000||h>30000||uint64_t(w)*h>100000000)throw std::runtime_error("像素编辑超出栅格预算");}
+void grayCheck(const GrayRaster& g){sizeCheck(g.width,g.height);if(g.pixels.size()!=size_t(g.width)*g.height)throw std::runtime_error("无效的蒙版存储");}
 uint8_t byte(double v){return uint8_t(std::clamp(std::lround(v),0L,255L));}
 Rect intersect(Rect a,Rect b){double x=std::max(a.x,b.x),y=std::max(a.y,b.y),right=std::min(a.x+a.width,b.x+b.width),bottom=std::min(a.y+a.height,b.y+b.height);return {x,y,std::max(0.,right-x),std::max(0.,bottom-y)};}
 Rect unite(Rect a,Rect b){if(a.empty())return b;if(b.empty())return a;double x=std::min(a.x,b.x),y=std::min(a.y,b.y);return {x,y,std::max(a.x+a.width,b.x+b.width)-x,std::max(a.y+a.height,b.y+b.height)-y};}
@@ -24,7 +24,7 @@ Rect toPixels(Rect rect,const Transform& t,int w,int h){
 }
 Transform transformFor(const Transform& t,Rect grid,int baseWidth,int baseHeight){
     auto out=t;out.width=grid.width*t.width/baseWidth;out.height=grid.height*t.height/baseHeight;auto center=t.fromUnit({(grid.x+grid.width/2)/baseWidth,(grid.y+grid.height/2)/baseHeight});out.x=center.x-out.width/2;out.y=center.y-out.height/2;
-    if(!out.valid())throw std::runtime_error("Edited transform exceeds project limits");return out;
+    if(!out.valid())throw std::runtime_error("编辑后的变换超出项目限制");return out;
 }
 std::shared_ptr<const Raster> editRaster(const std::shared_ptr<const Raster>& src,const std::function<Pixel(Pixel,int,int)>& edit){
     std::shared_ptr<Raster> out;int columns=(src->width+255)/256;
@@ -50,7 +50,7 @@ std::shared_ptr<const GrayRaster> reframeMask(const GrayRaster& src,Rect grid,in
 Rect editGrid(const Layer& layer,const Document& doc,int baseWidth,int baseHeight,PixelEdit operation,Rect selectedBounds){
     Rect original{0,0,double(baseWidth),double(baseHeight)},canvas{0,0,double(doc.width),double(doc.height)};
     auto extent=unite(original,integral(toPixels(canvas,layer.transform,baseWidth,baseHeight)));
-    if(extent.width>1000000000||extent.height>1000000000)throw std::runtime_error("Expanded working grid exceeds source limit");
+    if(extent.width>1000000000||extent.height>1000000000)throw std::runtime_error("扩展后的工作网格超出源限制");
     Rect area=doc.selection?intersect(canvas,{selectedBounds.x-1,selectedBounds.y-1,selectedBounds.width+2,selectedBounds.height+2}):canvas;
     auto affected=intersect(integral(toPixels(area,layer.transform,baseWidth,baseHeight)),extent);if(operation==PixelEdit::Clear)affected=intersect(affected,original);if(affected.empty())return {};
     double left=std::floor((affected.x-extent.x)/256)*256+extent.x,top=std::floor((affected.y-extent.y)/256)*256+extent.y;
@@ -59,8 +59,8 @@ Rect editGrid(const Layer& layer,const Document& doc,int baseWidth,int baseHeigh
     sizeCheck(int(allocated.width),int(allocated.height));return allocated;
 }
 bool noSelectionPixels(const Document& doc,Rect& bounds){
-    if(!doc.selection)return false;if(!doc.selection->coverage)throw std::runtime_error("Present selection has no coverage");
-    const auto& coverage=*doc.selection->coverage;if(coverage.width!=doc.width||coverage.height!=doc.height)throw std::runtime_error("Selection dimensions do not match canvas");bounds=coverageBounds(coverage);if(bounds.empty())return true;if(doc.selection->outline)bounds=doc.selection->outline->bounds();return false;
+    if(!doc.selection)return false;if(!doc.selection->coverage)throw std::runtime_error("当前选区没有覆盖区域");
+    const auto& coverage=*doc.selection->coverage;if(coverage.width!=doc.width||coverage.height!=doc.height)throw std::runtime_error("选区尺寸与画布不匹配");bounds=coverageBounds(coverage);if(bounds.empty())return true;if(doc.selection->outline)bounds=doc.selection->outline->bounds();return false;
 }
 struct GradientPaint {
     Point start,end;
@@ -81,10 +81,10 @@ struct PixelMapping {
 };
 }
 static Layer editLayerImpl(const Layer& layer,const Document& doc,PixelEdit operation,Pixel color,bool targetMask,uint8_t maskBackground,const GradientPaint* gradient){
-    if(!layer.transform.valid()||doc.width<1||doc.height<1||doc.width>30000||doc.height>30000)throw std::runtime_error("Invalid pixel edit geometry");
+    if(!layer.transform.valid()||doc.width<1||doc.height<1||doc.width>30000||doc.height>30000)throw std::runtime_error("无效的像素编辑几何");
     Rect selectedBounds;if(noSelectionPixels(doc,selectedBounds)||(operation==PixelEdit::Clear&&!doc.selection))return layer;
     if(targetMask){
-        if(!layer.mask||!layer.mask->raster)throw std::runtime_error("Pixel edit requires an owned mask");
+        if(!layer.mask||!layer.mask->raster)throw std::runtime_error("像素编辑需要自有蒙版");
         auto source=layer.mask->raster;grayCheck(*source);int w=source->width,h=source->height;
         // Brush edits use the layer grid for an attached mask, even when its stored
         // coverage is uniform. Invert only expands a uniform mask for a selection.
@@ -95,12 +95,12 @@ static Layer editLayerImpl(const Layer& layer,const Document& doc,PixelEdit oper
             if(value!=old){if(!out){out=std::make_shared<GrayRaster>();out->width=w;out->height=h;out->pixels.resize(size_t(w)*h);for(int sy=0;sy<h;++sy)for(int sx=0;sx<w;++sx)out->pixels[size_t(sy)*w+sx]=source->pixel(int((sx+.5)*source->width/w),int((sy+.5)*source->height/h));}out->pixels[size_t(y)*w+x]=value;}}
         if(!out)return layer;auto result=layer;result.mask->raster=out;return result;
     }
-    if(layer.group||!layer.adjustmentJson.empty())throw std::runtime_error("This layer has no editable image pixel target");
+    if(layer.group||!layer.adjustmentJson.empty())throw std::runtime_error("此图层没有可编辑的图像像素目标");
     if(!layer.raster&&operation!=PixelEdit::Fill)return layer;
     int baseWidth=layer.raster?layer.raster->width:int(std::round(layer.transform.width)),baseHeight=layer.raster?layer.raster->height:int(std::round(layer.transform.height));
-    if(baseWidth<1||baseHeight<1||baseWidth>30000||baseHeight>30000)throw std::runtime_error("Invalid pixel edit grid");if(layer.raster)sizeCheck(baseWidth,baseHeight);
+    if(baseWidth<1||baseHeight<1||baseWidth>30000||baseHeight>30000)throw std::runtime_error("无效的像素编辑网格");if(layer.raster)sizeCheck(baseWidth,baseHeight);
     Rect grid=operation==PixelEdit::Invert?Rect{0,0,double(baseWidth),double(baseHeight)}:editGrid(layer,doc,baseWidth,baseHeight,operation,selectedBounds);if(grid.empty())return layer;
-    if(layer.deep&&layer.deep->isHdr()&&uint64_t(grid.width)*uint64_t(grid.height)*24>1200000000)throw std::runtime_error("HDR pixel edit exceeds working memory budget");
+    if(layer.deep&&layer.deep->isHdr()&&uint64_t(grid.width)*uint64_t(grid.height)*24>1200000000)throw std::runtime_error("HDR 像素编辑超出工作内存预算");
     auto transform=transformFor(layer.transform,grid,baseWidth,baseHeight);auto source=reframe(layer.raster,grid);auto coverage=mappedCoverage(doc,transform,source->width,source->height,operation!=PixelEdit::Invert);PixelMapping mapping(transform,source->width,source->height);
     auto changed=editRaster(source,[&](Pixel old,int x,int y){double a=coverage?coverage->pixel(x,y)/255.:1.;if(a==0)return old;
         if(operation==PixelEdit::Clear)return Pixel{byte(old.r*(1-a)),byte(old.g*(1-a)),byte(old.b*(1-a)),byte(old.a*(1-a))};
@@ -141,12 +141,12 @@ std::optional<CopiedPixels> copyPixels(const Document& doc,std::optional<std::st
     Rect bounds=doc.selection?(outline?outline->bounds():doc.selection->outline?doc.selection->outline->bounds():selectedBounds):Rect{0,0,double(doc.width),double(doc.height)};if(bounds.empty())return {};
     double x=std::floor(bounds.x+.001),y=std::floor(bounds.y+.001);auto region=intersect({x,y,std::ceil(bounds.x+bounds.width-.001)-x,std::ceil(bounds.y+bounds.height-.001)-y},{0,0,double(doc.width),double(doc.height)});if(region.empty())return {};
     int rx=int(region.x),ry=int(region.y),w=int(region.width),h=int(region.height);sizeCheck(w,h);std::shared_ptr<const Raster> image;
-    if(layerID){auto at=std::find_if(doc.layers.begin(),doc.layers.end(),[&](const Layer& l){return l.id==*layerID;});if(at==doc.layers.end())throw std::runtime_error("Copy layer does not exist");
+    if(layerID){auto at=std::find_if(doc.layers.begin(),doc.layers.end(),[&](const Layer& l){return l.id==*layerID;});if(at==doc.layers.end())throw std::runtime_error("被复制的图层不存在");
         if(targetMask){if(!at->mask||!at->mask->raster)return {};const auto& gray=*at->mask->raster;grayCheck(gray);auto t=at->mask->placement.value_or(at->transform);uint8_t outside=at->mask->placement?graphics::cachedMaskBackground(at->mask->raster):0;
             image=editRaster(Raster::filled(w,h,{outside,outside,outside,255}),[&](Pixel old,int px,int py){auto u=t.toUnit({rx+px+.5,ry+py+.5});if(u.x<0||u.y<0||u.x>=1||u.y>=1)return old;auto value=gray.pixel(int(u.x*gray.width),int(u.y*gray.height));return Pixel{value,value,value,255};});
         }else {if(!at->raster)return {};Document current=doc;current.layers={*at};auto& layer=current.layers.front();layer.parentId.clear();layer.maskSourceId.clear();layer.mask.reset();layer.opacity=1;layer.blend=Blend::Normal;layer.visible=true;layer.group=false;layer.adjustmentJson.clear();layer.shapeJson.clear();current.selection.reset();image=backend.render(current,rx,ry,w,h);}
-    }else {if(targetMask)throw std::runtime_error("Copy merged cannot target an owned mask");if(std::none_of(doc.layers.begin(),doc.layers.end(),[](const Layer& layer){return bool(layer.raster);}))return {};image=backend.render(doc,rx,ry,w,h);}
-    if(!image||image->width!=w||image->height!=h)throw std::runtime_error("Copy renderer returned an invalid region");
+    }else {if(targetMask)throw std::runtime_error("合并拷贝不能以所属蒙版为目标");if(std::none_of(doc.layers.begin(),doc.layers.end(),[](const Layer& layer){return bool(layer.raster);}))return {};image=backend.render(doc,rx,ry,w,h);}
+    if(!image||image->width!=w||image->height!=h)throw std::runtime_error("复制渲染器返回了无效区域");
     if(doc.selection){const auto& mask=*doc.selection->coverage;image=editRaster(image,[&](Pixel p,int px,int py){double a=mask.pixel(rx+px,ry+py)/255.;return Pixel{byte(p.r*a),byte(p.g*a),byte(p.b*a),byte(p.a*a)};});}
     return CopiedPixels{image,{double(rx),double(ry)}};
 }

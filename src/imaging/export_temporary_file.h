@@ -33,12 +33,12 @@ inline void ok(HRESULT hr, const char* context) {
 inline void cancelled(const std::function<bool()>& check) { if (check && check()) throw ExportCancelled(); }
 struct Apartment {
     HRESULT result = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    Apartment() { if (FAILED(result) && result != RPC_E_CHANGED_MODE) ok(result, "Initialize export COM apartment"); }
+    Apartment() { if (FAILED(result) && result != RPC_E_CHANGED_MODE) ok(result, "初始化导出 COM 单元"); }
     ~Apartment() { if (SUCCEEDED(result)) CoUninitialize(); }
 };
 inline Microsoft::WRL::ComPtr<IWICImagingFactory> factory() {
     Microsoft::WRL::ComPtr<IWICImagingFactory> value;
-    ok(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&value)), "Create export imaging factory");
+    ok(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&value)), "创建导出图像工厂");
     return value;
 }
 struct Handle {
@@ -48,16 +48,16 @@ struct Handle {
 inline void regularFile(HANDLE handle) {
     BY_HANDLE_FILE_INFORMATION info{};
     if (GetFileType(handle) != FILE_TYPE_DISK || !GetFileInformationByHandle(handle, &info) || (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-        throw std::runtime_error("Image export requires a regular file");
+        throw std::runtime_error("图像导出需要常规文件");
 }
 struct TemporaryFile {
     std::filesystem::path path;
     explicit TemporaryFile(const std::filesystem::path& destination) {
-        GUID id{}; ok(CoCreateGuid(&id), "Create temporary export identifier");
-        wchar_t text[40]{}; if (!StringFromGUID2(id, text, 40)) throw std::runtime_error("Cannot name temporary export");
+        GUID id{}; ok(CoCreateGuid(&id), "创建临时导出标识符");
+        wchar_t text[40]{}; if (!StringFromGUID2(id, text, 40)) throw std::runtime_error("无法命名临时导出文件");
         path = win32FilePath(destination); path += std::wstring(L".") + text + L".tmp";
         Handle file{CreateFileW(path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr)};
-        if (file.value == INVALID_HANDLE_VALUE) throw std::runtime_error("Cannot create temporary export beside destination");
+        if (file.value == INVALID_HANDLE_VALUE) throw std::runtime_error("无法在目标位置旁创建临时导出文件");
         try { regularFile(file.value); }
         catch (...) { CloseHandle(file.value); file.value = INVALID_HANDLE_VALUE; DeleteFileW(path.c_str()); throw; }
     }
@@ -66,7 +66,7 @@ struct TemporaryFile {
         cancelled(check);
         const auto target=win32FilePath(destination);
         if (!MoveFileExW(path.c_str(), target.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
-            throw std::runtime_error("Atomic export replacement failed");
+            throw std::runtime_error("原子导出替换失败");
     }
 };
 }

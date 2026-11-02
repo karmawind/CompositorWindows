@@ -271,35 +271,35 @@ std::optional<std::string> installedFamily(const std::string& photoshopName) {
     ComPtr<IDWriteLocalizedStrings> families; if (FAILED(face->GetFamilyNames(&families))) return std::nullopt;
     return acceptedFamilyName(fonts.Get(), families.Get());
 }
-const char* rasterNote = "Editable Photoshop text becomes pixels and can't be retyped.";
+const char* rasterNote = "可编辑的 Photoshop 文本将变为像素，无法重新输入。";
 std::string styleFromFontName(const std::string& name) {
     std::string lower = name;
     for (char& letter : lower) if (letter >= 'A' && letter <= 'Z') letter = char(letter - 'A' + 'a');
     const bool italic = lower.find("italic") != std::string::npos || lower.find("oblique") != std::string::npos;
     if (lower.find("semibold") != std::string::npos || lower.find("semi-bold") != std::string::npos || lower.find("demibold") != std::string::npos || lower.find("demi-bold") != std::string::npos)
-        return italic ? "Semibold Italic" : "Semibold";
+        return italic ? "半粗斜体" : "Semibold";
     if (lower.find("bold") != std::string::npos || lower.find("black") != std::string::npos || lower.find("heavy") != std::string::npos)
-        return italic ? "Bold Italic" : "Bold";
-    if (lower.find("light") != std::string::npos) return italic ? "Light Italic" : "Light";
-    if (italic) return "Italic";
-    return "Regular";
+        return italic ? "粗斜体" : "加粗";
+    if (lower.find("light") != std::string::npos) return italic ? "细斜体" : "光";
+    if (italic) return "斜体";
+    return "常规";
 }
-struct ImportedFace { std::string family{"Segoe UI"}, style{"Regular"}, photoshop; double size{12}; bool missing{}; };
+struct ImportedFace { std::string family{"Segoe UI"}, style{"常规"}, photoshop; double size{12}; bool missing{}; };
 ImportedFace faceFromRun(const Engine* run, const Engine* fonts, double scale, double fallbackSize) {
     ImportedFace face; face.size = fallbackSize;
     const Engine* dataNode = walk(run, {"StyleSheet", "StyleSheetData"}); if (!dataNode) dataNode = run;
     if (auto points = numberOf(walk(dataNode, {"FontSize"})); points && std::isfinite(*points) && *points > 0) face.size = std::clamp(*points * scale, 1., 1000.);
     int index = 0; if (auto font = numberOf(walk(dataNode, {"Font"}))) index = int(std::lround(*font));
     if (fonts && fonts->kind == Engine::Kind::Array && index >= 0 && index < int(fonts->values.size()))
-        if (auto name = stringOf(walk(&fonts->values[size_t(index)], {"Name"})); name && !name->empty()) face.photoshop = *name;
+        if (auto name = stringOf(walk(&fonts->values[size_t(index)], {"名称"})); name && !name->empty()) face.photoshop = *name;
     if (face.photoshop.empty()) face.photoshop = "Segoe UI";
     if (auto resolved = installedFamily(face.photoshop)) face.family = std::move(*resolved);
     else { face.family = "Segoe UI"; face.missing = face.photoshop != "Segoe UI"; }
     face.style = styleFromFontName(face.photoshop);
-    if (boolOf(walk(dataNode, {"FauxBold"})).value_or(false) && face.style.find("Bold") == std::string::npos && face.style.find("Semibold") == std::string::npos)
-        face.style = face.style == "Italic" || face.style == "Light Italic" ? "Bold Italic" : "Bold";
-    if (boolOf(walk(dataNode, {"FauxItalic"})).value_or(false) && face.style.find("Italic") == std::string::npos)
-        face.style = face.style == "Regular" ? "Italic" : face.style + " Italic";
+    if (boolOf(walk(dataNode, {"FauxBold"})).value_or(false) && face.style.find("加粗") == std::string::npos && face.style.find("Semibold") == std::string::npos)
+        face.style = face.style == "斜体" || face.style == "细斜体" ? "粗斜体" : "加粗";
+    if (boolOf(walk(dataNode, {"FauxItalic"})).value_or(false) && face.style.find("斜体") == std::string::npos)
+        face.style = face.style == "常规" ? "斜体" : face.style + " Italic";
     return face;
 }
 bool sameFace(const ImportedFace& left, const ImportedFace& right) {
@@ -314,7 +314,7 @@ PhotoshopText readPhotoshopText(const uint8_t* data, size_t size) {
         const double xx = in.f64(), xy = in.f64(), yx = in.f64(), yy = in.f64(), tx = in.f64(), ty = in.f64();
         if (!in.ok || !std::isfinite(xx) || !std::isfinite(xy) || !std::isfinite(yx) || !std::isfinite(yy) || !std::isfinite(tx) || !std::isfinite(ty) || in.u16() != 50) return result;
         auto text = descriptorMap(in, true); if (!text) return result;
-        if (auto orientation = field(*text, "Ornt"); orientation && orientation->kind == Descriptor::Kind::Enum && orientation->text == "Vrtc") { result.note = "Vertical Photoshop text was rasterized and can't be retyped."; return result; }
+        if (auto orientation = field(*text, "Ornt"); orientation && orientation->kind == Descriptor::Kind::Enum && orientation->text == "Vrtc") { result.note = "竖排 Photoshop 文本已被栅格化，无法重新输入。"; return result; }
         const double scaleX = std::hypot(xx, yx); if (!(scaleX > 1e-6)) return result;
         const double cosR = xx / scaleX, sinR = yx / scaleX, localX = cosR * xy + sinR * yy, localY = -sinR * xy + cosR * yy, scaleY = std::abs(localY);
         const double largest = std::max(scaleX, scaleY);
@@ -357,7 +357,7 @@ PhotoshopText readPhotoshopText(const uint8_t* data, size_t size) {
             auto noteMissing = [&](const ImportedFace& face) {
                 if (!face.missing || std::find(missing.begin(), missing.end(), face.photoshop) != missing.end()) return;
                 missing.push_back(face.photoshop);
-                notes += "The font \"" + face.photoshop + "\" isn't installed, so the text was drawn with Segoe UI.\n";
+                notes += "字体 \"" + face.photoshop + "\" isn't installed, so the text was drawn with Segoe UI.\n";
             };
             noteMissing(faces.front());
             if (!runLengths.empty()) {
@@ -382,20 +382,20 @@ PhotoshopText readPhotoshopText(const uint8_t* data, size_t size) {
                 else if (channels.size() == 3) { style.red = unitColor(channels[0]); style.green = unitColor(channels[1]); style.blue = unitColor(channels[2]); }
                 else if (!channels.empty()) style.red = style.green = style.blue = unitColor(channels[0]);
             }
-            if (auto tracking = numberOf(walk(dataNode, {"Tracking"})); tracking && std::isfinite(*tracking)) style.tracking = std::clamp(*tracking * style.fontSize / 1000., -100., 1000.);
+            if (auto tracking = numberOf(walk(dataNode, {"字距"})); tracking && std::isfinite(*tracking)) style.tracking = std::clamp(*tracking * style.fontSize / 1000., -100., 1000.);
             const bool automatic = boolOf(walk(dataNode, {"AutoLeading"})).value_or(true);
-            if (!automatic) if (auto leading = numberOf(walk(dataNode, {"Leading"})); leading && std::isfinite(*leading) && *leading > 0) style.leading = std::clamp(*leading * scaleX, 0., 5000.);
+            if (!automatic) if (auto leading = numberOf(walk(dataNode, {"行距"})); leading && std::isfinite(*leading) && *leading > 0) style.leading = std::clamp(*leading * scaleX, 0., 5000.);
             const Engine* paragraphs = walk(&*engine, {"EngineDict", "ParagraphRun", "RunArray"});
             const Engine* paragraph = paragraphs && paragraphs->kind == Engine::Kind::Array && !paragraphs->values.empty() ? &paragraphs->values.front() : &*engine;
             int justification = 0; if (auto value = numberOf(walk(paragraph, {"ParagraphSheet", "Properties", "Justification"}))) justification = int(std::lround(*value));
             if (justification == 1) style.alignment = TextAlignment::Right;
             else if (justification == 2) style.alignment = TextAlignment::Center;
-            else if (justification != 0) { style.alignment = TextAlignment::Left; notes += "Full justification was imported as left alignment.\n"; }
+            else if (justification != 0) { style.alignment = TextAlignment::Left; notes += "两端对齐已导入为左对齐。\n"; }
         }
         double originX = tx, originY = ty;
         if (auto bounds = field(*text, "bounds"); bounds && bounds->kind == Descriptor::Kind::Map) if (auto glyphs = field(*text, "boundingBox"); glyphs && glyphs->kind == Descriptor::Kind::Map) {
-            auto left = side(*bounds, "Left"), top = side(*bounds, "Top "), right = side(*bounds, "Rght"), bottom = side(*bounds, "Btom");
-            auto glyphLeft = side(*glyphs, "Left"), glyphTop = side(*glyphs, "Top "), glyphRight = side(*glyphs, "Rght"), glyphBottom = side(*glyphs, "Btom");
+            auto left = side(*bounds, "左"), top = side(*bounds, "Top "), right = side(*bounds, "Rght"), bottom = side(*bounds, "Btom");
+            auto glyphLeft = side(*glyphs, "左"), glyphTop = side(*glyphs, "Top "), glyphRight = side(*glyphs, "Rght"), glyphBottom = side(*glyphs, "Btom");
             if (left && top && right && bottom && glyphLeft && glyphTop && glyphRight && glyphBottom) {
                 const double width = *right - *left, height = *bottom - *top, glyphWidth = *glyphRight - *glyphLeft, glyphHeight = *glyphBottom - *glyphTop;
                 if (width > glyphWidth + 4 && height > glyphHeight + 4 && width > 1 && height > 1) {

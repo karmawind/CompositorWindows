@@ -64,14 +64,14 @@ namespace compositor {
 static std::filesystem::path nativePath(const QString&s){return std::filesystem::path(s.toStdWString());}
 static void reportPickerBusy(MainWindow* window){
     logging::trace("native picker ignored because another picker is active");
-    window->statusBar()->showMessage("A file picker is already open",5000);
+    window->statusBar()->showMessage("文件选择器已打开",5000);
 }
 namespace {
 template<class Load> bool loadProjectBatch(QWidget* owner,const QStringList& paths,Load&& load){
     bool opened=false;
     for(const auto& path:paths){
         try{opened=load(path)||opened;}
-        catch(const std::exception& error){QMessageBox message(QMessageBox::Critical,"Open Compositor Project",QString("Could not open %1.\n\n%2").arg(QDir::toNativeSeparators(path),QString::fromUtf8(error.what())),QMessageBox::Ok,owner);message.setObjectName("projectOpenError");message.exec();}
+        catch(const std::exception& error){QMessageBox message(QMessageBox::Critical,"打开 Compositor 项目",QString("无法打开 %1。\n\n%2").arg(QDir::toNativeSeparators(path),QString::fromUtf8(error.what())),QMessageBox::Ok,owner);message.setObjectName("projectOpenError");message.exec();}
     }
     return opened;
 }
@@ -91,7 +91,7 @@ QStringList nativeImportPaths(HWND owner,const QString& directory){
     dialog.lpstrFile=buffer.data();
     dialog.nMaxFile=DWORD(buffer.size());
     dialog.lpstrInitialDir=initial.empty()?nullptr:initial.c_str();
-    dialog.lpstrTitle=L"Import Images";
+    dialog.lpstrTitle=L"导入图像";
     dialog.Flags=OFN_EXPLORER|OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_ALLOWMULTISELECT|OFN_NOCHANGEDIR;
     logging::trace(QString("native picker entered owner=0x%1 directory=%2")
         .arg(quintptr(owner),0,16).arg(QDir::toNativeSeparators(directory)));
@@ -171,26 +171,26 @@ QString withExportSuffix(QString path,ExportKind kind){
     case ExportKind::Pdf:if(suffix=="pdf")return path;break;
     case ExportKind::Exr:if(suffix=="exr")return path;break;
     }
-    const auto stem=info.completeBaseName().isEmpty()?QStringLiteral("Untitled"):info.completeBaseName();
+    const auto stem=info.completeBaseName().isEmpty()?QStringLiteral("未命名"):info.completeBaseName();
     const char* extension=kind==ExportKind::Jpeg?".jpg":kind==ExportKind::Pdf?".pdf":kind==ExportKind::Exr?".exr":".png";
     return QDir::cleanPath(QDir(info.path()).filePath(stem+extension));
 }
 QString chooseNativeExportDestination(MainWindow* window,ExportKind kind,const QString& suggested){
     static const wchar_t pngFilter[]=L"PNG\0*.png\0All files\0*.*\0";
-    static const wchar_t jpegFilter[]=L"JPEG\0*.jpg;*.jpeg\0All files\0*.*\0";
+    static const wchar_t jpegFilter[]=L"JPEG\0*.jpg;*.jpeg\0所有文件\0*.*\0";
     static const wchar_t pdfFilter[]=L"PDF\0*.pdf\0All files\0*.*\0";
     static const wchar_t exrFilter[]=L"OpenEXR image\0*.exr\0\0";
     const wchar_t* filter=kind==ExportKind::Exr?exrFilter:kind==ExportKind::Jpeg?jpegFilter:kind==ExportKind::Pdf?pdfFilter:pngFilter;
     const wchar_t* defaultExtension=kind==ExportKind::Jpeg?L"jpg":kind==ExportKind::Pdf?L"pdf":kind==ExportKind::Exr?L"exr":L"png";
-    auto path=chooseNativeSaveDestination(window,MainWindow::userDownloadsDirectory(),suggested,filter,L"Export Image",defaultExtension);
+    auto path=chooseNativeSaveDestination(window,MainWindow::userDownloadsDirectory(),suggested,filter,L"导出图像",defaultExtension);
     if(path.isEmpty())return {};
     return withExportSuffix(path,kind);
 }
 QString chooseNativeProjectDestination(MainWindow* window,const QString& suggested){
-    static const wchar_t filter[]=L"Compositor project directory\0*.comp\0All files\0*.*\0";
+    static const wchar_t filter[]=L"Compositor 项目目录\0*.comp\0所有文件\0*.*\0";
     QFileInfo info(suggested.isEmpty()?"Untitled.comp":suggested);
     QString directory=info.isAbsolute()&&QDir(info.absolutePath()).exists()?info.absolutePath():MainWindow::userDownloadsDirectory();
-    auto path=chooseNativeSaveDestination(window,directory,info.fileName().isEmpty()?QString("Untitled.comp"):info.fileName(),filter,L"Save Compositor Project",L"comp");
+    auto path=chooseNativeSaveDestination(window,directory,info.fileName().isEmpty()?QString("Untitled.comp"):info.fileName(),filter,L"保存 Compositor 项目",L"comp");
     if(path.isEmpty())return {};
     if(!path.endsWith(".comp",Qt::CaseInsensitive))path+=".comp";
     return path;
@@ -210,20 +210,20 @@ ui::ImportQueue* MainWindow::ensureImportQueue(){
         auto*p=project(target);if(!p)return;
         if(busy&&current()!=p)for(size_t i=0;i<projects_.size();++i)if(projects_[i].get()==p){tabs_->setCurrentIndex(int(i));break;}
         p->importing=busy;
-        if(busy){auto*progress=new QProgressDialog("Importing images…","Cancel",0,0,this);progress->setObjectName("imageImportProgress");progress->setWindowModality(Qt::NonModal);progress->setMinimumDuration(200);progress->setAutoClose(false);progress->setAutoReset(false);connect(progress,&QProgressDialog::canceled,this,[this,target=QPointer<QObject>(target)]{if(importQueue_&&target)importQueue_->cancel(target);});progress->setValue(0);}
+        if(busy){auto*progress=new QProgressDialog("正在导入图像…","取消",0,0,this);progress->setObjectName("imageImportProgress");progress->setWindowModality(Qt::NonModal);progress->setMinimumDuration(200);progress->setAutoClose(false);progress->setAutoReset(false);connect(progress,&QProgressDialog::canceled,this,[this,target=QPointer<QObject>(target)]{if(importQueue_&&target)importQueue_->cancel(target);});progress->setValue(0);}
         else for(auto*progress:findChildren<QProgressDialog*>("imageImportProgress")){QSignalBlocker blocked(progress);progress->close();progress->deleteLater();}
         refresh(false,false);
     };
     host.commit=[this,project](QObject* target,const ui::ImportResult& result){
-        auto*p=project(target);if(!p)throw std::runtime_error("The import destination was closed");
+        auto*p=project(target);if(!p)throw std::runtime_error("导入目标已关闭");
         const bool first=ui::commitPreparedImport(*p,result);
         p->composite.reset();refresh();if(first&&p->document){p->canvas->setDocumentSize(p->document->width,p->document->height);p->canvas->fit();}
     };
     host.completed=[this](QObject* target,const ui::ImportResult& result){
         if(target&&!result.errors.empty()){auto errors=target->property("imageImportErrors").toStringList();errors.append(result.errors);target->setProperty("imageImportErrors",errors);}
-        if(result.cancelled)statusBar()->showMessage("Image import cancelled",5000);
-        else if(result.imported)statusBar()->showMessage(QString("Imported %1 image(s)").arg(result.imported),5000);
-        QTimer::singleShot(0,this,[this]{if(!importQueue_||!importQueue_->idle())return;QStringList errors;for(const auto&p:projects_){errors.append(p->canvas->property("imageImportErrors").toStringList());p->canvas->setProperty("imageImportErrors",{});}if(errors.isEmpty())return;auto*message=new QMessageBox(QMessageBox::Warning,"Import Images","Some images could not be imported.",QMessageBox::Ok,this);message->setObjectName("imageImportErrors");message->setDetailedText(errors.join("\n\n"));message->setAttribute(Qt::WA_DeleteOnClose);message->setWindowModality(Qt::WindowModal);message->show();});
+        if(result.cancelled)statusBar()->showMessage("图像导入已取消",5000);
+        else if(result.imported)statusBar()->showMessage(QString("已导入 %1 张图像").arg(result.imported),5000);
+        QTimer::singleShot(0,this,[this]{if(!importQueue_||!importQueue_->idle())return;QStringList errors;for(const auto&p:projects_){errors.append(p->canvas->property("imageImportErrors").toStringList());p->canvas->setProperty("imageImportErrors",{});}if(errors.isEmpty())return;auto*message=new QMessageBox(QMessageBox::Warning,"导入图像","某些图像无法导入。",QMessageBox::Ok,this);message->setObjectName("imageImportErrors");message->setDetailedText(errors.join("\n\n"));message->setAttribute(Qt::WA_DeleteOnClose);message->setWindowModality(Qt::WindowModal);message->show();});
         if(workspaceDrops_)workspaceDrops_->imageFinished(target,result.cancelled);
     };
     importQueue_=new ui::ImportQueue(std::move(host),this);return importQueue_;
@@ -248,13 +248,13 @@ ui::WorkspaceDropQueue* MainWindow::ensureWorkspaceDropQueue(){
     host.image=[this,project,hdrPrepared](QObject* canvas,const QString& path,std::optional<Point> point,std::shared_ptr<void> lifetime,const ui::RawSettings& settings){
         auto ext=QFileInfo(path).suffix().toLower();
         if(ext=="psd"||ext=="psb"){importPhotoshop(path);if(workspaceDrops_)workspaceDrops_->imageFinished(canvas,false);return;}
-        auto* target=project(canvas);if(!target)throw std::runtime_error("The drop destination was closed");
+        auto* target=project(canvas);if(!target)throw std::runtime_error("拖放目标已关闭");
         ui::ImportBatch batch;batch.files={nativePath(path)};batch.point=point;batch.lifetime=std::move(lifetime);batch.rawAdjustments=settings;batch.prepared=std::move(*hdrPrepared);
         finishOpacityEdit();cropDraft_.reset();cropDrag_.reset();if(transformSession_)applyTransformSession();
         ensureImportQueue()->enqueue(target->canvas,std::move(batch));
     };
     host.cancelImage=[this](QObject* target){if(importQueue_)importQueue_->cancel(target);};
-    host.error=[this](const QString& path,const QString& error){QMessageBox message(QMessageBox::Critical,"Receive Dropped Files",QString("Could not open %1.\n\n%2").arg(QDir::toNativeSeparators(path),error),QMessageBox::Ok,this);message.setObjectName("workspaceDropError");message.exec();};
+    host.error=[this](const QString& path,const QString& error){QMessageBox message(QMessageBox::Critical,"接收拖放的文件",QString("无法打开 %1。\n\n%2").arg(QDir::toNativeSeparators(path),error),QMessageBox::Ok,this);message.setObjectName("workspaceDropError");message.exec();};
     workspaceDrops_=new ui::WorkspaceDropQueue(std::move(host),this);return workspaceDrops_;
 }
 void MainWindow::receiveDropPaths(const QStringList& paths,NativeCanvas* destination,std::optional<Point> point){
@@ -317,7 +317,7 @@ bool MainWindow::receiveLayerDrop(const QMimeData* mime,QPoint location,Qt::Keyb
         if(!target){QScopedValueRollback<bool> selecting(selectingProjectForOpen_,true);target=&addEmptyProject(false);}
         ui::LayerCopyWork work;work.source=*sourceProject->document;work.root=id;work.point=point;work.target=target->canvas;work.before={target->document,target->active};
         if(target->document)work.destination=*target->document;
-        else{work.destination.id=newId();work.destination.width=work.source.width;work.destination.height=work.source.height;Layer blank;blank.id=newId();blank.name="Layer 1";blank.transform={0,0,double(work.source.width),double(work.source.height)};work.destination.layers.push_back(std::move(blank));}
+        else{work.destination.id=newId();work.destination.width=work.source.width;work.destination.height=work.source.height;Layer blank;blank.id=newId();blank.name="图层 1";blank.transform={0,0,double(work.source.width),double(work.source.height)};work.destination.layers.push_back(std::move(blank));}
         target->projectBusy=true;try{refresh(false,false);}catch(...){target->projectBusy=false;throw;}return work;
     };
     host.commit=[this,project](const ui::LayerCopyWork& work,layers::CopyResult copy){
@@ -327,7 +327,7 @@ bool MainWindow::receiveLayerDrop(const QMimeData* mime,QPoint location,Qt::Keyb
         refresh();if(first){target->canvas->setDocumentSize(target->document->width,target->document->height);target->canvas->fit();}
     };
     host.settled=[this,project](const ui::LayerCopyWork& work){if(auto* target=project(work.target))target->projectBusy=false;refresh(false,false);};
-    host.error=[this](const QString& error){QMessageBox message(QMessageBox::Warning,"Copy Layers from Project",error,QMessageBox::Ok,this);message.setObjectName("projectLayerDropError");message.exec();};
+    host.error=[this](const QString& error){QMessageBox message(QMessageBox::Warning,"从项目复制图层",error,QMessageBox::Ok,this);message.setObjectName("projectLayerDropError");message.exec();};
     host.finished=[this,project,sourceOwner]{if(auto* owner=project(sourceOwner))owner->projectBusy=false;managingProjectOpen_=false;refresh();};
     // Construct the worker owner before publishing busy state; it starts via a
     // queued event, so failed allocation cannot leave the workspace locked.
@@ -355,7 +355,7 @@ void MainWindow::dropEvent(QDropEvent*event){
             // marshals an async provider, or copies a synchronous provider here.
             // A foreign blocking GetData/Read cannot be given a cancel deadline.
             QPointer<MainWindow> owner(this);
-            QPointer<QProgressDialog> progress=new QProgressDialog("Receiving dropped images…","Cancel",0,0,this);
+            QPointer<QProgressDialog> progress=new QProgressDialog("正在接收拖放的图像…","取消",0,0,this);
             progress->setObjectName("virtualImageDropProgress");progress->setWindowModality(Qt::NonModal);
             progress->setAutoClose(false);progress->setAutoReset(false);progress->setMinimumDuration(200);progress->setValue(0);
             try{
@@ -366,32 +366,32 @@ void MainWindow::dropEvent(QDropEvent*event){
                         const auto error=result.error;const auto captured=result.request.destination;const bool hadDestination=result.request.hasDestination;
                         result.request.completed=[owner,captured,hadDestination,error](bool cancelled){
                             if(cancelled||error.isEmpty()||!owner||owner->closingWindow_||(hadDestination&&!captured))return;
-                            auto* message=new QMessageBox(QMessageBox::Warning,"Receive Dropped Images","Some dropped items could not be read.",QMessageBox::Ok,owner);
+                            auto* message=new QMessageBox(QMessageBox::Warning,"接收拖放的图像","某些拖放的项目无法读取。",QMessageBox::Ok,owner);
                             message->setObjectName("virtualImageDropErrors");message->setTextFormat(Qt::PlainText);message->setDetailedText(error);
                             message->setAttribute(Qt::WA_DeleteOnClose);message->setWindowModality(Qt::WindowModal);message->show();
                         };
                         owner->ensureWorkspaceDropQueue()->enqueue(std::move(result.request));
                     },[progress](uint64_t bytes,bool timedOut){
-                        if(progress)progress->setLabelText(timedOut?QStringLiteral("Waiting for the image provider to finish cancelling…"):QString("Receiving dropped images… %1 bytes").arg(qulonglong(bytes)));
+                        if(progress)progress->setLabelText(timedOut?QStringLiteral("正在等待图像提供程序完成取消…"):QString("正在接收拖放的图像… %1 字节").arg(qulonglong(bytes)));
                     });
                 connect(progress,&QProgressDialog::canceled,job,&ui::VirtualDropJob::cancel);
             }catch(...){if(progress){QSignalBlocker blocked(progress);progress->close();progress->deleteLater();}throw;}
             event->setDropAction(Qt::CopyAction);event->accept();return;
         }
         if(request.paths.isEmpty()&&event->mimeData()->hasImage()){
-            auto temp=std::make_shared<QTemporaryDir>();if(!temp->isValid())throw std::runtime_error("Cannot create dropped-image temporary storage");
-            const auto image=qvariant_cast<QImage>(event->mimeData()->imageData());const auto path=temp->filePath("Dropped Image.png");if(image.isNull()||!image.save(path,"PNG"))throw std::runtime_error("Cannot copy dropped image data");
+            auto temp=std::make_shared<QTemporaryDir>();if(!temp->isValid())throw std::runtime_error("无法创建拖放图像的临时存储");
+            const auto image=qvariant_cast<QImage>(event->mimeData()->imageData());const auto path=temp->filePath("拖入的图像.png");if(image.isNull()||!image.save(path,"PNG"))throw std::runtime_error("无法复制拖放的图像数据");
             request.paths={path};request.lifetime=std::move(temp);
         }
         if(request.paths.isEmpty())return;
         ensureWorkspaceDropQueue()->enqueue(std::move(request));
         event->acceptProposedAction();
-    }catch(const std::exception&e){QMessageBox::critical(this,"Import Images",e.what());}
+    }catch(const std::exception&e){QMessageBox::critical(this,"导入图像",e.what());}
 }
 void MainWindow::setupRecentProjectsMenu(QMenu* file){
-    auto* menu=file->addMenu("Open &Recent");menu->setObjectName("openRecentMenu");
-    auto* clear=new QAction("Clear Menu",menu);clear->setObjectName("clearRecentProjects");
-    const auto* spec=ui::commandSpec("Open Recent","Clear Menu");
+    auto* menu=file->addMenu("最近打开(&R)");menu->setObjectName("openRecentMenu");
+    auto* clear=new QAction("清除菜单",menu);clear->setObjectName("clearRecentProjects");
+    const auto* spec=ui::commandSpec("最近打开","清除菜单");
     if(!spec)throw std::logic_error("Clear Menu is not in the command catalog");
     commands_->bind(clear,*spec,[this]{QSettings settings;ui::clearRecentProjects(settings);},[](const ui::CommandState&){QSettings settings;return !ui::recentProjects(settings).isEmpty();});
     // Rebuilt on every show so moved or deleted folders drop out and the order matches settings.
@@ -427,7 +427,7 @@ void MainWindow::openProjectDialog(){
     if(!guard)return;
     managingProjectOpen_=true;refresh(false,false);
     try{if(const auto paths=ui::chooseProjectDirectories(this,MainWindow::userDownloadsDirectory())){if(!guard)return;loadProjectBatch(this,*paths,[this](const QString& path){return loadProjectDirectory(path);});}}
-    catch(const std::exception& error){if(guard)QMessageBox::critical(this,"Open Compositor Projects",QString::fromUtf8(error.what()));}
+    catch(const std::exception& error){if(guard)QMessageBox::critical(this,"打开 Compositor 项目",QString::fromUtf8(error.what()));}
 }
 bool MainWindow::openProjectPaths(const QStringList& paths){
     if(!canSwitchProjects()||paths.isEmpty())return false;
@@ -436,7 +436,7 @@ bool MainWindow::openProjectPaths(const QStringList& paths){
     return loadProjectBatch(this,paths,[this](const QString& path){return loadProjectDirectory(path);});
 }
 bool MainWindow::loadProjectDirectory(const QString& path){
-        if(!QFileInfo(path).isDir())throw std::runtime_error("The project path is not an existing directory");
+        if(!QFileInfo(path).isDir())throw std::runtime_error("项目路径不是现有目录");
         // ProjectWorkspace.swift:77-80: select an existing resolved project
         // without reloading state; the caller owns the workspace guard.
         const auto supplied=nativePath(path);
@@ -497,7 +497,7 @@ void MainWindow::importSelectedImages(const QStringList& paths,QObject* destinat
         target=nullptr;
         for(auto& project:projects_)if(project->canvas==destination){target=project.get();break;}
         if(!target){
-            logging::trace("import destination was closed");
+            logging::trace("导入目标已关闭");
             return;
         }
     }
@@ -524,7 +524,7 @@ void deferSelectedImageImport(MainWindow* window,QStringList paths,QPointer<QObj
         if(!guard)return;
         if(pinned){
             if(!destination){
-                logging::trace("import destination was closed");
+                logging::trace("导入目标已关闭");
                 return;
             }
             guard->importSelectedImages(paths,destination);
@@ -583,10 +583,10 @@ namespace {
 // Lists layers whose Photoshop vector content stayed pixels or was omitted. Cancel imports nothing from the file.
 bool confirmPhotoshopWarnings(QWidget* parent,const QString& file,const std::vector<std::string>& warnings){
     QStringList details;for(const auto& warning:warnings)details<<QString::fromStdString(warning);
-    QMessageBox message(QMessageBox::Warning,"Import PSD",QString("%1 layer(s) in %2 are not fully editable after import.").arg(int(warnings.size())).arg(file),QMessageBox::NoButton,parent);
+    QMessageBox message(QMessageBox::Warning,"导入 PSD",QString("导入后，%2 中有 %1 个图层无法完全编辑。").arg(int(warnings.size())).arg(file),QMessageBox::NoButton,parent);
     message.setObjectName("psdImportWarnings");message.setDetailedText(details.join("\n"));
-    auto* proceed=message.addButton("Continue",QMessageBox::AcceptRole);proceed->setObjectName("psdContinueButton");
-    auto* cancel=message.addButton("Cancel",QMessageBox::RejectRole);cancel->setObjectName("psdCancelButton");
+    auto* proceed=message.addButton("继续",QMessageBox::AcceptRole);proceed->setObjectName("psdContinueButton");
+    auto* cancel=message.addButton("取消",QMessageBox::RejectRole);cancel->setObjectName("psdCancelButton");
     message.setDefaultButton(proceed);message.exec();
     return message.clickedButton()==proceed;
 }
@@ -600,7 +600,7 @@ bool MainWindow::importPhotoshop(const QString& path){
         refresh();project.canvas->fit();
         return true;
     }catch(const std::exception& error){
-        QMessageBox::critical(this,"Import PSD",error.what());
+        QMessageBox::critical(this,"导入 PSD",error.what());
         return false;
     }
 }
@@ -611,7 +611,7 @@ void MainWindow::focusStackImages(){
     if(injected.isValid()){focusStackSelectedImages(injected.toStringList());return;}
     pickNativeImages(this,userDownloadsDirectory(),[](MainWindow* window,QStringList paths){window->focusStackSelectedImages(paths);});
 }
-bool MainWindow::saveProject(bool saveAs){cropDraft_.reset();cropDrag_.reset();if(transformSession_&&transformSession_->persistent)applyTransformSession();auto*p=current();if(!p||!p->document||p->importing||p->projectBusy)return false;if(!p->saveJob.isNull()){statusBar()->showMessage("A save is already in progress",5000);return false;}auto path=p->path;if(path.isEmpty()||saveAs){path=chooseNativeProjectDestination(this,path.isEmpty()?"Untitled.comp":path);if(path.isEmpty())return false;}for(const auto& other:projects_)if(!other->savePath.isEmpty()&&QDir::cleanPath(other->savePath).compare(QDir::cleanPath(path),Qt::CaseInsensitive)==0){statusBar()->showMessage("Another open project is already saving to this location",5000);return false;}startProjectSave(*p,path);return true;}
+bool MainWindow::saveProject(bool saveAs){cropDraft_.reset();cropDrag_.reset();if(transformSession_&&transformSession_->persistent)applyTransformSession();auto*p=current();if(!p||!p->document||p->importing||p->projectBusy)return false;if(!p->saveJob.isNull()){statusBar()->showMessage("已有保存操作正在进行",5000);return false;}auto path=p->path;if(path.isEmpty()||saveAs){path=chooseNativeProjectDestination(this,path.isEmpty()?"Untitled.comp":path);if(path.isEmpty())return false;}for(const auto& other:projects_)if(!other->savePath.isEmpty()&&QDir::cleanPath(other->savePath).compare(QDir::cleanPath(path),Qt::CaseInsensitive)==0){statusBar()->showMessage("另一个打开的项目已在保存到此位置",5000);return false;}startProjectSave(*p,path);return true;}
 void MainWindow::startProjectSave(EditorProject& project,const QString& path){
     // The snapshot is the document value and revision captured here on the UI thread. The
     // worker never reads the live project, and edits after this point stay unsaved.
@@ -625,7 +625,7 @@ void MainWindow::startProjectSave(EditorProject& project,const QString& path){
         EditorProject* owner=nullptr;
         if(identity)for(auto& candidate:projects_)if(candidate->canvas==identity.data()){owner=candidate.get();break;}
         if(!owner){
-            if(!error.isEmpty())QMessageBox::critical(this,"Save Project",error);
+            if(!error.isEmpty())QMessageBox::critical(this,"保存项目",error);
             return;
         }
         owner->saveJob=nullptr;
@@ -637,7 +637,7 @@ void MainWindow::startProjectSave(EditorProject& project,const QString& path){
         }
         owner->saveError=error;
         refresh(false,false);
-        if(!error.isEmpty())QMessageBox::critical(this,"Save Project",error);
+        if(!error.isEmpty())QMessageBox::critical(this,"保存项目",error);
     };
     project.saveJob=new ui::ProjectSaveJob(*project.document,project.active,path,std::move(host),this);
     refresh(false,false);
@@ -645,8 +645,8 @@ void MainWindow::startProjectSave(EditorProject& project,const QString& path){
 bool MainWindow::waitForProjectSave(EditorProject& project){
     if(project.saveJob.isNull())return project.saveError.isEmpty();
     // The progress dialog is application-modal, so nothing can edit or close the project while the close decision waits.
-    QProgressDialog progress("Saving project…",QString(),0,0,this);
-    progress.setObjectName("projectSaveWait");progress.setWindowTitle("Save Project");progress.setWindowModality(Qt::ApplicationModal);progress.setCancelButton(nullptr);progress.setMinimumDuration(0);progress.show();
+    QProgressDialog progress("正在保存项目…",QString(),0,0,this);
+    progress.setObjectName("projectSaveWait");progress.setWindowTitle("保存项目");progress.setWindowModality(Qt::ApplicationModal);progress.setCancelButton(nullptr);progress.setMinimumDuration(0);progress.show();
     QEventLoop loop;
     connect(project.saveJob.data(),&QObject::destroyed,&loop,&QEventLoop::quit);
     loop.exec();
@@ -658,33 +658,33 @@ void MainWindow::exportImage(){
     const Document snapshot=*p->document;
     p->projectBusy=true;refresh(false,false);
     struct Restore {std::function<void()> action;~Restore(){action();}} restore{[&]{p->projectBusy=false;refresh(false,false);}};
-    QTemporaryDir temp;if(!temp.isValid())throw std::runtime_error("Cannot create image export storage");
-    QDialog dialog(this);dialog.setObjectName("imageExportDialog");dialog.setWindowTitle("Export Image");QFormLayout layout(&dialog);
-    QComboBox format;format.setObjectName("exportFormat");format.addItems({"PNG","JPEG","PDF","OpenEXR"});layout.addRow("Format",&format);
+    QTemporaryDir temp;if(!temp.isValid())throw std::runtime_error("无法创建图像导出存储");
+    QDialog dialog(this);dialog.setObjectName("imageExportDialog");dialog.setWindowTitle("导出图像");QFormLayout layout(&dialog);
+    QComboBox format;format.setObjectName("exportFormat");format.addItems({"PNG","JPEG","PDF","OpenEXR"});layout.addRow("格式",&format);
     const auto kind=[&]{return ExportKind(format.currentIndex());};
     // PDF only: the page holds the canvas resampled by this factor, at the document's resolution, so it prints that much larger or smaller.
-    QComboBox scale;scale.setObjectName("exportScale");for(const int percent:{25,50,75,100,200})scale.addItem(QString("%1%").arg(percent),percent/100.);scale.setCurrentIndex(3);layout.addRow("Scale",&scale);
-    QLabel pageSize;pageSize.setObjectName("exportPageSize");layout.addRow("Page",&pageSize);
+    QComboBox scale;scale.setObjectName("exportScale");for(const int percent:{25,50,75,100,200})scale.addItem(QString("%1%").arg(percent),percent/100.);scale.setCurrentIndex(3);layout.addRow("缩放",&scale);
+    QLabel pageSize;pageSize.setObjectName("exportPageSize");layout.addRow("页面",&pageSize);
     QSettings settings;double remembered=settings.value("jpegExportQuality",.85).toDouble();if(!std::isfinite(remembered))remembered=.85;
-    ui::TrackSlider quality(Qt::Horizontal);quality.setObjectName("exportQuality");quality.setRange(0,100);quality.setDefaultValue(85);quality.setValue(int(std::round(std::clamp(remembered,0.,1.)*100)));layout.addRow("JPEG quality",&quality);
+    ui::TrackSlider quality(Qt::Horizontal);quality.setObjectName("exportQuality");quality.setRange(0,100);quality.setDefaultValue(85);quality.setValue(int(std::round(std::clamp(remembered,0.,1.)*100)));layout.addRow("JPEG 质量",&quality);
     // JPEG and PDF have no transparency in the preview or the file; this color fills the canvas wherever it is transparent.
-    QPushButton matte("White");matte.setObjectName("exportMatte");QColor matteColor=Qt::white;layout.addRow("Background",&matte);
+    QPushButton matte("白色");matte.setObjectName("exportMatte");QColor matteColor=Qt::white;layout.addRow("背景",&matte);
     auto showPageSize=[&]{
         const auto size=imaging::scaledExportSize(uint32_t(snapshot.width),uint32_t(snapshot.height),scale.currentData().toDouble());
         auto inches=[&](uint32_t pixels){auto text=QString::number(pixels/snapshot.resolution,'f',2);while(text.endsWith('0'))text.chop(1);if(text.endsWith('.'))text.chop(1);return text;};
-        pageSize.setText(QString("%1 × %2 in at %3 DPI (%4 × %5 px)").arg(inches(size.width),inches(size.height)).arg(qRound(snapshot.resolution)).arg(size.width).arg(size.height));
+        pageSize.setText(QString("%1 × %2 英寸，%3 DPI（%4 × %5 px）").arg(inches(size.width),inches(size.height)).arg(qRound(snapshot.resolution)).arg(size.width).arg(size.height));
     };
     showPageSize();layout.setRowVisible(&pageSize,false);
     QLabel preview;preview.setObjectName("exportPreview");preview.setMinimumSize(520,320);preview.setAlignment(Qt::AlignCenter);layout.addRow(&preview);
-    ui::TrackSlider previewZoom(Qt::Horizontal);previewZoom.setObjectName("exportPreviewZoom");previewZoom.setRange(25,400);previewZoom.setDefaultValue(100);previewZoom.setValue(100);layout.addRow("Preview zoom",&previewZoom);QPixmap previewSource;auto showPreview=[&]{if(previewSource.isNull())return;preview.setPixmap(previewSource.scaled(previewSource.size()*previewZoom.value()/100.,Qt::KeepAspectRatio,Qt::SmoothTransformation));};
-    QLabel bytesLabel;bytesLabel.setObjectName("exportEncodedSize");layout.addRow("Encoded size",&bytesLabel);
+    ui::TrackSlider previewZoom(Qt::Horizontal);previewZoom.setObjectName("exportPreviewZoom");previewZoom.setRange(25,400);previewZoom.setDefaultValue(100);previewZoom.setValue(100);layout.addRow("预览缩放",&previewZoom);QPixmap previewSource;auto showPreview=[&]{if(previewSource.isNull())return;preview.setPixmap(previewSource.scaled(previewSource.size()*previewZoom.value()/100.,Qt::KeepAspectRatio,Qt::SmoothTransformation));};
+    QLabel bytesLabel;bytesLabel.setObjectName("exportEncodedSize");layout.addRow("编码后大小",&bytesLabel);
     QDialogButtonBox buttons(QDialogButtonBox::Save|QDialogButtonBox::Cancel);buttons.setObjectName("exportButtons");layout.addRow(&buttons);
     struct Prepared {imaging::StreamingExportResult result;QString path,error;bool cancelled{};};
     QFutureWatcher<Prepared> watcher;QTimer debounce,progress;debounce.setSingleShot(true);debounce.setInterval(200);progress.setInterval(80);
     auto cancel=std::make_shared<std::atomic_bool>(false);auto percent=std::make_shared<std::atomic_uint32_t>(0);
     quint64 generation=0,runningGeneration=0;bool running=false,closed=false;QString readyPath;
     std::function<void()> start;
-    auto changed=[&]{++generation;cancel->store(true);readyPath.clear();buttons.button(QDialogButtonBox::Save)->setEnabled(false);bytesLabel.setText("Updating preview…");debounce.start();};
+    auto changed=[&]{++generation;cancel->store(true);readyPath.clear();buttons.button(QDialogButtonBox::Save)->setEnabled(false);bytesLabel.setText("正在更新预览…");debounce.start();};
     start=[&]{
         if(running||closed)return;
         running=true;runningGeneration=generation;cancel=std::make_shared<std::atomic_bool>(false);percent->store(0);
@@ -701,19 +701,19 @@ void MainWindow::exportImage(){
         if(!prepared.error.isEmpty()){bytesLabel.setText(prepared.error);return;}
         const auto&image=prepared.result.preview;
         QImage shown(image.pixels.data(),int(image.width),int(image.height),qsizetype(image.stride),QImage::Format_RGBA8888_Premultiplied);
-        if(shown.isNull()){bytesLabel.setText("Cannot display export preview");return;}
+        if(shown.isNull()){bytesLabel.setText("无法显示导出预览");return;}
         previewSource=QPixmap::fromImage(shown.copy());showPreview();readyPath=prepared.path;
-        bytesLabel.setText(QString::number(prepared.result.encodedBytes)+" bytes");buttons.button(QDialogButtonBox::Save)->setEnabled(true);
+        bytesLabel.setText(QString::number(prepared.result.encodedBytes)+" 字节");buttons.button(QDialogButtonBox::Save)->setEnabled(true);
         dialog.setProperty("readyExportPath",readyPath);dialog.setProperty("readyExportGeneration",generation);
     });
     connect(&debounce,&QTimer::timeout,&dialog,start);
-    connect(&progress,&QTimer::timeout,&dialog,[&]{if(running&&runningGeneration==generation)bytesLabel.setText(QString("Encoding %1%").arg(percent->load()));});
+    connect(&progress,&QTimer::timeout,&dialog,[&]{if(running&&runningGeneration==generation)bytesLabel.setText(QString("正在编码 %1%").arg(percent->load()));});
     auto applyKind=[&]{quality.setEnabled(kind()==ExportKind::Jpeg);matte.setEnabled(kind()==ExportKind::Jpeg||kind()==ExportKind::Pdf);layout.setRowVisible(&matte,kind()==ExportKind::Jpeg||kind()==ExportKind::Pdf);scale.setEnabled(kind()==ExportKind::Pdf);layout.setRowVisible(&quality,kind()==ExportKind::Jpeg);layout.setRowVisible(&scale,kind()==ExportKind::Pdf);layout.setRowVisible(&pageSize,kind()==ExportKind::Pdf);};
     connect(&format,&QComboBox::currentIndexChanged,&dialog,[&]{applyKind();changed();});
     connect(&scale,&QComboBox::currentIndexChanged,&dialog,[&]{showPageSize();changed();});
     connect(&quality,&QSlider::valueChanged,&dialog,changed);
     connect(&previewZoom,&QSlider::valueChanged,&dialog,showPreview);
-    connect(&matte,&QPushButton::clicked,&dialog,[&]{auto color=QColorDialog::getColor(matteColor,&dialog,"Export background");if(color.isValid()){matteColor=color;matte.setText(color.name());changed();}});
+    connect(&matte,&QPushButton::clicked,&dialog,[&]{auto color=QColorDialog::getColor(matteColor,&dialog,"导出背景");if(color.isValid()){matteColor=color;matte.setText(color.name());changed();}});
     connect(&buttons,&QDialogButtonBox::accepted,&dialog,[&]{if(!readyPath.isEmpty()&&!running)dialog.accept();});
     connect(&buttons,&QDialogButtonBox::rejected,&dialog,&QDialog::reject);
     applyKind();changed();progress.start();
@@ -723,7 +723,7 @@ void MainWindow::exportImage(){
     if(chosen==ExportKind::Jpeg)settings.setValue("jpegExportQuality",quality.value()/100.);
     const auto suggested=(p->path.isEmpty()?QString("Untitled"):QFileInfo(p->path).completeBaseName())+(chosen==ExportKind::Png?".png":chosen==ExportKind::Jpeg?".jpg":chosen==ExportKind::Exr?".exr":".pdf");
     const auto destination=chooseNativeExportDestination(this,chosen,suggested);if(destination.isEmpty())return;
-    QProgressDialog saving("Saving image…","Cancel",0,0,this);saving.setObjectName("imageExportSaving");saving.setWindowModality(Qt::ApplicationModal);saving.setMinimumDuration(0);
+    QProgressDialog saving("正在保存图像…","取消",0,0,this);saving.setObjectName("imageExportSaving");saving.setWindowModality(Qt::ApplicationModal);saving.setMinimumDuration(0);
     auto copyCancelled=std::make_shared<std::atomic_bool>(false);QFutureWatcher<QString> copy;
     connect(&saving,&QProgressDialog::canceled,&saving,[copyCancelled]{copyCancelled->store(true);});
     connect(&copy,&QFutureWatcher<QString>::finished,&saving,&QDialog::accept);

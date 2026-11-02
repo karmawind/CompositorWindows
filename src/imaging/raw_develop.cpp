@@ -38,12 +38,12 @@ RgbaImage downsample(const RgbaImage& source, std::uint32_t maxSide) {
 // LibRaw failures keep their meaning for the UI; cancellation uses the same wording as other import cancellations.
 std::runtime_error librawError(const char* stage, int code) {
     switch (code) {
-    case LIBRAW_CANCELLED_BY_CALLBACK: return std::runtime_error("Image operation cancelled");
+    case LIBRAW_CANCELLED_BY_CALLBACK: return std::runtime_error("图像操作已取消");
     case LIBRAW_TOO_BIG:
-    case LIBRAW_UNSUFFICIENT_MEMORY: return std::runtime_error("RAW image exceeds the import memory budget");
-    case LIBRAW_FILE_UNSUPPORTED: return std::runtime_error("Unsupported RAW file: LibRaw does not recognise this format");
-    case LIBRAW_IO_ERROR: return std::runtime_error("Cannot read RAW file");
-    default: return std::runtime_error(std::string("Malformed RAW file (") + stage + ": " + libraw_strerror(code) + ")");
+    case LIBRAW_UNSUFFICIENT_MEMORY: return std::runtime_error("RAW 图像超出导入内存预算");
+    case LIBRAW_FILE_UNSUPPORTED: return std::runtime_error("不支持的 RAW 文件：LibRaw 无法识别此格式");
+    case LIBRAW_IO_ERROR: return std::runtime_error("无法读取 RAW 文件");
+    default: return std::runtime_error(std::string("RAW 文件格式错误 (") + stage + ": " + libraw_strerror(code) + ")");
     }
 }
 
@@ -75,7 +75,7 @@ Vec3 multipliersFor(const Mat3& cameraXyz, double kelvin) {
     const auto xyz = planckianXyz(kelvin);
     Vec3 rgb{};
     for (int c = 0; c < 3; ++c) rgb[c] = cameraXyz[c][0] * xyz[0] + cameraXyz[c][1] * xyz[1] + cameraXyz[c][2] * xyz[2];
-    if (!(rgb[0] > 0 && rgb[1] > 0 && rgb[2] > 0)) throw std::runtime_error("RAW camera colour data is unusable");
+    if (!(rgb[0] > 0 && rgb[1] > 0 && rgb[2] > 0)) throw std::runtime_error("RAW 相机颜色数据不可用");
     return {rgb[1] / rgb[0], 1.0, rgb[1] / rgb[2]};
 }
 
@@ -138,7 +138,7 @@ void validateSettings(const RawAdjustments& raw) {
         (raw.kelvin && (*raw.kelvin < kRawKelvinMin || *raw.kelvin > kRawKelvinMax)) ||
         (raw.tint && (!std::isfinite(*raw.tint) || std::abs(*raw.tint) > kRawTintLimit)) ||
         (raw.noiseReduction && (!std::isfinite(*raw.noiseReduction) || *raw.noiseReduction < 0 || *raw.noiseReduction > kRawNoiseLimit)))
-        throw std::runtime_error("Invalid RAW development settings");
+        throw std::runtime_error("无效的 RAW 显影设置");
 }
 }
 
@@ -163,7 +163,7 @@ RawDevelopment developRaw(const std::filesystem::path& path, const ImportOptions
     const auto whiteBalance = estimateWhiteBalance(raw);
     const auto& settings = options.raw;
     const bool adjustsWhiteBalance = settings.kelvin || settings.tint;
-    if (adjustsWhiteBalance && !whiteBalance.usable) throw std::runtime_error("This RAW file cannot change white balance");
+    if (adjustsWhiteBalance && !whiteBalance.usable) throw std::runtime_error("此 RAW 文件无法更改白平衡");
 
     auto& params = raw.imgdata.params;
     params.output_color = 1;   // sRGB primaries
@@ -190,7 +190,7 @@ RawDevelopment developRaw(const std::filesystem::path& path, const ImportOptions
     std::unique_ptr<libraw_processed_image_t, MemImageDeleter> processed(raw.dcraw_make_mem_image(&errorCode));
     if (!processed) throw librawError("memory image", errorCode);
     if (processed->colors != 3 || processed->bits != 16 || !processed->width || !processed->height)
-        throw std::runtime_error("Unsupported RAW output layout");
+        throw std::runtime_error("不支持的 RAW 输出布局");
     const auto width = processed->width, height = processed->height;
     checkedBytes(width, height, 3, options, 2);
 

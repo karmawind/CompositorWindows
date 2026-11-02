@@ -68,7 +68,7 @@ void MainWindow::checkForRelease(std::function<void(const QString&)> report){
 void MainWindow::runReleaseCheck(bool manual){
     releaseCheckManual_=releaseCheckManual_||manual;
     if(releaseCheckRunning_)return; // The running check reports to every waiting caller.
-    if(!runningVersion()){finishReleaseCheck({},"This build has no release version to compare.");return;}
+    if(!runningVersion()){finishReleaseCheck({},"此构建没有可比较的发布版本。");return;}
     releaseCheckRunning_=true;
     auto fetcher=releaseFetcher_?releaseFetcher_:ReleaseFetcher([url=update::releaseCheckUrl()](const std::function<bool()>& cancelled){return update::fetchReleaseMetadata(url,cancelled);});
     auto cancelled=std::make_shared<std::atomic<bool>>(false);
@@ -84,7 +84,7 @@ void MainWindow::runReleaseCheck(bool manual){
         FetchResult result;
         try{result.response=fetcher([cancelled]{return cancelled->load();});}
         catch(const std::exception& error){result.error=QString::fromUtf8(error.what());}
-        catch(...){result.error="Unknown release check failure";}
+        catch(...){result.error="未知的发布检查失败";}
         return result;
     }));
 }
@@ -98,14 +98,14 @@ void MainWindow::finishReleaseCheck(const QByteArray& response,const QString& fe
     try{
         if(!fetchError.isEmpty())throw std::runtime_error(fetchError.toUtf8().constData());
         const auto release=update::parseLatestRelease(response);
-        if(!release||release->version<=*running)status="Compositor "+running->text()+" is up to date.";
+        if(!release||release->version<=*running)status="Compositor "+running->text()+" 已是最新版本。";
         else{
-            status="Compositor "+release->version.text()+" is available.";
+            status="Compositor "+release->version.text()+" 现已发布。";
             const auto skipped=update::skippedRelease(settings);
             if(manual||!skipped||*skipped!=release->version)showUpdateNotice(release->version.text(),running->text(),release->pageUrl);
         }
     }catch(const std::exception& error){
-        status="Could not check for updates: "+QString::fromUtf8(error.what());
+        status="无法检查更新： "+QString::fromUtf8(error.what());
         logging::trace("release check failed: "+QString::fromUtf8(error.what()));
     }
     setProperty("releaseCheckStatus",status);
@@ -114,13 +114,13 @@ void MainWindow::finishReleaseCheck(const QByteArray& response,const QString& fe
 void MainWindow::showUpdateNotice(const QString& version,const QString& running,const QString& pageUrl){
     for(auto* old:findChildren<QDialog*>("updateAvailableNotice")){old->setObjectName({});old->close();}
     auto* notice=new QDialog(this);notice->setObjectName("updateAvailableNotice");notice->setAttribute(Qt::WA_DeleteOnClose);
-    notice->setWindowTitle("Update Available");notice->setWindowModality(Qt::NonModal);notice->setProperty("releaseVersion",version);
+    notice->setWindowTitle("有可用更新");notice->setWindowModality(Qt::NonModal);notice->setProperty("releaseVersion",version);
     auto* layout=new QVBoxLayout(notice);
-    auto* text=new QLabel(QString("Compositor %1 is available. You are running %2.\n\nInstallation stays manual: download the new MSI or portable package from the release page. Compositor does not verify the download itself.").arg(version,running));
+    auto* text=new QLabel(QString("Compositor %1 已可用，当前运行的是 %2。\n\n安装仍需手动完成：请从发布页面下载新的 MSI 或便携版程序包。Compositor 本身不会校验下载内容。").arg(version,running));
     text->setObjectName("updateNoticeText");text->setWordWrap(true);layout->addWidget(text);
     auto* row=new QHBoxLayout;layout->addLayout(row);
-    auto* download=new QPushButton("Download…");download->setObjectName("updateNoticeDownload");download->setDefault(true);
-    auto* skip=new QPushButton("Skip This Version");skip->setObjectName("updateNoticeSkip");
+    auto* download=new QPushButton("下载…");download->setObjectName("updateNoticeDownload");download->setDefault(true);
+    auto* skip=new QPushButton("跳过此版本");skip->setObjectName("updateNoticeSkip");
     auto* later=new QPushButton("Later");later->setObjectName("updateNoticeLater");
     row->addWidget(download);row->addStretch();row->addWidget(skip);row->addWidget(later);
     connect(download,&QPushButton::clicked,notice,[this,notice,pageUrl]{

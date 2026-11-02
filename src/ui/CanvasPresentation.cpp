@@ -35,7 +35,7 @@ void NativeCanvas::setDisplayProfileOverride(std::optional<std::filesystem::path
     displayProfileOverride_=std::move(path);refreshDisplayProfile();
 }
 void NativeCanvas::setPresentationBudget(uint64_t bytes){
-    if(bytes>128ULL*1024*1024)throw std::invalid_argument("Presentation budget cannot exceed 128 MiB");
+    if(bytes>128ULL*1024*1024)throw std::invalid_argument("呈现预算不能超过 128 MiB");
     if(bytes!=presentationByteBudget_){presentationByteBudget_=bytes;resetPresentationResources();update();}
 }
 bool NativeCanvas::eventFilter(QObject* watched,QEvent* event){
@@ -55,7 +55,7 @@ void NativeCanvas::preparePresentation(){
         presentationAttempted_=true;
         try{
             const auto size=target_->GetPixelSize();const uint64_t bytes=uint64_t(size.width)*size.height*4;
-            if(bytes>presentationByteBudget_)throw std::runtime_error("Monitor presentation exceeds its viewport memory budget");
+            if(bytes>presentationByteBudget_)throw std::runtime_error("监视器呈现超出其视口内存预算");
             const auto properties=D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET,D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM,D2D1_ALPHA_MODE_IGNORE),float(96*devicePixelRatioF()),float(96*devicePixelRatioF()));
             presentationCheck(context_->CreateBitmap(size,nullptr,0,&properties,&presentationScene_),"Create sRGB presentation surface");
             Microsoft::WRL::ComPtr<ID2D1ColorContext> srgb,destination;
@@ -80,7 +80,7 @@ HRESULT NativeCanvas::finishPresentation(){
     if(FAILED(result)&&result!=D2DERR_RECREATE_TARGET){
         // The canonical scene is already complete. A failed transform can safely
         // present those pixels while retaining a diagnostic and disabling retries.
-        presentationDiagnostic_=QString("Monitor presentation failed (HRESULT 0x%1); using sRGB presentation").arg(uint32_t(result),8,16,QChar('0'));
+        presentationDiagnostic_=QString("监视器呈现失败（HRESULT 0x%1）；改用 sRGB 呈现").arg(uint32_t(result),8,16,QChar('0'));
         context_->BeginDraw();context_->DrawBitmap(presentationScene_.Get(),D2D1::RectF(0,0,float(width()),float(height())),1,D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR);result=context_->EndDraw();
         presentationEffect_.Reset();presentationScene_.Reset();presentationBytes_=0;
     }

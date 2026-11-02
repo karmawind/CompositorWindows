@@ -11,26 +11,26 @@ std::optional<editing::SelectionOutline> outlineOf(const std::optional<Selection
 }
 layers::EditResult editMask(const Document& document,layers::SelectionState selection,const std::string& id,MaskCommand command){
     validateDocument(document);selection=layers::normalizeSelection(document,std::move(selection));const auto* original=layerOf(document,id);
-    if(!original||(command!=MaskCommand::ToggleLink&&(selection.ids.size()!=1||selection.primary!=id)))return {document,selection,false,"Layer Mask"};
+    if(!original||(command!=MaskCommand::ToggleLink&&(selection.ids.size()!=1||selection.primary!=id)))return {document,selection,false,"图层蒙版"};
     Document next=document;auto& layer=*std::find_if(next.layers.begin(),next.layers.end(),[&](const Layer& value){return value.id==id;});std::string name;
     if(command==MaskCommand::AddReveal||command==MaskCommand::AddHide||command==MaskCommand::RevealAll||command==MaskCommand::HideAll){
-        if(layer.mask)return {document,selection,false,"Add Layer Mask"};const bool reveal=command==MaskCommand::AddReveal||command==MaskCommand::RevealAll;
+        if(layer.mask)return {document,selection,false,"添加图层蒙版"};const bool reveal=command==MaskCommand::AddReveal||command==MaskCommand::RevealAll;
         const bool useSelection=(command==MaskCommand::AddReveal||command==MaskCommand::AddHide)&&next.selection.has_value();
         auto raster=std::make_shared<GrayRaster>();
         if(useSelection){raster->width=layer.raster?layer.raster->width:int(std::lround(layer.transform.width));raster->height=layer.raster?layer.raster->height:int(std::lround(layer.transform.height));
-            if(raster->width<1||raster->height<1||raster->width>30000||raster->height>30000||uint64_t(raster->width)*raster->height>100000000)throw std::runtime_error("Mask exceeds image limits");
-            const auto coverage=editing::mappedCoverage(next,layer.transform,raster->width,raster->height);if(!coverage)throw std::runtime_error("Selection coverage is unavailable");raster->pixels.resize(size_t(raster->width)*raster->height);for(int y=0;y<raster->height;++y)for(int x=0;x<raster->width;++x)raster->pixels[size_t(y)*raster->width+x]=coverage->pixel(x,y);if(!reveal)for(auto& byte:raster->pixels)byte=uint8_t(255-byte);next.selection.reset();name="Add Mask from Selection";
-        }else{raster->width=raster->height=1;raster->pixels={uint8_t(reveal?255:0)};name=reveal?"Add Reveal-All Mask":"Add Hide-All Mask";}
+            if(raster->width<1||raster->height<1||raster->width>30000||raster->height>30000||uint64_t(raster->width)*raster->height>100000000)throw std::runtime_error("蒙版超出图像限制");
+            const auto coverage=editing::mappedCoverage(next,layer.transform,raster->width,raster->height);if(!coverage)throw std::runtime_error("选区覆盖不可用");raster->pixels.resize(size_t(raster->width)*raster->height);for(int y=0;y<raster->height;++y)for(int x=0;x<raster->width;++x)raster->pixels[size_t(y)*raster->width+x]=coverage->pixel(x,y);if(!reveal)for(auto& byte:raster->pixels)byte=uint8_t(255-byte);next.selection.reset();name="从选区添加蒙版";
+        }else{raster->width=raster->height=1;raster->pixels={uint8_t(reveal?255:0)};name=reveal?"添加显示全部蒙版":"添加隐藏全部蒙版";}
         layer.mask=Mask{raster};
-    }else if(command==MaskCommand::ToggleEnabled&&layer.mask){name=layer.mask->enabled?"Disable Layer Mask":"Enable Layer Mask";layer.mask->enabled=!layer.mask->enabled;}
-    else if(command==MaskCommand::ToggleLink&&layer.mask){name=layer.mask->linked?"Unlink Layer Mask":"Link Layer Mask";layer.mask->linked=!layer.mask->linked;}
-    else if(command==MaskCommand::Delete&&layer.mask){name="Delete Layer Mask";layer.mask.reset();}
-    else return {document,selection,false,"Layer Mask"};
+    }else if(command==MaskCommand::ToggleEnabled&&layer.mask){name=layer.mask->enabled?"停用图层蒙版":"启用图层蒙版";layer.mask->enabled=!layer.mask->enabled;}
+    else if(command==MaskCommand::ToggleLink&&layer.mask){name=layer.mask->linked?"取消链接图层蒙版":"链接图层蒙版";layer.mask->linked=!layer.mask->linked;}
+    else if(command==MaskCommand::Delete&&layer.mask){name="删除图层蒙版";layer.mask.reset();}
+    else return {document,selection,false,"图层蒙版"};
     validateDocument(next);const bool changed=next!=document;return {std::move(next),std::move(selection),changed,name};
 }
 layers::EditResult copyMask(const Document& d,layers::SelectionState selection,const std::string& source,const std::string& target){
-    const auto* from=layerOf(d,source);const auto* to=layerOf(d,target);if(!from||!from->mask||!to||to->group||source==target)return {d,std::move(selection),false,"Copy Layer Mask"};
-    Document next=d;auto& layer=*std::find_if(next.layers.begin(),next.layers.end(),[&](const Layer& l){return l.id==target;});auto mask=*from->mask;mask.placement=mask.placement.value_or(from->transform);const auto action=layer.mask?"Replace Layer Mask":"Copy Layer Mask";layer.mask=std::move(mask);validateDocument(next);return {std::move(next),{{target},target},true,action};
+    const auto* from=layerOf(d,source);const auto* to=layerOf(d,target);if(!from||!from->mask||!to||to->group||source==target)return {d,std::move(selection),false,"复制图层蒙版"};
+    Document next=d;auto& layer=*std::find_if(next.layers.begin(),next.layers.end(),[&](const Layer& l){return l.id==target;});auto mask=*from->mask;mask.placement=mask.placement.value_or(from->transform);const auto action=layer.mask?"替换图层蒙版":"复制图层蒙版";layer.mask=std::move(mask);validateDocument(next);return {std::move(next),{{target},target},true,action};
 }
 std::optional<Selection> loadedSelection(const Document& d,const std::string& id,bool mask,editing::SelectionMode mode){
     const auto* layer=layerOf(d,id);if(!layer)return d.selection;
@@ -69,7 +69,7 @@ void MainWindow::loadLayerSelection(const std::string& id,bool mask,Qt::Keyboard
     applyGradient();if(transformSession_&&transformSession_->persistent)applyTransformSession();pointerCancel();auto* p=current();if(!p||!p->document)return;
     const auto mode=modifiers.testFlag(Qt::AltModifier)?editing::SelectionMode::Subtract:modifiers.testFlag(Qt::ShiftModifier)?editing::SelectionMode::Add:editing::SelectionMode::Replace;
     auto selection=ui::loadedSelection(*p->document,id,mask,mode);if(selection==p->document->selection){QApplication::beep();return;}
-    edit(mask?"Load Mask Selection":"Load Layer Selection",[&](Document& d){d.selection=std::move(selection);});
+    edit(mask?"载入蒙版选区":"载入图层选区",[&](Document& d){d.selection=std::move(selection);});
 }
 void MainWindow::maskCommand(int value){
     const auto command=ui::MaskCommand(value);

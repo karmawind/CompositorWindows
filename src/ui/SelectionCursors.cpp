@@ -60,13 +60,13 @@ QCursor makeCursor(editing::LassoKind kind,editing::SelectionMode mode,qreal sca
     }
     painter.end();auto pixels=QPixmap::fromImage(image);pixels.setDevicePixelRatio(scale);return QCursor(pixels,hotSpot.x(),hotSpot.y());
 }
-int iconIndex(editing::LassoKind kind){switch(kind){case editing::LassoKind::Freehand:return 0;case editing::LassoKind::Polygonal:return 1;case editing::LassoKind::Rectangle:return 2;case editing::LassoKind::Ellipse:return 3;}throw std::invalid_argument("Unknown selection cursor tool");}
+int iconIndex(editing::LassoKind kind){switch(kind){case editing::LassoKind::Freehand:return 0;case editing::LassoKind::Polygonal:return 1;case editing::LassoKind::Rectangle:return 2;case editing::LassoKind::Ellipse:return 3;}throw std::invalid_argument("未知的选区光标工具");}
 struct ScaleCache {qreal scale;std::array<QCursor,12> cursors;};
 }
 QCursor selectionToolCursor(editing::LassoKind kind,editing::SelectionMode mode,qreal deviceScale){
     if(!QGuiApplication::instance()||QThread::currentThread()!=QGuiApplication::instance()->thread())throw std::logic_error("Selection cursor requires the GUI thread");
-    if(!std::isfinite(deviceScale)||deviceScale<.5||deviceScale>8)throw std::invalid_argument("Invalid selection cursor scale");
-    const int icon=iconIndex(kind);const int selected=int(mode);if(selected<0||selected>2)throw std::invalid_argument("Unknown selection cursor mode");
+    if(!std::isfinite(deviceScale)||deviceScale<.5||deviceScale>8)throw std::invalid_argument("无效的选区光标缩放");
+    const int icon=iconIndex(kind);const int selected=int(mode);if(selected<0||selected>2)throw std::invalid_argument("未知的选区光标模式");
     static std::list<ScaleCache> cache;
     for(auto it=cache.begin();it!=cache.end();++it)if(it->scale==deviceScale){cache.splice(cache.begin(),cache,it);return cache.front().cursors[size_t(icon)*3+size_t(selected)];}
     ScaleCache entry{deviceScale,{}};const std::array<editing::LassoKind,4> kinds{editing::LassoKind::Freehand,editing::LassoKind::Polygonal,editing::LassoKind::Rectangle,editing::LassoKind::Ellipse};

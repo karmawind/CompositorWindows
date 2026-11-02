@@ -11,7 +11,7 @@ struct WorkspaceDropQueue::Impl {
     QTimer retry;
 };
 WorkspaceDropQueue::WorkspaceDropQueue(Host host,QObject* parent):QObject(parent),impl_(std::make_unique<Impl>()){
-    if(!host.canBegin||!host.canAdvance||!host.managing||!host.project||!host.review||!host.imageTarget||!host.image||!host.cancelImage||!host.error)throw std::invalid_argument("Incomplete workspace drop host");
+    if(!host.canBegin||!host.canAdvance||!host.managing||!host.project||!host.review||!host.imageTarget||!host.image||!host.cancelImage||!host.error)throw std::invalid_argument("工作区拖放宿主不完整");
     setObjectName("workspaceDropQueue");impl_->host=std::move(host);impl_->retry.setSingleShot(true);impl_->retry.setInterval(30);
     connect(&impl_->retry,&QTimer::timeout,this,[this]{drain();});
 }
@@ -27,7 +27,7 @@ void WorkspaceDropQueue::finish(){
         p.completing=true;
         QTimer::singleShot(0,this,[this,done=std::move(completed),cancelled]{
             QPointer<WorkspaceDropQueue> alive(this);
-            try{done(cancelled);}catch(...){qWarning("Workspace drop completion callback threw");}
+            try{done(cancelled);}catch(...){qWarning("工作区拖放完成回调抛出异常");}
             if(alive){impl_->completing=false;impl_->retry.start(0);}
         });
     }

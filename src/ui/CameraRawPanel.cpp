@@ -45,8 +45,8 @@ public:
 protected:
     void contextMenuEvent(QContextMenuEvent* event) override {
         QMenu menu;
-        auto* histogram = menu.addAction("Histogram");
-        auto* vectors = menu.addAction("Vectorscope");
+        auto* histogram = menu.addAction("直方图");
+        auto* vectors = menu.addAction("矢量示波器");
         if (auto* chosen = menu.exec(event->globalPos())) {
             vectorscope = chosen == vectors;
             Q_UNUSED(histogram);
@@ -624,8 +624,8 @@ void CameraRawPanel::build() {
     shadows->setCheckable(true);
     highlights->setText("▲");
     shadows->setText("▼");
-    highlights->setAccessibleName("Highlight clipping");
-    shadows->setAccessibleName("Shadow clipping");
+    highlights->setAccessibleName("高光剪切");
+    shadows->setAccessibleName("阴影修剪");
     clips->addWidget(highlights);
     clips->addStretch(1);
     clips->addWidget(shadows);
@@ -668,7 +668,7 @@ void CameraRawPanel::build() {
         spin->setAlignment(Qt::AlignCenter);
         spin->setFixedWidth(72);
         slider->setRange(0, 10000);
-        slider->setAccessibleName(name + " slider");
+        slider->setAccessibleName(name + "滑块");
         applyTrackColors(slider, gradient);
         const auto position = [low, high](double value) { return int(std::lround((value - low) / (high - low) * 10000)); };
         slider->setValue(position(*field));
@@ -706,7 +706,7 @@ void CameraRawPanel::build() {
         auto* label = new QLabel(title);
         auto* eye = new SectionEye;
         eye->setObjectName("eye." + id);
-        eye->setAccessibleName("Show " + title);
+        eye->setAccessibleName("显示 " + title);
         eye->setChecked(*shown);
         row->addWidget(disclosure);
         row->addWidget(label, 1);
@@ -733,21 +733,21 @@ void CameraRawPanel::build() {
         return button;
     };
 
-    auto* light = addSection(sections, "Light", "light", true, &eyes_.light, [this] { return settings_.adjustsLight(); });
-    addSlider(light, "Exposure", &settings_.exposure, -5, 5, 0, 2, 1, {}, false);
+    auto* light = addSection(sections, "光", "light", true, &eyes_.light, [this] { return settings_.adjustsLight(); });
+    addSlider(light, "曝光", &settings_.exposure, -5, 5, 0, 2, 1, {}, false);
     addSlider(light, "Contrast", &settings_.contrast, -100, 100, 0, 0, 0, {}, false);
-    addSlider(light, "Highlights", &settings_.highlights, -100, 100, 0, 0, 1, {}, false);
-    addSlider(light, "Shadows", &settings_.shadows, -100, 100, 0, 0, 2, {}, false);
+    addSlider(light, "高光", &settings_.highlights, -100, 100, 0, 0, 1, {}, false);
+    addSlider(light, "阴影", &settings_.shadows, -100, 100, 0, 0, 2, {}, false);
     addSlider(light, "Whites", &settings_.whites, -100, 100, 0, 0, 1, {}, false);
     addSlider(light, "Blacks", &settings_.blacks, -100, 100, 0, 0, 2, {}, false);
 
-    auto* color = addSection(sections, "Color", "color", true, &eyes_.color, [this] { return settings_.adjustsColor(); });
+    auto* color = addSection(sections, "颜色", "color", true, &eyes_.color, [this] { return settings_.adjustsColor(); });
     whiteBalance_ = new QComboBox;
     whiteBalance_->setObjectName("cameraRawWhiteBalance");
-    whiteBalance_->addItems({"Custom", "Auto"});
-    whiteBalance_->setAccessibleName("White Balance");
+    whiteBalance_->addItems({"自定义", "自动"});
+    whiteBalance_->setAccessibleName("白平衡");
     color->addWidget(whiteBalance_);
-    color->addWidget(toolButton("White Balance", Tool::WhiteBalance));
+    color->addWidget(toolButton("白平衡", Tool::WhiteBalance));
     connect(whiteBalance_, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int index) {
         if (writing_) return;
         settings_.whiteBalance = index == 1 ? filters::CameraRawWhiteBalance::Auto : filters::CameraRawWhiteBalance::Custom;
@@ -755,10 +755,10 @@ void CameraRawPanel::build() {
         else if (edited) edited();
     });
     sync_.push_back([this] { if (whiteBalance_) { QSignalBlocker block(whiteBalance_); whiteBalance_->setCurrentIndex(whiteBalanceIsAuto() ? 1 : 0); } });
-    addSlider(color, "Temperature", &settings_.temperature, -100, 100, 0, 0, 0, "stop:0 #3a6ea5, stop:1 #d4a017", true);
+    addSlider(color, "色温", &settings_.temperature, -100, 100, 0, 0, 0, "stop:0 #3a6ea5, stop:1 #d4a017", true);
     addSlider(color, "Tint", &settings_.tint, -100, 100, 0, 0, 0, "stop:0 #3c9a55, stop:1 #c45b8a", true);
     addSlider(color, "Vibrance", &settings_.vibrance, -100, 100, 0, 0, 0, {}, false);
-    addSlider(color, "Saturation", &settings_.saturation, -100, 100, 0, 0, 0, "stop:0 #8a8a8a, stop:1 #d64545", false);
+    addSlider(color, "饱和度", &settings_.saturation, -100, 100, 0, 0, 0, "stop:0 #8a8a8a, stop:1 #d64545", false);
 
     auto* curve = addSection(sections, "Curve", "curve", false, &eyes_.curve, [this] { return settings_.curve.adjusts(); });
     auto* curvePages = new QWidget;
@@ -774,12 +774,12 @@ void CameraRawPanel::build() {
     curveGroup->addButton(point, 1);
     curvePageLayout->addWidget(parametric);
     curvePageLayout->addWidget(point);
-    curvePageLayout->addWidget(toolButton("Curve Target", Tool::Curve));
+    curvePageLayout->addWidget(toolButton("曲线目标", Tool::Curve));
     curve->addWidget(curvePages);
     auto* channel = new QComboBox;
     channel->setObjectName("cameraRawCurveChannel");
-    channel->addItems({"RGB", "Red", "Green", "Blue"});
-    channel->setAccessibleName("Curve Channel");
+    channel->addItems({"RGB", "红色", "绿色", "蓝色"});
+    channel->setAccessibleName("曲线通道");
     curve->addWidget(channel);
     auto* graph = new CurveGraph;
     graph->setObjectName("cameraRawCurve");
@@ -788,15 +788,15 @@ void CameraRawPanel::build() {
     graph->channel = &curveChannel_;
     graph->onEdit = [this] { publish(); };
     curve->addWidget(graph);
-    addSlider(curve, "Highlights", &settings_.curve.highlights, -100, 100, 0, 0, 0, {}, false);
+    addSlider(curve, "高光", &settings_.curve.highlights, -100, 100, 0, 0, 0, {}, false);
     addSlider(curve, "Lights", &settings_.curve.lights, -100, 100, 0, 0, 0, {}, false);
     addSlider(curve, "Darks", &settings_.curve.darks, -100, 100, 0, 0, 0, {}, false);
-    addSlider(curve, "Shadows", &settings_.curve.shadows, -100, 100, 0, 0, 0, {}, false);
-    auto* refine = addSlider(curve, "Refine Saturation", &settings_.curve.refineSaturation, -100, 100, 0, 0, 0, {}, false);
+    addSlider(curve, "阴影", &settings_.curve.shadows, -100, 100, 0, 0, 0, {}, false);
+    auto* refine = addSlider(curve, "优化饱和度", &settings_.curve.refineSaturation, -100, 100, 0, 0, 0, {}, false);
     auto* presets = new QComboBox;
     presets->setObjectName("cameraRawCurvePreset");
-    presets->addItems({"Curve Preset", "Linear", "Medium Contrast", "Strong Contrast"});
-    presets->setAccessibleName("Curve Preset");
+    presets->addItems({"曲线预设", "线性", "中等对比度", "强对比度"});
+    presets->setAccessibleName("曲线预设");
     curve->addWidget(presets);
     connect(curveGroup, &QButtonGroup::idClicked, this, [this, channel, graph](int id) { curveParametric_ = id == 0; channel->setVisible(id == 1); graph->update(); });
     channel->setVisible(false);
@@ -813,7 +813,7 @@ void CameraRawPanel::build() {
     auto* mixer = addSection(sections, "Mixer", "mixer", true, &eyes_.mixer, [this] { return settings_.mixer.adjusts(); });
     auto* mixerPages = new QHBoxLayout;
     auto* hsl = new QPushButton("HSL");
-    auto* colors = new QPushButton("Color");
+    auto* colors = new QPushButton("颜色");
     auto* points = new QPushButton("Point");
     hsl->setCheckable(true);
     colors->setCheckable(true);
@@ -826,11 +826,11 @@ void CameraRawPanel::build() {
     mixerPages->addWidget(hsl);
     mixerPages->addWidget(colors);
     mixerPages->addWidget(points);
-    mixerPages->addWidget(toolButton("Mixer Target", Tool::Mixer));
+    mixerPages->addWidget(toolButton("混色器目标", Tool::Mixer));
     mixer->addLayout(mixerPages);
     auto* mixerTabs = new QHBoxLayout;
-    auto* hueTab = new QPushButton("Hue");
-    auto* satTab = new QPushButton("Saturation");
+    auto* hueTab = new QPushButton("色相");
+    auto* satTab = new QPushButton("饱和度");
     auto* lumTab = new QPushButton("Luminance");
     for (auto* tab : {hueTab, satTab, lumTab}) tab->setCheckable(true);
     hueTab->setChecked(true);
@@ -848,8 +848,8 @@ void CameraRawPanel::build() {
     for (int i = 0; i < 8; ++i) {
         const QString family = filters::CameraRawMixerSettings::names[size_t(i)];
         hueRows[size_t(i)] = addSlider(mixer, family, &settings_.mixer.hue[size_t(i)], -100, 100, 0, 0, 0, hueStops(filters::CameraRawMixerSettings::centers[size_t(i)]), false)->parentWidget();
-        satRows[size_t(i)] = addSlider(mixer, family + " Saturation", &settings_.mixer.saturation[size_t(i)], -100, 100, 0, 0, 0, "stop:0 #8a8a8a, stop:1 " + QColor::fromHsv(int(filters::CameraRawMixerSettings::centers[size_t(i)]), 180, 210).name(), false)->parentWidget();
-        lumRows[size_t(i)] = addSlider(mixer, family + " Luminance", &settings_.mixer.luminance[size_t(i)], -100, 100, 0, 0, 0, {}, false)->parentWidget();
+        satRows[size_t(i)] = addSlider(mixer, family + " 饱和度", &settings_.mixer.saturation[size_t(i)], -100, 100, 0, 0, 0, "stop:0 #8a8a8a, stop:1 " + QColor::fromHsv(int(filters::CameraRawMixerSettings::centers[size_t(i)]), 180, 210).name(), false)->parentWidget();
+        lumRows[size_t(i)] = addSlider(mixer, family + "亮度", &settings_.mixer.luminance[size_t(i)], -100, 100, 0, 0, 0, {}, false)->parentWidget();
         hueRows[size_t(i)]->hide();
         satRows[size_t(i)]->hide();
         lumRows[size_t(i)]->hide();
@@ -871,25 +871,25 @@ void CameraRawPanel::build() {
         swatches->addWidget(swatch);
     }
     colorLayout->addLayout(swatches);
-    auto* familyHue = addSlider(colorLayout, "Hue", &settings_.mixer.hue[0], -100, 100, 0, 0, 0, {}, false);
-    auto* familySat = addSlider(colorLayout, "Saturation", &settings_.mixer.saturation[0], -100, 100, 0, 0, 0, {}, false);
+    auto* familyHue = addSlider(colorLayout, "色相", &settings_.mixer.hue[0], -100, 100, 0, 0, 0, {}, false);
+    auto* familySat = addSlider(colorLayout, "饱和度", &settings_.mixer.saturation[0], -100, 100, 0, 0, 0, {}, false);
     auto* familyLum = addSlider(colorLayout, "Luminance", &settings_.mixer.luminance[0], -100, 100, 0, 0, 0, {}, false);
     mixer->addWidget(colorHost);
     tabHost->hide();
     auto* pointHost = new QWidget;
     auto* pointLayout = new QVBoxLayout(pointHost);
     pointLayout->setContentsMargins(0, 0, 0, 0);
-    pointLayout->addWidget(toolButton("Point Color", Tool::PointColor));
+    pointLayout->addWidget(toolButton("点颜色", Tool::PointColor));
     auto* pointList = new QComboBox;
     pointList->setObjectName("cameraRawPoints");
-    pointList->setAccessibleName("Point Color");
+    pointList->setAccessibleName("点颜色");
     pointLayout->addWidget(pointList);
-    auto* pointHue = addSlider(pointLayout, "Hue Shift", &pointScratch_, -100, 100, 0, 0, 0, {}, false);
-    auto* pointSat = addSlider(pointLayout, "Saturation Shift", &pointScratch_, -100, 100, 0, 0, 0, {}, false);
-    auto* pointLum = addSlider(pointLayout, "Luminance Shift", &pointScratch_, -100, 100, 0, 0, 0, {}, false);
-    auto* visualize = new QCheckBox("Visualize");
+    auto* pointHue = addSlider(pointLayout, "色相偏移", &pointScratch_, -100, 100, 0, 0, 0, {}, false);
+    auto* pointSat = addSlider(pointLayout, "饱和度偏移", &pointScratch_, -100, 100, 0, 0, 0, {}, false);
+    auto* pointLum = addSlider(pointLayout, "明亮度偏移", &pointScratch_, -100, 100, 0, 0, 0, {}, false);
+    auto* visualize = new QCheckBox("可视化");
     visualize->setObjectName("cameraRawVisualize");
-    visualize->setAccessibleName("Visualize");
+    visualize->setAccessibleName("可视化");
     pointLayout->addWidget(visualize);
     mixer->addWidget(pointHost);
     pointHost->hide();
@@ -953,7 +953,7 @@ void CameraRawPanel::build() {
         familyLum->setValue(settings_.mixer.luminance[size_t(mixerFamily_)]);
         QSignalBlocker block(pointList);
         pointList->clear();
-        for (int i = 0; i < int(settings_.mixer.points.size()); ++i) pointList->addItem(QString("Point %1").arg(i + 1));
+        for (int i = 0; i < int(settings_.mixer.points.size()); ++i) pointList->addItem(QString("点 %1").arg(i + 1));
         const bool any = !settings_.mixer.points.empty();
         pointHue->setEnabled(any);
         pointSat->setEnabled(any);
@@ -971,14 +971,14 @@ void CameraRawPanel::build() {
         }
     });
 
-    auto* grading = addSection(sections, "Color Grading", "grading", true, &eyes_.grading, [this] { return settings_.grading.adjusts(); });
+    auto* grading = addSection(sections, "颜色分级", "grading", true, &eyes_.grading, [this] { return settings_.grading.adjusts(); });
     auto* gradePage = new QComboBox;
     gradePage->setObjectName("cameraRawGradePage");
-    gradePage->addItems({"Three-Way", "Shadows", "Midtones", "Highlights", "Global"});
-    gradePage->setAccessibleName("Color Grading");
+    gradePage->addItems({"三路", "阴影", "中间调", "高光", "全局"});
+    gradePage->setAccessibleName("颜色分级");
     grading->addWidget(gradePage);
     filters::CameraRawGradeWheel* wheels[]{&settings_.grading.shadows, &settings_.grading.midtones, &settings_.grading.highlights, &settings_.grading.global};
-    const char* wheelNames[]{"Shadows", "Midtones", "Highlights", "Global"};
+    const char* wheelNames[]{"阴影", "中间调", "高光", "全局"};
     std::array<QWidget*, 4> columns{};
     auto* wheelRow = new QHBoxLayout;
     for (int i = 0; i < 4; ++i) {
@@ -994,44 +994,44 @@ void CameraRawPanel::build() {
         wheel->onEdit = [this, wheel] { wheel->update(); publish(); };
         stack->addWidget(title);
         stack->addWidget(wheel, 0, Qt::AlignHCenter);
-        addSlider(stack, QString(wheelNames[i]) + " Luminance", &wheels[i]->luminance, -100, 100, 0, 0, 0, {}, false, true);
+        addSlider(stack, QString(wheelNames[i]) + "亮度", &wheels[i]->luminance, -100, 100, 0, 0, 0, {}, false, true);
         columns[size_t(i)] = wheelColumn;
         wheelRow->addWidget(wheelColumn, 1);
     }
     grading->addLayout(wheelRow);
     addSlider(grading, "Blending", &settings_.grading.blending, 0, 100, 50, 0, 0, {}, false);
-    addSlider(grading, "Balance", &settings_.grading.balance, -100, 100, 0, 0, 0, {}, false);
+    addSlider(grading, "平衡", &settings_.grading.balance, -100, 100, 0, 0, 0, {}, false);
     connect(gradePage, qOverload<int>(&QComboBox::currentIndexChanged), this, [columns](int id) {
         for (int i = 0; i < 4; ++i) columns[size_t(i)]->setVisible(id == 0 ? i < 3 : i == id - 1);
     });
     columns[3]->hide();
 
-    auto* effects = addSection(sections, "Effects", "effects", false, &eyes_.effects, [this] { return settings_.adjustsEffects(); });
+    auto* effects = addSection(sections, "效果", "effects", false, &eyes_.effects, [this] { return settings_.adjustsEffects(); });
     addSlider(effects, "Texture", &settings_.texture, -100, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Clarity", &settings_.clarity, -100, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Dehaze", &settings_.dehaze, -100, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "清晰度", &settings_.clarity, -100, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "去雾", &settings_.dehaze, -100, 100, 0, 0, 0, {}, false);
     auto* glowStyle = new QComboBox;
     glowStyle->setObjectName("cameraRawGlowStyle");
-    glowStyle->addItems({"Diffusion", "Bloom", "Halation"});
-    glowStyle->setAccessibleName("Glow Style");
+    glowStyle->addItems({"扩散", "辉光", "光晕"});
+    glowStyle->setAccessibleName("光晕样式");
     effects->addWidget(glowStyle);
-    addSlider(effects, "Glow", &settings_.glow, 0, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Glow Range", &settings_.glowRange, -100, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Glow Spread", &settings_.glowSpread, -100, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Glow Warmth", &settings_.glowWarmth, -100, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "发光", &settings_.glow, 0, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "光晕范围", &settings_.glowRange, -100, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "光晕扩散", &settings_.glowSpread, -100, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "光晕暖色", &settings_.glowWarmth, -100, 100, 0, 0, 0, {}, false);
     auto* vignetteStyle = new QComboBox;
     vignetteStyle->setObjectName("cameraRawVignetteStyle");
-    vignetteStyle->addItems({"Highlight Priority", "Color Priority", "Paint Overlay"});
-    vignetteStyle->setAccessibleName("Vignette Style");
+    vignetteStyle->addItems({"高光优先", "颜色优先", "绘画叠加"});
+    vignetteStyle->setAccessibleName("晕影样式");
     effects->addWidget(vignetteStyle);
-    addSlider(effects, "Vignette", &settings_.vignetteAmount, -100, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Vignette Midpoint", &settings_.vignetteMidpoint, 0, 100, 50, 0, 0, {}, false);
-    addSlider(effects, "Vignette Roundness", &settings_.vignetteRoundness, -100, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Vignette Feather", &settings_.vignetteFeather, 0, 100, 50, 0, 0, {}, false);
-    addSlider(effects, "Vignette Highlights", &settings_.vignetteHighlights, 0, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Grain", &settings_.grainAmount, 0, 100, 0, 0, 0, {}, false);
-    addSlider(effects, "Grain Size", &settings_.grainSize, 0, 100, 25, 0, 0, {}, false);
-    addSlider(effects, "Grain Roughness", &settings_.grainRoughness, 0, 100, 50, 0, 0, {}, false);
+    addSlider(effects, "晕影", &settings_.vignetteAmount, -100, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "晕影中点", &settings_.vignetteMidpoint, 0, 100, 50, 0, 0, {}, false);
+    addSlider(effects, "晕影圆度", &settings_.vignetteRoundness, -100, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "晕影羽化", &settings_.vignetteFeather, 0, 100, 50, 0, 0, {}, false);
+    addSlider(effects, "晕影高光", &settings_.vignetteHighlights, 0, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "颗粒", &settings_.grainAmount, 0, 100, 0, 0, 0, {}, false);
+    addSlider(effects, "颗粒大小", &settings_.grainSize, 0, 100, 25, 0, 0, {}, false);
+    addSlider(effects, "颗粒粗糙度", &settings_.grainRoughness, 0, 100, 50, 0, 0, {}, false);
     connect(glowStyle, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int id) {
         if (writing_) return;
         settings_.glowStyle = filters::CameraRawGlowStyle(id);
@@ -1050,15 +1050,15 @@ void CameraRawPanel::build() {
 
     auto* detail = addSection(sections, "Detail", "detail", false, &eyes_.detail, [this] { return settings_.detail.adjusts(); });
     addSlider(detail, "Sharpen", &settings_.detail.sharpenAmount, 0, 150, 0, 0, 0, {}, false);
-    addSlider(detail, "Sharpen Radius", &settings_.detail.sharpenRadius, 0, 100, 10, 0, 0, {}, false);
-    addSlider(detail, "Sharpen Detail", &settings_.detail.sharpenDetail, 0, 100, 25, 0, 0, {}, false);
+    addSlider(detail, "锐化半径", &settings_.detail.sharpenRadius, 0, 100, 10, 0, 0, {}, false);
+    addSlider(detail, "锐化细节", &settings_.detail.sharpenDetail, 0, 100, 25, 0, 0, {}, false);
     addSlider(detail, "Masking", &settings_.detail.sharpenMasking, 0, 100, 0, 0, 3, {}, false);
-    addSlider(detail, "Luminance Noise", &settings_.detail.noiseLuminance, 0, 100, 0, 0, 0, {}, false);
-    auto* noiseLumaDetail = addSlider(detail, "Luminance Detail", &settings_.detail.noiseLuminanceDetail, 0, 100, 50, 0, 0, {}, false);
-    auto* noiseLumaContrast = addSlider(detail, "Luminance Contrast", &settings_.detail.noiseLuminanceContrast, 0, 100, 0, 0, 0, {}, false);
-    addSlider(detail, "Color Noise", &settings_.detail.noiseColor, 0, 100, 0, 0, 0, {}, false);
-    auto* noiseColorDetail = addSlider(detail, "Color Detail", &settings_.detail.noiseColorDetail, 0, 100, 50, 0, 0, {}, false);
-    auto* noiseColorSmooth = addSlider(detail, "Color Smoothness", &settings_.detail.noiseColorSmoothness, 0, 100, 50, 0, 0, {}, false);
+    addSlider(detail, "亮度噪点", &settings_.detail.noiseLuminance, 0, 100, 0, 0, 0, {}, false);
+    auto* noiseLumaDetail = addSlider(detail, "亮度细节", &settings_.detail.noiseLuminanceDetail, 0, 100, 50, 0, 0, {}, false);
+    auto* noiseLumaContrast = addSlider(detail, "亮度对比度", &settings_.detail.noiseLuminanceContrast, 0, 100, 0, 0, 0, {}, false);
+    addSlider(detail, "颜色噪点", &settings_.detail.noiseColor, 0, 100, 0, 0, 0, {}, false);
+    auto* noiseColorDetail = addSlider(detail, "颜色细节", &settings_.detail.noiseColorDetail, 0, 100, 50, 0, 0, {}, false);
+    auto* noiseColorSmooth = addSlider(detail, "颜色平滑度", &settings_.detail.noiseColorSmoothness, 0, 100, 50, 0, 0, {}, false);
     sync_.push_back([this, noiseLumaDetail, noiseLumaContrast, noiseColorDetail, noiseColorSmooth] {
         const bool luma = settings_.detail.noiseLuminance > 0, chroma = settings_.detail.noiseColor > 0;
         noiseLumaDetail->setEnabled(luma);
@@ -1067,25 +1067,25 @@ void CameraRawPanel::build() {
         noiseColorSmooth->setEnabled(chroma);
     });
 
-    auto* optics = addSection(sections, "Optics", "optics", false, &eyes_.optics, [this] { return settings_.optics.adjusts(); });
-    auto* aberration = new QCheckBox("Remove Chromatic Aberration");
-    auto* profile = new QCheckBox("Enable Lens Profile");
-    aberration->setAccessibleName("Remove Chromatic Aberration");
-    profile->setAccessibleName("Enable Lens Profile");
+    auto* optics = addSection(sections, "光学", "optics", false, &eyes_.optics, [this] { return settings_.optics.adjusts(); });
+    auto* aberration = new QCheckBox("去除色差");
+    auto* profile = new QCheckBox("启用镜头配置文件");
+    aberration->setAccessibleName("去除色差");
+    profile->setAccessibleName("启用镜头配置文件");
     optics->addWidget(aberration);
     optics->addWidget(profile);
-    optics->addWidget(toolButton("Defringe", Tool::Defringe));
-    auto* profileDistortion = addSlider(optics, "Profile Distortion", &settings_.optics.profileDistortion, 0, 100, 100, 0, 0, {}, false);
-    auto* profileVignette = addSlider(optics, "Profile Vignetting", &settings_.optics.profileVignetting, 0, 100, 100, 0, 0, {}, false);
-    addSlider(optics, "Distortion", &settings_.optics.distortion, -100, 100, 0, 0, 0, {}, false);
-    addSlider(optics, "Purple Amount", &settings_.optics.purpleAmount, 0, 100, 0, 0, 0, {}, false);
-    addSlider(optics, "Purple Hue Low", &settings_.optics.purpleHueLow, 0, 360, 270, 0, 0, {}, false);
-    addSlider(optics, "Purple Hue High", &settings_.optics.purpleHueHigh, 0, 360, 310, 0, 0, {}, false);
-    addSlider(optics, "Green Amount", &settings_.optics.greenAmount, 0, 100, 0, 0, 0, {}, false);
-    addSlider(optics, "Green Hue Low", &settings_.optics.greenHueLow, 0, 360, 60, 0, 0, {}, false);
-    addSlider(optics, "Green Hue High", &settings_.optics.greenHueHigh, 0, 360, 120, 0, 0, {}, false);
-    addSlider(optics, "Lens Vignette", &settings_.optics.vignetteAmount, -100, 100, 0, 0, 0, {}, false);
-    addSlider(optics, "Lens Vignette Midpoint", &settings_.optics.vignetteMidpoint, 0, 100, 50, 0, 0, {}, false);
+    optics->addWidget(toolButton("去边", Tool::Defringe));
+    auto* profileDistortion = addSlider(optics, "配置文件畸变", &settings_.optics.profileDistortion, 0, 100, 100, 0, 0, {}, false);
+    auto* profileVignette = addSlider(optics, "配置文件晕影", &settings_.optics.profileVignetting, 0, 100, 100, 0, 0, {}, false);
+    addSlider(optics, "畸变", &settings_.optics.distortion, -100, 100, 0, 0, 0, {}, false);
+    addSlider(optics, "紫色数量", &settings_.optics.purpleAmount, 0, 100, 0, 0, 0, {}, false);
+    addSlider(optics, "紫色色相下限", &settings_.optics.purpleHueLow, 0, 360, 270, 0, 0, {}, false);
+    addSlider(optics, "紫色色相上限", &settings_.optics.purpleHueHigh, 0, 360, 310, 0, 0, {}, false);
+    addSlider(optics, "绿色数量", &settings_.optics.greenAmount, 0, 100, 0, 0, 0, {}, false);
+    addSlider(optics, "绿色色相下限", &settings_.optics.greenHueLow, 0, 360, 60, 0, 0, {}, false);
+    addSlider(optics, "绿色色相上限", &settings_.optics.greenHueHigh, 0, 360, 120, 0, 0, {}, false);
+    addSlider(optics, "镜头晕影", &settings_.optics.vignetteAmount, -100, 100, 0, 0, 0, {}, false);
+    addSlider(optics, "镜头晕影中点", &settings_.optics.vignetteMidpoint, 0, 100, 50, 0, 0, {}, false);
     connect(aberration, &QCheckBox::toggled, this, [this](bool on) { if (writing_) return; settings_.optics.removeChromaticAberration = on; if (edited) edited(); });
     connect(profile, &QCheckBox::toggled, this, [this](bool on) { if (writing_) return; settings_.optics.enableLensProfile = on; if (edited) edited(); });
     sync_.push_back([this, aberration, profile, profileDistortion, profileVignette] {
@@ -1096,30 +1096,30 @@ void CameraRawPanel::build() {
         profileVignette->setEnabled(settings_.optics.enableLensProfile);
     });
 
-    auto* geometry = addSection(sections, "Geometry", "geometry", false, &eyes_.geometry, [this] { return settings_.geometry.adjusts(); });
+    auto* geometry = addSection(sections, "几何", "geometry", false, &eyes_.geometry, [this] { return settings_.geometry.adjusts(); });
     auto* upright = new QComboBox;
     upright->setObjectName("cameraRawUpright");
-    upright->addItems({"Off", "Guided"});
-    upright->setAccessibleName("Upright");
+    upright->addItems({"关", "引导"});
+    upright->setAccessibleName("校正");
     auto* projection = new QComboBox;
     projection->setObjectName("cameraRawProjection");
-    projection->addItems({"Perspective", "Rectilinear"});
-    projection->setAccessibleName("Projection");
+    projection->addItems({"透视", "直线"});
+    projection->setAccessibleName("投影");
     geometry->addWidget(upright);
     geometry->addWidget(projection);
-    geometry->addWidget(toolButton("Draw Guides", Tool::Guide));
-    auto* clearGuides = new QPushButton("Clear Guides");
-    clearGuides->setAccessibleName("Clear Guides");
+    geometry->addWidget(toolButton("绘制参考线", Tool::Guide));
+    auto* clearGuides = new QPushButton("清除参考线");
+    clearGuides->setAccessibleName("清除参考线");
     geometry->addWidget(clearGuides);
-    addSlider(geometry, "Vertical", &settings_.geometry.vertical, -100, 100, 0, 0, 0, {}, false);
-    addSlider(geometry, "Horizontal", &settings_.geometry.horizontal, -100, 100, 0, 0, 0, {}, false);
-    addSlider(geometry, "Rotate", &settings_.geometry.rotate, -45, 45, 0, 0, 0, {}, false);
+    addSlider(geometry, "垂直", &settings_.geometry.vertical, -100, 100, 0, 0, 0, {}, false);
+    addSlider(geometry, "水平", &settings_.geometry.horizontal, -100, 100, 0, 0, 0, {}, false);
+    addSlider(geometry, "旋转", &settings_.geometry.rotate, -45, 45, 0, 0, 0, {}, false);
     addSlider(geometry, "Aspect", &settings_.geometry.aspect, -100, 100, 0, 0, 0, {}, false);
-    addSlider(geometry, "Scale", &settings_.geometry.scale, -100, 100, 0, 0, 0, {}, false);
-    addSlider(geometry, "Offset X", &settings_.geometry.offsetX, -100, 100, 0, 0, 0, {}, false);
-    addSlider(geometry, "Offset Y", &settings_.geometry.offsetY, -100, 100, 0, 0, 0, {}, false);
-    auto* constrain = new QCheckBox("Constrain Crop");
-    constrain->setAccessibleName("Constrain Crop");
+    addSlider(geometry, "缩放", &settings_.geometry.scale, -100, 100, 0, 0, 0, {}, false);
+    addSlider(geometry, "偏移 X", &settings_.geometry.offsetX, -100, 100, 0, 0, 0, {}, false);
+    addSlider(geometry, "偏移 Y", &settings_.geometry.offsetY, -100, 100, 0, 0, 0, {}, false);
+    auto* constrain = new QCheckBox("约束裁剪");
+    constrain->setAccessibleName("约束裁剪");
     geometry->addWidget(constrain);
     connect(upright, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int id) {
         if (writing_) return;
@@ -1140,23 +1140,23 @@ void CameraRawPanel::build() {
         constrain->setChecked(settings_.geometry.constrainCrop);
     });
 
-    auto* calibration = addSection(sections, "Calibration", "calibration", false, &eyes_.calibration, [this] { return settings_.calibration.adjusts(); });
+    auto* calibration = addSection(sections, "校准", "calibration", false, &eyes_.calibration, [this] { return settings_.calibration.adjusts(); });
     auto* process = new QComboBox;
     process->setObjectName("cameraRawProcess");
-    process->addItems({"Version 1", "Version 2", "Version 3", "Version 4", "Version 5", "Version 6"});
-    process->setAccessibleName("Process");
+    process->addItems({"版本 1", "版本 2", "版本 3", "版本 4", "版本 5", "版本 6"});
+    process->setAccessibleName("处理");
     processSummary_ = new QLabel;
     processSummary_->setWordWrap(true);
     processSummary_->setObjectName("cameraRawProcessSummary");
     calibration->addWidget(process);
     calibration->addWidget(processSummary_);
-    addSlider(calibration, "Shadow Tint", &settings_.calibration.shadowTint, -100, 100, 0, 0, 0, {}, false);
-    addSlider(calibration, "Red Hue", &settings_.calibration.redHue, -100, 100, 0, 0, 0, {}, false);
-    addSlider(calibration, "Red Saturation", &settings_.calibration.redSaturation, -100, 100, 0, 0, 0, {}, false);
-    addSlider(calibration, "Green Hue", &settings_.calibration.greenHue, -100, 100, 0, 0, 0, {}, false);
-    addSlider(calibration, "Green Saturation", &settings_.calibration.greenSaturation, -100, 100, 0, 0, 0, {}, false);
-    addSlider(calibration, "Blue Hue", &settings_.calibration.blueHue, -100, 100, 0, 0, 0, {}, false);
-    addSlider(calibration, "Blue Saturation", &settings_.calibration.blueSaturation, -100, 100, 0, 0, 0, {}, false);
+    addSlider(calibration, "阴影色调", &settings_.calibration.shadowTint, -100, 100, 0, 0, 0, {}, false);
+    addSlider(calibration, "红色色相", &settings_.calibration.redHue, -100, 100, 0, 0, 0, {}, false);
+    addSlider(calibration, "红色饱和度", &settings_.calibration.redSaturation, -100, 100, 0, 0, 0, {}, false);
+    addSlider(calibration, "绿色色相", &settings_.calibration.greenHue, -100, 100, 0, 0, 0, {}, false);
+    addSlider(calibration, "绿色饱和度", &settings_.calibration.greenSaturation, -100, 100, 0, 0, 0, {}, false);
+    addSlider(calibration, "蓝色色相", &settings_.calibration.blueHue, -100, 100, 0, 0, 0, {}, false);
+    addSlider(calibration, "蓝色饱和度", &settings_.calibration.blueSaturation, -100, 100, 0, 0, 0, {}, false);
     connect(process, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int id) {
         if (writing_) return;
         settings_.calibration.process = filters::CameraRawProcess(id + 1);

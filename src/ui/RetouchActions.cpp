@@ -19,13 +19,13 @@ namespace compositor {
 namespace {
 bool isWarp(retouch::Mode mode) { return mode==retouch::Mode::Smudge||mode==retouch::Mode::Liquify; }
 const char* editName(retouch::Mode mode,bool mask) {
-    if(mask)return "Blur Mask";
+    if(mask)return "模糊蒙版";
     switch(mode) {
-    case retouch::Mode::Clone:return "Clone Stamp";
-    case retouch::Mode::Blur:return "Blur";
-    case retouch::Mode::Smudge:return "Smudge";
-    case retouch::Mode::Liquify:return "Liquify";
-    default:return "Spot Healing";
+    case retouch::Mode::Clone:return "仿制图章";
+    case retouch::Mode::Blur:return "模糊";
+    case retouch::Mode::Smudge:return "涂抹";
+    case retouch::Mode::Liquify:return "液化";
+    default:return "修复";
     }
 }
 Layer* findLayer(EditorProject* project,const std::string& id) {
@@ -36,7 +36,7 @@ Layer* findLayer(EditorProject* project,const std::string& id) {
 uint64_t retouchPixelBudget(const Document& document,const Layer& target,bool mask) {
     uint64_t imageRemaining=100000000,maskRemaining=100000000;
     auto consume=[](uint64_t& remaining,int width,int height){
-        if(width<=0||height<=0||width>30000||height>30000)throw std::runtime_error("Invalid existing raster extent");
+        if(width<=0||height<=0||width>30000||height>30000)throw std::runtime_error("无效的现有栅格范围");
         const auto pixels=uint64_t(width)*uint64_t(height);
         if(pixels>remaining)throw std::runtime_error("Existing layers exceed the retouch pixel budget");
         remaining-=pixels;
@@ -50,33 +50,33 @@ uint64_t retouchPixelBudget(const Document& document,const Layer& target,bool ma
 }
 
 void MainWindow::setupRetouchActions() {
-    retouchBar_=addToolBar("Retouch Options");
+    retouchBar_=addToolBar("润饰选项");
     retouchBar_->setObjectName("retouchOptions");
     auto addTool=[&](const QString& label,const char* objectName,const QKeySequence& shortcut,Tool tool) {
         auto* item=retouchBar_->addAction(label);
         item->setObjectName(objectName);item->setProperty("retouchShortcut",shortcut.toString());item->setCheckable(true);
-        bindCommand(item,"Tools",tool==Tool::CloneStamp?"Clone (S)":tool==Tool::SpotHealing?"Heal (J)":"Retouch (R)",[this,tool]{selectTool(tool);});commands_->releaseShortcut(item);item->setVisible(false);
+        bindCommand(item,"工具",tool==Tool::CloneStamp?"仿制图章 (S)":tool==Tool::SpotHealing?"修复 (J)":"润饰 (R)",[this,tool]{selectTool(tool);});commands_->releaseShortcut(item);item->setVisible(false);
     };
-    addTool("Clone Stamp (S)","retouchClone",QKeySequence(Qt::Key_S),Tool::CloneStamp);
-    addTool("Spot Healing (J)","retouchHeal",QKeySequence(Qt::Key_J),Tool::SpotHealing);
-    addTool("Smear (R)","retouchSmear",QKeySequence(Qt::Key_R),Tool::Blur);
+    addTool("仿制图章 (S)","retouchClone",QKeySequence(Qt::Key_S),Tool::CloneStamp);
+    addTool("修复 (J)","retouchHeal",QKeySequence(Qt::Key_J),Tool::SpotHealing);
+    addTool("涂抹 (R)","retouchSmear",QKeySequence(Qt::Key_R),Tool::Blur);
     auto* options=new ui::WrappingToolOptions;options->setObjectName("retouchOptionsContents");retouchBar_->addWidget(options);
     auto* family=new QLabel;family->setObjectName("retouchFamily");options->addControl(family);
     healingModes_=new QComboBox;
-    healingModes_->setObjectName("retouchHealingMode");healingModes_->setAccessibleName("Healing mode");
-    healingModes_->addItems({"Content-Aware","Create Texture","Proximity Match"});options->addControl(healingModes_);
+    healingModes_->setObjectName("retouchHealingMode");healingModes_->setAccessibleName("修复模式");
+    healingModes_->addItems({"内容识别","创建纹理","邻近匹配"});options->addControl(healingModes_);
     blurModes_=new QComboBox;
-    blurModes_->setObjectName("retouchSmearMode");blurModes_->setAccessibleName("Smear mode");
-    blurModes_->addItems({"Liquify","Blur","Smudge"});options->addControl(blurModes_);
-    cloneAligned_=new QCheckBox("Aligned");cloneAligned_->setObjectName("retouchAligned");cloneAligned_->setChecked(true);options->addControl(cloneAligned_);
-    cloneAllLayers_=new QCheckBox("Sample All Layers");cloneAllLayers_->setObjectName("retouchAllLayers");options->addControl(cloneAllLayers_);
-    const char* labels[]{" Size "," Hardness "," Opacity "};
-    const char* names[]{"Retouch diameter","Retouch hardness","Retouch opacity"};
+    blurModes_->setObjectName("retouchSmearMode");blurModes_->setAccessibleName("涂抹模式");
+    blurModes_->addItems({"液化","模糊","涂抹"});options->addControl(blurModes_);
+    cloneAligned_=new QCheckBox("对齐");cloneAligned_->setObjectName("retouchAligned");cloneAligned_->setChecked(true);options->addControl(cloneAligned_);
+    cloneAllLayers_=new QCheckBox("对所有图层取样");cloneAllLayers_->setObjectName("retouchAllLayers");options->addControl(cloneAllLayers_);
+    const char* labels[]{" 大小 "," 硬度 "," 不透明度 "};
+    const char* names[]{"润饰直径","润饰硬度","润饰不透明度"};
     const char* objects[]{"retouchDiameter","retouchHardness","retouchOpacity"};
     for(size_t i=0;i<retouchTip_.size();++i) {
         auto* label=new QLabel(QString::fromUtf8(labels[i]).trimmed());if(i==2)label->setObjectName("retouchOpacityLabel");
         if(i){
-            auto* slider=new ui::TrackSlider(Qt::Horizontal);slider->setObjectName(i==1?"retouchHardnessSlider":"retouchOpacitySlider");slider->setAccessibleName(i==1?"Retouch hardness slider":"Retouch opacity slider");slider->setRange(i==1?0:100,10000);slider->setDefaultValue(10000);slider->setFixedWidth(100);retouchSliders_[i-1]=slider;
+            auto* slider=new ui::TrackSlider(Qt::Horizontal);slider->setObjectName(i==1?"retouchHardnessSlider":"retouchOpacitySlider");slider->setAccessibleName(i==1?"润饰硬度滑块":"润饰不透明度滑块");slider->setRange(i==1?0:100,10000);slider->setDefaultValue(10000);slider->setFixedWidth(100);retouchSliders_[i-1]=slider;
             connect(slider,&QSlider::valueChanged,this,[this,i](int value){
                 if(refreshing_||retouch_||stroke_)return;
                 double* field=nullptr;
@@ -146,8 +146,8 @@ void MainWindow::refreshRetouchControls() {
     for(size_t i=0;i<retouchSliders_.size();++i)if(auto* slider=retouchSliders_[i]){const QSignalBlocker block(slider);slider->setValue(int(std::lround(values[i+1]*100)));
         // Factory hardness differs by tool: clone and blur start soft (0), the healing brush starts at 100%.
         slider->setDefaultValue(i==0&&(clone||smear)?0:10000);slider->setEnabled(enabled&&(clone||heal||smear));}
-    if(auto* label=retouchBar_->findChild<QLabel*>("retouchOpacityLabel"))label->setText(smear?"Strength":"Opacity");
-    if(auto* label=retouchBar_->findChild<QLabel*>("retouchFamily"))label->setText(clone?"Clone Stamp":heal?"Spot Healing":"Smear");
+    if(auto* label=retouchBar_->findChild<QLabel*>("retouchOpacityLabel"))label->setText(smear?"强度":"不透明度");
+    if(auto* label=retouchBar_->findChild<QLabel*>("retouchFamily"))label->setText(clone?"仿制图章":heal?"修复":"擦痕");
 }
 
 bool MainWindow::beginRetouch(Point point,Qt::KeyboardModifiers modifiers) {
@@ -156,13 +156,13 @@ bool MainWindow::beginRetouch(Point point,Qt::KeyboardModifiers modifiers) {
     if(retouch_)cancelRetouch();
     // Source sampling is a pointer action, even on an ineligible paint target.
     if(tool_==Tool::CloneStamp&&modifiers.testFlag(Qt::AltModifier)) {
-        try{project->cloneAlignment.setSource(point);statusBar()->showMessage(QString("Clone source: %1, %2").arg(point.x,0,'f',1).arg(point.y,0,'f',1));}
+        try{project->cloneAlignment.setSource(point);statusBar()->showMessage(QString("仿制源：%1, %2").arg(point.x,0,'f',1).arg(point.y,0,'f',1));}
         catch(const std::exception& error){statusBar()->showMessage(error.what());}
         return true;
     }
     auto* layer=active();
     if(!layer||layerSelection().ids.size()!=1)return true;
-    if(!project->maskSelected&&layer->deep&&layer->deep->isHdr()){statusBar()->showMessage("Use Layer > Convert HDR to 16-Bit before retouching");return true;}
+    if(!project->maskSelected&&layer->deep&&layer->deep->isHdr()){statusBar()->showMessage("润饰前请使用“图层 > 将 HDR 转换为 16 位”");return true;}
     const auto entries=layers::entries(*project->document);
     if(std::none_of(entries.begin(),entries.end(),[&](const layers::Entry& entry){return entry.id==layer->id&&entry.visible;}))return true;
     const auto& selected=project->document->selection;
@@ -173,14 +173,14 @@ bool MainWindow::beginRetouch(Point point,Qt::KeyboardModifiers modifiers) {
     else {settings.mode=healingMode_;settings.radius=brushSettings_.radius;settings.hardness=brushSettings_.hardness;settings.opacity=brushSettings_.opacity;settings.healingSeed=QRandomGenerator::global()->generate();}
     const bool mask=project->maskSelected;
     if(mask) {
-        if(settings.mode!=retouch::Mode::Blur){statusBar()->showMessage("Use Blur to retouch a mask. Clone, Healing, Smudge and Liquify edit image pixels.");return true;}
+        if(settings.mode!=retouch::Mode::Blur){statusBar()->showMessage("使用模糊可润饰蒙版。仿制图章、修复、涂抹和液化会编辑图像像素。");return true;}
         if(!layer->mask||!layer->mask->enabled||!layer->mask->raster)return true;
     } else if(layer->group||!layer->adjustmentJson.empty()||(!layer->raster&&(settings.mode==retouch::Mode::Blur||isWarp(settings.mode))))return true;
     const Point start=modifiers.testFlag(Qt::ShiftModifier)&&lastBrushPoint_&&lastBrushLayer_==layer->id&&lastBrushMask_==mask?*lastBrushPoint_:point;
     retouch::Sources sources;
     if(settings.mode==retouch::Mode::Clone) {
         sources.cloneOffset=project->cloneAlignment.strokeOffset(start);
-        if(!sources.cloneOffset){statusBar()->showMessage("Alt-click where Clone Stamp should copy from first.");return true;}
+        if(!sources.cloneOffset){statusBar()->showMessage("请先按住 Alt 单击仿制图章要复制的源位置。");return true;}
     }
     QString fallback;
     try {
@@ -192,7 +192,7 @@ bool MainWindow::beginRetouch(Point point,Qt::KeyboardModifiers modifiers) {
             auto shader=QDir(QApplication::applicationDirPath()).filePath("shaders/BrushCoverage.hlsl");
             if(!QFileInfo::exists(shader))shader=QStringLiteral(COMPOSITOR_SOURCE_ROOT)+"/shaders/BrushCoverage.hlsl";
             try{brushGpu_=std::make_shared<graphics::D3D11BrushCoverage>(std::filesystem::path(shader.toStdWString()),warp_);}
-            catch(const std::exception& error){fallback=QString("Using software retouch coverage: ")+error.what();}
+            catch(const std::exception& error){fallback=QString("正在使用软件润饰覆盖： ")+error.what();}
         }
         if(settings.mode==retouch::Mode::Clone&&settings.sampleAllLayers)sources.allLayersSource=retouch::compositeSource(document);
         const auto selection=selected?selected->coverage:nullptr;
@@ -222,9 +222,9 @@ Point MainWindow::constrainRetouch(Point point,Qt::KeyboardModifiers modifiers) 
 }
 
 void MainWindow::publishRetouch(bool finish) {
-    if(!retouch_||!retouchOwner_||!retouchOwner_->document||!retouchOriginal_)throw std::logic_error("No active retouch target");
+    if(!retouch_||!retouchOwner_||!retouchOwner_->document||!retouchOriginal_)throw std::logic_error("无活动润饰目标");
     auto* layer=findLayer(retouchOwner_,retouchOriginal_->id);
-    if(!layer||*layer!=*retouchOriginal_)throw std::runtime_error("The retouch target changed during the stroke");
+    if(!layer||*layer!=*retouchOriginal_)throw std::runtime_error("描边过程中润饰目标发生了变化");
     if(!finish){retouchOwner_->retouchPreview=retouch_->livePreview();return;}
     const auto snapshot=retouch_->commitSnapshot();
     if(!snapshot)throw std::runtime_error("Retouch did not produce a commit snapshot");
@@ -237,7 +237,7 @@ bool MainWindow::updateRetouch(Point point,Qt::KeyboardModifiers modifiers) {
     try {
         if(current()!=retouchOwner_||!retouchOwner_->document||retouchOwner_->active!=retouchOriginal_->id||retouchOwner_->maskSelected!=retouchMask_){cancelRetouch();return true;}
         auto* layer=findLayer(retouchOwner_,retouchOriginal_->id);
-        if(!layer||*layer!=*retouchOriginal_)throw std::runtime_error("The retouch target changed during the stroke");
+        if(!layer||*layer!=*retouchOriginal_)throw std::runtime_error("描边过程中润饰目标发生了变化");
         point=constrainRetouch(point,modifiers);
         retouch_->append(point);lastBrushPoint_=point;
         publishRetouch(false);refresh(true,false);

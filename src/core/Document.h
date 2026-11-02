@@ -27,6 +27,9 @@ struct Transform {
 enum class Blend { Normal,Multiply,Screen,Overlay,Darken,Lighten,Difference,ColorDodge,ColorBurn,Hue,Saturation,Color,Luminosity,LinearBurn,LinearDodge,SoftLight,HardLight,VividLight,LinearLight,PinLight,HardMix,Exclusion,Subtract,Divide };
 WidePixel blendWidePixel(WidePixel background,WidePixel source,Blend mode);
 inline constexpr std::array<const char*,24> blendNames{"Normal","Multiply","Screen","Overlay","Darken","Lighten","Difference","Color Dodge","Color Burn","Hue","Saturation","Color","Luminosity","Linear Burn","Linear Dodge","Soft Light","Hard Light","Vivid Light","Linear Light","Pin Light","Hard Mix","Exclusion","Subtract","Divide"};
+// 序列化用英文(与 .comp 兼容);仅界面显示用中文
+inline constexpr std::array<const char*,24> blendDisplayNames{"正常","正片叠底","滤色","叠加","变暗","变亮","差值","颜色减淡","颜色加深","色相","饱和度","颜色","明度","线性加深","线性减淡","柔光","强光","亮光","线性光","点光","实色混合","排除","减去","划分"};
+inline constexpr const char* blendDisplayName(size_t index){return index<blendDisplayNames.size()?blendDisplayNames[index]:"Normal";}
 
 // Immutable 256x256 tiles. Editing copies only touched tiles. Flattening is explicit.
 class Raster {
@@ -141,14 +144,14 @@ struct TextContent {
     std::string value,fontFamily{"Segoe UI"};
     double fontSize{48},red{},green{},blue{},alpha{1};
     std::vector<TextRun> colorRuns,fontRuns;
-    std::string fontStyle{"Regular"};
+    std::string fontStyle{"常规"};
     double tracking{},leading{};
     TextAlignment alignment{TextAlignment::Left};
     std::optional<double> boxWidth,boxHeight;
     bool operator==(const TextContent&) const = default;
 };
 struct Layer {
-    std::string id,name{"Layer"},parentId,maskSourceId;
+    std::string id,name{"图层"},parentId,maskSourceId;
     bool visible{true},group{};
     double opacity{1};
     Blend blend{Blend::Normal};

@@ -39,7 +39,7 @@ std::shared_ptr<const Document> MainWindow::editPanelPreview(EditorProject& proj
 ui::EditPanelHost MainWindow::makeEditPanelHost(EditorProject& project,const Document& document,std::string action){
     auto* owner=&project;QPointer<NativeCanvas> token=project.canvas;
     auto original=std::find_if(document.layers.begin(),document.layers.end(),[&](const Layer& layer){return layer.id==project.active;});
-    if(original==document.layers.end())throw std::runtime_error("The edit target no longer exists");
+    if(original==document.layers.end())throw std::runtime_error("编辑目标已不存在");
     auto state=std::make_shared<EditViewState>();state->original=*original;state->live=!original->adjustmentJson.empty();
     auto present=[this,owner,token]{return token&&std::any_of(projects_.begin(),projects_.end(),[owner](const auto& item){return item.get()==owner;});};
     ui::EditPanelHost host;host.canvas=project.canvas;

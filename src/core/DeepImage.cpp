@@ -49,17 +49,17 @@ NormalizedDeep normalizeDeep(const DeepImage& source,const std::function<bool()>
     if(!source.valid())throw std::runtime_error("Invalid HDR source");
     if(uint64_t(source.width)*source.height*32>1200000000)throw std::runtime_error("HDR color operation exceeds working memory budget");
     NormalizedDeep out;out.scales.resize(std::size_t(source.width)*source.height);auto normal=makeDeep(source.width,source.height,DeepImage::Format::Unorm16);
-    for(int y=0;y<source.height;++y){if(cancelled&&cancelled())throw std::runtime_error("HDR operation cancelled");for(int x=0;x<source.width;++x){auto p=source.pixel(x,y);float scale=p[3]>0?std::max({1.f,p[0]/p[3],p[1]/p[3],p[2]/p[3]}):1;
+    for(int y=0;y<source.height;++y){if(cancelled&&cancelled())throw std::runtime_error("HDR 操作已取消");for(int x=0;x<source.width;++x){auto p=source.pixel(x,y);float scale=p[3]>0?std::max({1.f,p[0]/p[3],p[1]/p[3],p[2]/p[3]}):1;
         out.scales[std::size_t(y)*source.width+x]=scale;for(int c=0;c<3;++c)p[c]/=scale;normal->setPixel(x,y,p);}}
     out.raster=rasterFromDeep(*normal);return out;
 }
 std::shared_ptr<const DeepImage> restoreDeep(const Raster& source,const std::vector<float>& scales,const std::function<bool()>& cancelled){
     if(scales.size()!=std::size_t(source.width)*source.height)throw std::runtime_error("HDR scale grid changed");
-    auto out=makeDeep(source.width,source.height);for(int y=0;y<source.height;++y){if(cancelled&&cancelled())throw std::runtime_error("HDR operation cancelled");for(int x=0;x<source.width;++x){auto p=source.pixel(x,y);float scale=scales[std::size_t(y)*source.width+x]/255;
+    auto out=makeDeep(source.width,source.height);for(int y=0;y<source.height;++y){if(cancelled&&cancelled())throw std::runtime_error("HDR 操作已取消");for(int x=0;x<source.width;++x){auto p=source.pixel(x,y);float scale=scales[std::size_t(y)*source.width+x]/255;
         out->setPixel(x,y,{p.r*scale,p.g*scale,p.b*scale,p.a/255.f});}}return out;
 }
 std::shared_ptr<const DeepImage> deepFromPlanes(int width, int height, const std::uint16_t* red, const std::uint16_t* green, const std::uint16_t* blue, const std::uint16_t* alpha) {
-    if (width < 1 || height < 1 || !red || !green || !blue) throw std::runtime_error("Invalid 16-bit image");
+    if (width < 1 || height < 1 || !red || !green || !blue) throw std::runtime_error("无效的 16 位图像");
     auto image = std::make_shared<DeepImage>();
     image->width = width;
     image->height = height;
@@ -75,7 +75,7 @@ std::shared_ptr<const DeepImage> deepFromPlanes(int width, int height, const std
     return image;
 }
 std::shared_ptr<const Raster> rasterFromDeep(const DeepImage& image) {
-    if (!image.valid()) throw std::runtime_error("Invalid 16-bit image");
+    if (!image.valid()) throw std::runtime_error("无效的 16 位图像");
     std::vector<std::uint8_t> rgba(std::size_t(image.width) * std::size_t(image.height) * 4);
     for (int y = 0; y < image.height; ++y) for (int x = 0; x < image.width; ++x) {
         const auto value = image.pixel(x, y);

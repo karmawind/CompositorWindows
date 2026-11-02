@@ -1,0 +1,1121 @@
+[
+ {
+  "s": "Add",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp",
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Adjustments",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Aligned",
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Alternate",
+  "f": [
+   "src/ui/KeyboardShortcutDialog.cpp"
+  ]
+ },
+ {
+  "s": "Amount",
+  "f": [
+   "src/ui/FilterActions.cpp"
+  ]
+ },
+ {
+  "s": "Anchor",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Angle",
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Antialias",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Appearance",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Auto",
+  "f": [
+   "src/ui/CameraRawPanel.cpp",
+   "src/ui/TextActions.cpp"
+  ]
+ },
+ {
+  "s": "Background",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Balance",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Black",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Bloom",
+  "f": [
+   "src/ui/AdjustmentActions.cpp",
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Blue",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp",
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Blues",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Blur",
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Bold",
+  "f": [
+   "src/ui/TextActions.cpp"
+  ]
+ },
+ {
+  "s": "Bottom",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Brightness",
+  "f": [
+   "src/ui/PaletteDialog.cpp"
+  ]
+ },
+ {
+  "s": "Calibration",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Cancel",
+  "f": [
+   "src/ui/FileActions.cpp",
+   "src/ui/FocusStackJob.cpp",
+   "src/ui/KeyboardShortcutDialog.cpp"
+  ]
+ },
+ {
+  "s": "Canvas",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Center",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Centimeters",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Channel",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Clarity",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Clear",
+  "f": [
+   "src/ui/KeyboardShortcutDialog.cpp",
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Clipboard",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Color",
+  "f": [
+   "src/ui/CameraRawPanel.cpp",
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Colorize",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Command",
+  "f": [
+   "src/ui/KeyboardShortcutDialog.cpp"
+  ]
+ },
+ {
+  "s": "Compositor",
+  "f": [
+   "src/ui/CommandActions.cpp",
+   "src/ui/FilterActions.cpp",
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Content-Aware",
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Contiguous",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Continue",
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "Contract",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Copy",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Curves",
+  "f": [
+   "src/ui/AdjustmentActions.cpp",
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Custom",
+  "f": [
+   "src/ui/CameraRawPanel.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Cut",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Cyans",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Defringe",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Dehaze",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Delete",
+  "f": [
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Diffusion",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Distance",
+  "f": [
+   "src/ui/FilterActions.cpp"
+  ]
+ },
+ {
+  "s": "Distort",
+  "f": [
+   "src/ui/TransformActions.cpp"
+  ]
+ },
+ {
+  "s": "Distortion",
+  "f": [
+   "src/ui/FilterActions.cpp"
+  ]
+ },
+ {
+  "s": "Dither",
+  "f": [
+   "src/ui/AdjustmentActions.cpp"
+  ]
+ },
+ {
+  "s": "Done",
+  "f": [
+   "src/ui/TextActions.cpp"
+  ]
+ },
+ {
+  "s": "Edit",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Effects",
+  "f": [
+   "src/ui/CameraRawPanel.cpp",
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Ellipse",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Enabled",
+  "f": [
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Erase",
+  "f": [
+   "src/ui/BrushActions.cpp"
+  ]
+ },
+ {
+  "s": "Expand",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Exposure",
+  "f": [
+   "src/ui/AdjustmentActions.cpp",
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/RawImportDialog.cpp"
+  ]
+ },
+ {
+  "s": "Feather",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "File",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Filters",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Format",
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "Free",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Freehand",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Gamma",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp",
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Gaussian",
+  "f": [
+   "src/ui/FilterActions.cpp"
+  ]
+ },
+ {
+  "s": "Geometry",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Global",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Glow",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Grain",
+  "f": [
+   "src/ui/AdjustmentActions.cpp",
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Gray",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp"
+  ]
+ },
+ {
+  "s": "Green",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp",
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Greens",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Group",
+  "f": [
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Guided",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Halation",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Hardness",
+  "f": [
+   "src/ui/BrushActions.cpp"
+  ]
+ },
+ {
+  "s": "Height",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/MainWindow.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Help",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Highlights",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Histogram",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Horizontal",
+  "f": [
+   "src/ui/CameraRawPanel.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Hue",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/PaletteDialog.cpp"
+  ]
+ },
+ {
+  "s": "Image",
+  "f": [
+   "src/ui/BrushActions.cpp",
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Import",
+  "f": [
+   "src/ui/RawImportDialog.cpp"
+  ]
+ },
+ {
+  "s": "Inches",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Inside",
+  "f": [
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Invert",
+  "f": [
+   "src/ui/AdjustmentActions.cpp",
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Italic",
+  "f": [
+   "src/ui/TextActions.cpp"
+  ]
+ },
+ {
+  "s": "Layer",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Layers",
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Leading",
+  "f": [
+   "src/ui/TextActions.cpp"
+  ]
+ },
+ {
+  "s": "Left",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Levels",
+  "f": [
+   "src/ui/AdjustmentActions.cpp",
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Light",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Line",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Linear",
+  "f": [
+   "src/ui/CameraRawPanel.cpp",
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Liquify",
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Magentas",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Mask",
+  "f": [
+   "src/ui/BrushActions.cpp",
+   "src/ui/LayerActions.cpp",
+   "src/ui/LayerPanel.cpp"
+  ]
+ },
+ {
+  "s": "Master",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Menu",
+  "f": [
+   "src/ui/KeyboardShortcutDialog.cpp"
+  ]
+ },
+ {
+  "s": "Midtones",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Millimeters",
+  "f": [
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Monochromatic",
+  "f": [
+   "src/ui/FilterActions.cpp"
+  ]
+ },
+ {
+  "s": "Multiple",
+  "f": [
+   "src/ui/TextActions.cpp"
+  ]
+ },
+ {
+  "s": "Name",
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Nearest",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/TransformActions.cpp"
+  ]
+ },
+ {
+  "s": "Off",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Opacity",
+  "f": [
+   "src/ui/BrushActions.cpp",
+   "src/ui/LayoutGridActions.cpp",
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Optics",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Original",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Outside",
+  "f": [
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Page",
+  "f": [
+   "src/ui/FileActions.cpp"
+  ]
+ },
+ {
+  "s": "Paint",
+  "f": [
+   "src/ui/BrushActions.cpp"
+  ]
+ },
+ {
+  "s": "Paste",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Percent",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Perspective",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Pixels",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/ProjectActions.cpp",
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Polygon",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Polygonal",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Preset",
+  "f": [
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Preview",
+  "f": [
+   "src/ui/FilterActions.cpp"
+  ]
+ },
+ {
+  "s": "Process",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Projection",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Radial",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Radius",
+  "f": [
+   "src/ui/FilterActions.cpp",
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Range",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Rectangle",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Rectilinear",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Red",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp",
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Redo",
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Reds",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ },
+ {
+  "s": "Regular",
+  "f": [
+   "src/ui/TextActions.cpp"
+  ]
+ },
+ {
+  "s": "Relative",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Remove",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp"
+  ]
+ },
+ {
+  "s": "Resampling",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Resolution",
+  "f": [
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Reverse",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Right",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Rotate",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Sample",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp"
+  ]
+ },
+ {
+  "s": "Saturation",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/PaletteDialog.cpp"
+  ]
+ },
+ {
+  "s": "Scale",
+  "f": [
+   "src/ui/FileActions.cpp",
+   "src/ui/TransformActions.cpp"
+  ]
+ },
+ {
+  "s": "Select",
+  "f": [
+   "src/ui/SelectionActions.cpp",
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Shadows",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Shortcut",
+  "f": [
+   "src/ui/KeyboardShortcutDialog.cpp"
+  ]
+ },
+ {
+  "s": "Size",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp",
+   "src/ui/BrushActions.cpp"
+  ]
+ },
+ {
+  "s": "Smear",
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Smooth",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/TransformActions.cpp"
+  ]
+ },
+ {
+  "s": "Smudge",
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Strength",
+  "f": [
+   "src/ui/RetouchActions.cpp"
+  ]
+ },
+ {
+  "s": "Stroke",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/LayerActions.cpp"
+  ]
+ },
+ {
+  "s": "Subdivisions",
+  "f": [
+   "src/ui/LayoutGridActions.cpp"
+  ]
+ },
+ {
+  "s": "Subtract",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Temperature",
+  "f": [
+   "src/ui/RawImportDialog.cpp"
+  ]
+ },
+ {
+  "s": "Three-Way",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Tolerance",
+  "f": [
+   "src/ui/SelectionActions.cpp"
+  ]
+ },
+ {
+  "s": "Tools",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/MainWindow.cpp",
+   "src/ui/PaletteActions.cpp"
+  ]
+ },
+ {
+  "s": "Top",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Tracking",
+  "f": [
+   "src/ui/TextActions.cpp"
+  ]
+ },
+ {
+  "s": "Transform",
+  "f": [
+   "src/ui/MainWindow.cpp",
+   "src/ui/TransformActions.cpp",
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Transparent",
+  "f": [
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Trim",
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Undo",
+  "f": [
+   "src/ui/MainWindow.cpp"
+  ]
+ },
+ {
+  "s": "Ungroup",
+  "f": [
+   "src/ui/LayerPanel.cpp"
+  ]
+ },
+ {
+  "s": "Units",
+  "f": [
+   "src/ui/DrawingActions.cpp"
+  ]
+ },
+ {
+  "s": "Upright",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Vectorscope",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Vertical",
+  "f": [
+   "src/ui/CameraRawPanel.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "View",
+  "f": [
+   "src/ui/VisualStyle.cpp"
+  ]
+ },
+ {
+  "s": "Vignette",
+  "f": [
+   "src/ui/AdjustmentActions.cpp",
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "Visualize",
+  "f": [
+   "src/ui/CameraRawPanel.cpp"
+  ]
+ },
+ {
+  "s": "White",
+  "f": [
+   "src/ui/AdjustmentAdvancedControls.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Width",
+  "f": [
+   "src/ui/DrawingActions.cpp",
+   "src/ui/MainWindow.cpp",
+   "src/ui/ProjectActions.cpp"
+  ]
+ },
+ {
+  "s": "Yellows",
+  "f": [
+   "src/ui/AdjustmentDialog.cpp"
+  ]
+ }
+]

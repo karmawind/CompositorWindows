@@ -64,3 +64,6 @@ CMakeFiles/
 *.idb
 *.tlog
 *.VC.db
+
+l10n-tools/baselinetest/
+l10n-tools/out/*.png

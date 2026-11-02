@@ -13,7 +13,7 @@ extern "C" {
 }
 namespace compositor::effects_tools {
 namespace {
-constexpr const char* channelNames[]{"RGB","Red","Green","Blue"};
+constexpr const char* channelNames[]{"RGB","红色","绿色","蓝色"};
 int channelIndex(LevelsChannel channel){int index=int(channel);if(index<0||index>3)throw std::runtime_error("Invalid Levels channel");return index;}
 double clamp(double value,double lo,double hi,double fallback){return std::isfinite(value)?std::clamp(value,lo,hi):fallback;}
 QJsonObject parse(std::string_view text){if(text.size()>4*1024*1024)throw std::runtime_error("Adjustment JSON exceeds budget");QJsonParseError error;auto doc=QJsonDocument::fromJson(QByteArray(text.data(),qsizetype(text.size())),&error);if(error.error!=QJsonParseError::NoError||!doc.isObject())throw std::runtime_error("Invalid adjustment JSON");return doc.object();}

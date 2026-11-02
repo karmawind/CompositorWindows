@@ -8,8 +8,8 @@ namespace {
 void maskBudget(const Document& document,const Layer& original){
     uint64_t pixels=uint64_t(original.raster->width)*original.raster->height;
     for(const auto& layer:document.layers)if(layer.id!=original.id&&layer.mask&&layer.mask->raster)pixels+=uint64_t(layer.mask->raster->width)*layer.mask->raster->height;
-    if(pixels>100000000)throw std::runtime_error("The background mask exceeds the project mask budget");
-    if(uint64_t(original.raster->width)*original.raster->height>imaging::ImportOptions{}.maxWorkingBytes/72)throw std::runtime_error("The background mask exceeds the refinement memory budget");
+    if(pixels>100000000)throw std::runtime_error("背景蒙版超出项目蒙版预算");
+    if(uint64_t(original.raster->width)*original.raster->height>imaging::ImportOptions{}.maxWorkingBytes/72)throw std::runtime_error("背景蒙版超出细化内存预算");
 }
 unsigned selectionCoverage(const std::optional<Selection>& selection,const Transform& transform,int x,int y,int width,int height){
     if(!selection)return 255;
@@ -27,17 +27,17 @@ class SubjectPanel final:public ui::EditPanelSession {
         if(!image){if(host_.preview)host_.preview({});return;}
         auto shown=originalDocument_;
         auto target=std::find_if(shown.layers.begin(),shown.layers.end(),[this](const Layer& l){return l.id==original_.id;});
-        if(target==shown.layers.end())throw std::runtime_error("Subject preview target is missing");
+        if(target==shown.layers.end())throw std::runtime_error("主体预览目标缺失");
         target->raster=Raster::fromRgba(int(image->width),int(image->height),image->pixels.data(),image->stride);
         if(host_.preview)host_.preview(std::make_shared<const Document>(std::move(shown)));
     }
     std::shared_ptr<const imaging::GrayMask> existingAtApply(){
-        if(host_.valid&&!host_.valid())throw std::runtime_error("The background removal target is no longer available");
+        if(host_.valid&&!host_.valid())throw std::runtime_error("去除背景的目标已不可用");
         auto current=host_.currentDocument?host_.currentDocument():std::optional<Document>{originalDocument_};
-        if(!current)throw std::runtime_error("The background removal document is no longer available");
+        if(!current)throw std::runtime_error("去除背景的文档已不可用");
         maskBudget(*current,original_);
         const auto found=std::find_if(current->layers.begin(),current->layers.end(),[this](const Layer& l){return l.id==original_.id;});
-        if(found==current->layers.end()||found->raster!=original_.raster||found->transform!=original_.transform)throw std::runtime_error("The background removal source changed");
+        if(found==current->layers.end()||found->raster!=original_.raster||found->transform!=original_.transform)throw std::runtime_error("去除背景的源已更改");
         if(!found->mask||found->mask->placement||!found->mask->raster||found->mask->raster->width!=original_.raster->width||found->mask->raster->height!=original_.raster->height)return {};
         const auto& mask=*found->mask->raster;
         return std::make_shared<const imaging::GrayMask>(imaging::GrayMask{uint32_t(mask.width),uint32_t(mask.height),size_t(mask.width),mask.pixels});
@@ -59,7 +59,7 @@ public:
         imaging::RgbaImage source{uint32_t(original.raster->width),uint32_t(original.raster->height),size_t(original.raster->width)*4,original.raster->rgba()};
         QPointer<SubjectPanel> owner=this;imaging::SubjectDialogCallbacks callbacks;
         callbacks.preview=[owner](std::shared_ptr<const imaging::RgbaImage> image){if(owner&&!owner->closed_){try{owner->publish(std::move(image));}catch(const std::exception& error){if(owner->host_.error)owner->host_.error(QString::fromUtf8(error.what()));owner->cancel();}}};
-        callbacks.existingAtApply=[owner]{if(!owner||owner->closed_)throw std::runtime_error("Background removal is closed");return owner->existingAtApply();};
+        callbacks.existingAtApply=[owner]{if(!owner||owner->closed_)throw std::runtime_error("去除背景功能已关闭");return owner->existingAtApply();};
         callbacks.committingChanged=[owner](bool value){if(owner&&!owner->closed_){owner->committing_=value;if(owner->host_.stateChanged)owner->host_.stateChanged();}};
         callbacks.finished=[owner](std::optional<imaging::GrayMask> result){if(owner)owner->finish(std::move(result));};
         const auto selection=document.selection;const auto transform=original.transform;

@@ -13,15 +13,15 @@ struct LayerMergeJob::Impl {
     std::shared_ptr<std::atomic_bool> cancelled=std::make_shared<std::atomic_bool>(false);
     QFutureWatcher<Result> watcher;
     QProgressDialog progress;
-    explicit Impl(QWidget* parent):progress("Merging layers…","Cancel",0,0,parent){
-        progress.setObjectName("mergeProgress");progress.setWindowTitle("Merge Layers");
+    explicit Impl(QWidget* parent):progress("正在合并图层…","取消",0,0,parent){
+        progress.setObjectName("mergeProgress");progress.setWindowTitle("合并图层");
         progress.setWindowModality(Qt::NonModal);progress.setMinimumDuration(0);
         progress.setAutoClose(false);progress.setAutoReset(false);
     }
 };
 LayerMergeJob::LayerMergeJob(Document document,layers::SelectionState selection,Host host,QWidget* parent)
     :QObject(parent),impl_(std::make_unique<Impl>(parent)){
-    if(!host.commit||!host.settled||!host.error)throw std::invalid_argument("Incomplete merge host");
+    if(!host.commit||!host.settled||!host.error)throw std::invalid_argument("合并宿主不完整");
     setObjectName("layerMergeJob");impl_->host=std::move(host);
     connect(&impl_->progress,&QProgressDialog::canceled,this,[this]{cancel();});
     connect(&impl_->watcher,&QFutureWatcher<Impl::Result>::finished,this,[this]{

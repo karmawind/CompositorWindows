@@ -63,7 +63,7 @@ IDWriteFontCollection* sharedCollection(){
 }
 Face resolveFace(IDWriteFontCollection* fonts,const std::string& family,const std::string& styleName){
     Face face;face.family=wide(family.empty()?"Segoe UI":family);
-    const auto wanted=lower(wide(styleName.empty()?"Regular":styleName));
+    const auto wanted=lower(wide(styleName.empty()?"常规":styleName));
     applyStyleWords(face,wanted);
     if(!fonts)return face;
     UINT32 index=0;BOOL exists=FALSE;
@@ -104,7 +104,7 @@ struct Built {
 Built build(const TextContent& text){
     if(!textRunsValid(text)||text.fontFamily.empty())throw std::runtime_error("Invalid text layer");
     Built built;built.characters=wide(text.value);
-    if(built.characters.size()>100000)throw std::runtime_error("Text exceeds limit");
+    if(built.characters.size()>100000)throw std::runtime_error("文本超出限制");
     built.write=sharedFactory();
     const Face base=resolveFace(sharedCollection(),text.fontFamily,text.fontStyle);
     const float line=float(lineHeight(text));

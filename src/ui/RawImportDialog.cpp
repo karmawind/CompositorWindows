@@ -27,7 +27,7 @@ constexpr int kNoiseMin = 0, kNoiseMax = int(imaging::kRawNoiseLimit);
 
 RawImportDialog::RawImportDialog(const std::filesystem::path& file, Developer developer, QWidget* parent)
     : QDialog(parent), file_(file), developer_(std::move(developer)), cancelled_(std::make_shared<std::atomic_bool>(false)) {
-    setWindowTitle("RAW Development – " + QString::fromStdWString(file_.filename().wstring()));
+    setWindowTitle("RAW 显影 – " + QString::fromStdWString(file_.filename().wstring()));
     setObjectName("rawImportDialog");
     setModal(true);
     resize(1280, 820);
@@ -47,9 +47,9 @@ void RawImportDialog::reject() {
 
 void RawImportDialog::build() {
     auto* root = new QHBoxLayout(this);
-    preview_ = new QLabel("Rendering preview…");
+    preview_ = new QLabel("正在渲染预览…");
     preview_->setObjectName("rawPreview");
-    preview_->setAccessibleName("RAW preview");
+    preview_->setAccessibleName("RAW 预览");
     preview_->setAlignment(Qt::AlignCenter);
     preview_->setFrameShape(QFrame::StyledPanel);
     preview_->setMinimumSize(640, 420);
@@ -73,18 +73,18 @@ void RawImportDialog::build() {
         line->addWidget(value);
         form->addRow(label, line);
     };
-    row("rawExposureSlider", "Exposure", exposure_, exposureValue_);
-    row("rawKelvinSlider", "Temperature", kelvin_, kelvinValue_);
+    row("rawExposureSlider", "曝光", exposure_, exposureValue_);
+    row("rawKelvinSlider", "色温", kelvin_, kelvinValue_);
     row("rawTintSlider", "Tint", tint_, tintValue_);
-    row("rawNoiseSlider", "Noise reduction", noise_, noiseValue_);
+    row("rawNoiseSlider", "降噪", noise_, noiseValue_);
     exposure_->setRange(-kExposureRange, kExposureRange);
     tint_->setRange(kTintMin, kTintMax);
     noise_->setRange(kNoiseMin, kNoiseMax);
 
-    lensCorrection_ = new QCheckBox("Lens correction");
+    lensCorrection_ = new QCheckBox("镜头校正");
     lensCorrection_->setObjectName("rawLensCorrection");
     lensCorrection_->setEnabled(false);
-    lensCorrection_->setToolTip("Unavailable: the LibRaw decoder used here applies no lens profile.");
+    lensCorrection_->setToolTip("不可用：此处使用的 LibRaw 解码器不应用镜头配置文件。");
     form->addRow(lensCorrection_);
 
     explanation_ = new QLabel;
@@ -98,7 +98,7 @@ void RawImportDialog::build() {
     panel->addStretch(1);
 
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Cancel);
-    importButton_ = new QPushButton("Import");
+    importButton_ = new QPushButton("导入");
     importButton_->setObjectName("rawImportButton");
     importButton_->setEnabled(false);
     importButton_->setDefault(true);
@@ -146,7 +146,7 @@ void RawImportDialog::startPreview() {
     imaging::ImportOptions options;
     options.raw = adjustments_;
     options.cancelled = [cancelled = cancelled_] { return cancelled->load(); };
-    setStatus("Rendering preview…", false);
+    setStatus("正在渲染预览…", false);
     watcher_.setFuture(QtConcurrent::run([developer = developer_, path = file_, options, generation = generation_]() -> Result {
         Result result;
         result.generation = generation;
@@ -212,9 +212,9 @@ void RawImportDialog::initializeControls(const imaging::RawDevelopment& develope
 
 void RawImportDialog::showExplanation(const imaging::RawCapabilities& caps) {
     QStringList reasons;
-    if (!caps.temperature) reasons << "Temperature is read-only for this decoder.";
-    if (!caps.tint) reasons << "Tint is read-only for this decoder.";
-    reasons << "Lens correction is unavailable: the LibRaw decoder used here applies no lens profile.";
+    if (!caps.temperature) reasons << "此解码器的色温为只读。";
+    if (!caps.tint) reasons << "此解码器的色调为只读。";
+    reasons << "镜头校正不可用：此处使用的 LibRaw 解码器不应用任何镜头配置文件。";
     explanation_->setText(reasons.join("\n"));
 }
 

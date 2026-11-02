@@ -149,7 +149,7 @@ private:
     // The layer whose style shapeStyle_ last loaded, and the stored style it matched; the bar reloads when either changes (e.g. undo).
     std::string shapeStyleLayer_;
     editing::ShapeStyle shapeStyleSynced_;
-    // Project whose open "Shape Style" history transaction collects spin-box steps until the field releases focus.
+    // Project whose open "形状样式" history transaction collects spin-box steps until the field releases focus.
     EditorProject* shapeStyleOwner_{};
     std::optional<Layer> drawingOriginal_;
     EditorProject* gradientOwner_{};
@@ -192,7 +192,7 @@ private:
     editing::ShapeStyle shapeDraftStyle_;
     std::optional<editing::Rect> shapeDraftRect_;
     std::optional<editing::Rect> cropDraft_;
-    QString cropRatioChoice_{"Free"};
+    QString cropRatioChoice_{"自由"};
     editing::LassoKind lassoKind_{editing::LassoKind::Freehand};
     int selectionExpandAmount_{1},selectionContractAmount_{1};
     std::optional<editing::CropDrag> cropDrag_;

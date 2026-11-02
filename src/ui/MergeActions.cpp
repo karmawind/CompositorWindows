@@ -16,7 +16,7 @@ void MainWindow::mergeLayers(){
     host.commit=[this,owner,token,before,beforeActive](layers::EditResult result){
         if(!token)return;
         if(owner->document!=before||owner->active!=beforeActive)
-            throw std::runtime_error("The source layers changed; the prepared merge was not applied");
+            throw std::runtime_error("源图层已更改；已准备的合并未应用");
         if(!result.changed)return;
         std::optional<Document> document=std::move(result.document);
         auto active=std::move(result.selection.primary);
