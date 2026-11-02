@@ -14,6 +14,8 @@
 #include <QToolButton>
 #include <QButtonGroup>
 #include <QLabel>
+#include <QHash>
+#include <windows.h>
 #include <QSignalBlocker>
 #include <QClipboard>
 #include <QGuiApplication>
@@ -176,17 +178,71 @@ void openComboOnFieldClick(QComboBox* combo){
     combo->installEventFilter(filter);
     if(combo->lineEdit())combo->lineEdit()->installEventFilter(filter);
 }
+// 字体名本地化:用 DirectWrite 读取系统字体官方 zh-CN 名称。
+// 显示用中文,内部(选择/渲染/项目存储)仍用原始名称。
+struct LocalizedFontNames{QHash<QString,QString> toZh,toEn;};
+const LocalizedFontNames& localizedFontNames(){
+    static const LocalizedFontNames data=[]{
+        LocalizedFontNames d;
+        using PFN_DWriteCreateFactory=LONG(WINAPI*)(const IID&,void**);
+        const HMODULE dwrite=::LoadLibraryW(L"dwrite.dll");
+        if(!dwrite)return d;
+        const auto create=reinterpret_cast<PFN_DWriteCreateFactory>(::GetProcAddress(dwrite,"DWriteCreateFactory"));
+        if(!create)return d;
+        struct IUnknownLocal{virtual LONG QueryInterface(const IID&,void**)=0;virtual ULONG AddRef()=0;virtual ULONG Release()=0;};
+        struct ILocalizedStrings:IUnknownLocal{
+            virtual LONG GetCount(UINT32*)=0;virtual LONG FindLocaleName(const wchar_t*,UINT32*,BOOL)=0;
+            virtual LONG GetStringLength(UINT32,UINT32*)=0;virtual LONG GetString(UINT32,wchar_t*,UINT32)=0;
+        };
+        struct IFontFamily:IUnknownLocal{virtual LONG GetFontCount(UINT32*)=0;virtual LONG GetFont(UINT32,void**)=0;
+            virtual LONG GetFamilyNames(ILocalizedStrings**)=0;};
+        struct IFontCollection:IUnknownLocal{virtual LONG GetFontFamilyCount(UINT32*)=0;virtual LONG GetFontFamily(UINT32,IFontFamily**)=0;};
+        struct IFactory:IUnknownLocal{virtual LONG GetSystemFontCollection(IFontCollection**,BOOL)=0;};
+        IFactory* factory=nullptr;
+        const IID dwriteFactoryId{0xb859ee5a,0xd838,0x4b41,{0xad,0x15,0x60,0x90,0x68,0x7c,0xec,0x3b}};
+        if(FAILED(create(dwriteFactoryId,reinterpret_cast<void**>(&factory)))||!factory)return d;
+        IFontCollection* collection=nullptr;
+        if(FAILED(factory->GetSystemFontCollection(&collection,FALSE))||!collection){factory->Release();return d;}
+        UINT32 count=0;collection->GetFontFamilyCount(&count);
+        wchar_t buffer[160];
+        auto take=[&](ILocalizedStrings* names,const wchar_t* locale)->QString{
+            UINT32 index=UINT32_MAX;BOOL exists=FALSE;
+            if(FAILED(names->FindLocaleName(locale,&index,exists))||!exists||index==UINT32_MAX)return QString();
+            UINT32 length=0;if(FAILED(names->GetStringLength(index,&length))||length>=159)return QString();
+            if(FAILED(names->GetString(index,buffer,length+1)))return QString();
+            return QString::fromWCharArray(buffer);
+        };
+        for(UINT32 i=0;i<count;++i){
+            IFontFamily* family=nullptr;
+            if(FAILED(collection->GetFontFamily(i,&family))||!family)continue;
+            ILocalizedStrings* names=nullptr;
+            if(SUCCEEDED(family->GetFamilyNames(&names))&&names){
+                QString zh=take(names,L"zh-cn");if(zh.isEmpty())zh=take(names,L"zh-hans");
+                const QString en=take(names,L"en-us");
+                if(!zh.isEmpty()&&!en.isEmpty()&&zh!=en){d.toZh.insert(en,zh);d.toEn.insert(zh,en);}
+                names->Release();
+            }
+            family->Release();
+        }
+        collection->Release();factory->Release();
+        return d;
+    }();
+    return data;
+}
+QString displayFontName(const QString& family){return localizedFontNames().toZh.value(family,family);}
+QString engineFontName(const QString& displayed){return localizedFontNames().toEn.value(displayed,displayed);}
 class FontFamilyDelegate final:public QStyledItemDelegate{
 public:
     using QStyledItemDelegate::QStyledItemDelegate;
     void paint(QPainter* painter,const QStyleOptionViewItem& option,const QModelIndex& index)const override{
         QStyleOptionViewItem opt(option);initStyleOption(&opt,index);
-        const QString family=opt.text;opt.text.clear();opt.widget->style()->drawControl(QStyle::CE_ItemViewItem,&opt,painter,opt.widget);
-        if(family.isEmpty())return;
+        const QString displayed=opt.text;opt.text.clear();opt.widget->style()->drawControl(QStyle::CE_ItemViewItem,&opt,painter,opt.widget);
+        if(displayed.isEmpty())return;
+        const QString family=engineFontName(displayed); // 显示用中文名,渲染用引擎名
         const bool selected=option.state&QStyle::State_Selected;
         const QColor color=option.palette.color(selected?QPalette::HighlightedText:QPalette::Text);
         const int height=std::max(8,option.rect.height()-6);
-        const QString key=family+"|"+QString::number(height)+"|"+color.name()+"|"+QString::number(option.rect.width());
+        const QString key=displayed+"|"+QString::number(height)+"|"+color.name()+"|"+QString::number(option.rect.width());
         auto found=cache_.constFind(key);
         if(found==cache_.cend()){
             // 预览 = 字体名 + 中文样字(永东)。不设 families 回退链:QFontMetrics 会按
@@ -195,7 +251,7 @@ public:
             QFont font(family);font.setPixelSize(height);
             QFontMetrics metrics(font);
             const int sampleWidth=metrics.horizontalAdvance(sample);
-            const QString shown=metrics.elidedText(family,Qt::ElideRight,std::max(1,option.rect.width()-8-sampleWidth));
+            const QString shown=metrics.elidedText(displayed,Qt::ElideRight,std::max(1,option.rect.width()-8-sampleWidth));
             const QString full=shown+sample;
             QPixmap pixmap(std::max(1,metrics.horizontalAdvance(full)+2),std::max(1,metrics.height()+2));
             pixmap.fill(Qt::transparent);
@@ -223,6 +279,12 @@ std::pair<int,int> wordRange(const QString& text,int index){
 void MainWindow::setupTypeControls(){
     auto* bar=addToolBar("文本选项");bar->setObjectName("typeOptions");
     auto* fonts=new QFontComboBox;fonts->setObjectName("textFont");fonts->setAccessibleName("文本字体");fonts->setFixedWidth(180);fonts->setItemDelegate(new FontFamilyDelegate(fonts));
+    // 列表项显示官方中文名(保留 FontRole,内部匹配不受影响)
+    if(auto* model=fonts->model())for(int row=0;row<model->rowCount();++row){
+        const QString family=model->index(row,0).data(Qt::DisplayRole).toString();
+        const QString zh=displayFontName(family);
+        if(zh!=family)model->setData(model->index(row,0),zh,Qt::DisplayRole);
+    }
     fonts->setEditable(true);fonts->lineEdit()->setReadOnly(true);fonts->lineEdit()->setPlaceholderText("多种");
     fonts->setCurrentFont(QFont(QString::fromStdString(textDefaults_.fontFamily)));
     auto* styles=new QComboBox;styles->setObjectName("textStyle");styles->setAccessibleName("文本样式");styles->setFixedWidth(120);
