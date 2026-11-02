@@ -12,6 +12,7 @@
 #include <QMenu>
 #include <QMimeData>
 #include <QPlainTextEdit>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QTextEdit>
 #include <QWidget>
@@ -197,7 +198,14 @@ const std::vector<CommandSpec>& commandCatalog(){
     return catalog;
 }
 namespace {
-QString normalized(QString value){return value.remove('&').trimmed();}
+QString normalized(QString value){
+    // 兼容英文助记符 "&File" 与中文习惯 "文件(&F)…" 格式;含 & 的尾部括号是助记符,
+    // 纯 "(B)" 形式是工具按键提示(hinted 依赖),保留。尾部省略号差异一并忽略。
+    value.remove(QRegularExpression("\\s*(…|\\.\\.\\.)\\s*$"));
+    value.remove(QRegularExpression("[（(]\\s*&\\s*[A-Za-z0-9]\\s*[）)]\\s*$"));
+    value.remove('&');
+    return value.trimmed();
+}
 QString portable(const QKeySequence& key){return key.toString(QKeySequence::PortableText);}
 // Labels such as "文本 (T)" carry the shipped key; replace that suffix with the effective key, or drop it when cleared.
 QString hinted(const QString& text,const QList<QKeySequence>& defaults,const QList<QKeySequence>& keys){

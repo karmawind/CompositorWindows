@@ -67,3 +67,6 @@ CMakeFiles/
 
 l10n-tools/baselinetest/
 l10n-tools/out/*.png
+
+l10n-tools/out/evidence-native*/
+l10n-tools/out/*.log
